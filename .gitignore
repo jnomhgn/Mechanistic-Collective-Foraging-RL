@@ -2,3 +2,15 @@
 .Rhistory
 .RData
 .Ruserdata
+
+data/
+
+asocial/results/
+
+social/results/
+
+*.rds
+*png
+*jpeg
+*db
+*.DS_Store
