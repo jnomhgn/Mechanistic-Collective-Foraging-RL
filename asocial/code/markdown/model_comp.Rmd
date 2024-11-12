@@ -1,0 +1,195 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# Model Comparison
+```{r setup-asoc-model_comp, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, results = 'markup', warning = TRUE)
+
+library(knitr)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(tibble)
+library(readr)
+library(stringr)
+
+library(ggplot2)
+library(ggpubr)
+library(viridis)
+
+library(rstan)
+library(loo)
+library(tidybayes)
+library(bayesplot)
+library(randtoolbox)
+
+# Source functions
+source("asocial/code/functions/softmax.R")
+source("asocial/code/functions/diagnostics.plot.R")
+source("asocial/code/functions/getmodels.R")
+
+
+```
+```{r, dir-modcomp, include=FALSE}
+if(!dir.exists("asocial/results")){dir.create("asocial/results")}
+if(!dir.exists("asocial/results/modelcomp")){dir.create("asocial/results/modelcomp")}
+if(!dir.exists("asocial/results/modelcomp/diagnostics")){dir.create("asocial/results/modelcomp/diagnostics")}
+```
+
+## Experimental data
+Load experimental data
+```{r, experiment-asoc_modelcomp, echo =TRUE, eval=TRUE}
+
+# Read data
+path = "~/Users/MarienhagenJonathan/thesisvc/data/data_discrete_1s.csv"
+d = read.csv(path,colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
+
+# Set player id unique across sessions
+d = d %>% mutate(id = (session - 1) * 5  + player) %>% select(-player)
+
+# Get solo trials
+d = d %>% filter(social.fac == 1)
+
+# Transform
+d=d %>%
+  mutate(decision = correct) %>% mutate(reward = catch) %>% mutate(nplayers = 5) %>%
+  mutate(decision = decision + 1) # Transform [0, 1] to [1, 2]
+
+# Put experimental data in list
+stan.data.d = with(d, list(
+  OBSERVATIONS=nrow(d),
+  SESSIONS=max(unique(session)), session=session,
+  TRIALS=max(unique(trial)), trial=trial,
+  MAXIMUM=length(unique(max.fac)), maximum=max.fac,
+  RATIO=length(unique(ratio.fac)), ratio=ratio.fac,
+  PLAYERS=unique(nplayers),
+  ID=max(id), id=id,
+  TIMES=max(unique(time.rounded)), time=time.rounded,
+  DECISIONS=length(unique(decision)), decision=decision, 
+  REWARDS=length(unique(reward)), reward=reward
+))
+```
+
+
+## MCMC Settings
+Models were fitted with the following settings
+```{r, mcmc-asoc_modelcomp, echo=TRUE, results='markup'}
+# MCMC 
+chains = 4
+cores = 4
+iter = 3000
+warmup = 2000
+refresh = 100
+```
+
+
+## Model comparison 
+The following code snippets show how the model comparison was computed. (Diagnostics
+are save to the results folder so be sure to check them.)
+```{r, compute-asoc-model_comp, echo=TRUE}
+# Manual caching to avoid recomputing everything when rendering the html
+
+if(!exists("asocial/results/modelcomp/modelcomp.Rdata")){
+  
+  models = getmodels(hierarch = T)
+
+  # Compile models to avoid recompiling 
+  models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
+  
+  # Results list
+  results = list()
+  
+  # Loop over models
+  for(mfit in 1:length(models$stan.loglik)){
+    
+    # Print info about current simulation / fitting to html
+    # Print info about current simulation to html
+    prgrss = paste("Currently fitting model", models$name[[mfit]])
+  
+  
+    # Write log to text file fot when knitting
+    log.file = paste(paste("asocial/results/modelcomp", "log.txt", sep = "/"))
+    if(!file.exists(log.file)){file.create(log.file)}
+    write(prgrss, log.file, append = TRUE, ncolumns = 1)
+  
+    # Fit model
+    fit = sampling(object = models$compiled[[mfit]], data = stan.data.d, 
+                   chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+    saveRDS(fit, paste("asocial/results/modelcomp", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
+  
+    # Plot some diagnostics for population means
+    diagnostics.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
+    ggexport(plotlist = diagnostics.list, width = 1920, height = 1080,
+                   filename = paste("asocial/results/modelcomp/diagnostics",
+                                    paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
+    
+    # Save diagnostics for all parameters 
+    fit.summary = summary(fit)$summary
+    write.csv(fit.summary, file = paste("asocial/results/modelcomp/diagnostics",
+                                    paste(models$name[[mfit]], "diagnostics", "csv",  sep = "."), sep = "/"))
+    
+  
+    # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
+    # Extract log likelihood values from model fit
+    ll = extract_log_lik(fit, parameter_name = "log_lik", merge_chains = FALSE)
+  
+    # Drop log likelihood of observations that were set to 0 in stan (time == 0)
+    indx = unique(which(ll != 0, arr.ind = T)[, 3])
+    ll = ll[, , indx]
+  
+    # Compute relative effect sample sizes
+    r_eff = relative_eff(exp(ll), cores = 2)
+  
+    # Compute psis loo 
+    loo.model = paste("loo", mfit, sep = ".")
+    assign(loo.model, loo(ll, r_eff = r_eff, cores = 4))
+    remove(ll)
+    
+    # Save diagnostics
+    jpeg(paste("asocial/results/modelcomp", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"),
+         width = 2550, height = 1440, units = "px")
+    plot(get(loo.model))
+    dev.off()
+
+    sink(log.file, append = T)
+    print(get(loo.model))
+    sink()
+  
+  
+    # Save to results
+    results[[mfit]] = get(loo.model)
+    rm(list = loo.model)
+    
+  }
+  
+  # Compare models
+  comparison = loo_compare(results)
+  
+  # Add model name
+  comparison.rank = rownames(comparison) %>% parse_number()
+  comparison.named = as.data.frame(comparison)
+  comparison.named$modelname = sapply(comparison.rank, function(x) models$name[[x]])
+  
+  # Note winning model (to reload for parameter recovery)
+  winner = comparison.named %>% filter(row_number() == 1 & elpd_diff == 0) %>% select(modelname) %>% unlist()
+  
+  
+  # Save Variables
+  save(list=c("results", "comparison", "comparison.named", "winner"), file = paste("asocial/results/modelcomp", "modelcomp.Rdata", sep = "/"))
+  
+  # Save and print comparison
+  write.csv(x = comparison, file = paste("asocial/results/modelcomp", "modelcomp.csv", sep = "/"))
+  write.csv(x = comparison.named, file = paste("asocial/results/modelcomp", "modelcompnamed.csv", sep = "/"))
+  
+}else{
+  
+  # Read comparison
+  load(file = paste("asocial/results/modelcomp", "modelcomp.Rdata", sep = "/"))
+  
+}
+
+print(comparison[, ])
+print(comparison.named)
+```
