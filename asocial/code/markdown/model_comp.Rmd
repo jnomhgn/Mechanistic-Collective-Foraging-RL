@@ -25,6 +25,9 @@ library(tidybayes)
 library(bayesplot)
 library(randtoolbox)
 
+# Set wd
+setwd("~/Users/MarienhagenJonathan/rlforaging")
+
 # Source functions
 source("asocial/code/functions/softmax.R")
 source("asocial/code/functions/diagnostics.plot.R")
@@ -79,8 +82,8 @@ Models were fitted with the following settings
 # MCMC 
 chains = 4
 cores = 4
-iter = 3000
-warmup = 2000
+iter = 2000
+warmup = 1000
 refresh = 100
 ```
 
