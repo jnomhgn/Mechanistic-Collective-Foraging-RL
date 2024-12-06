@@ -25,8 +25,8 @@ data{
 parameters{
   
   // Asocial RL pars
-  real<lower = 0, upper = 1> alphaQN[MAXIMUM];
-  real<lower = 0, upper = 1> alphaQP[MAXIMUM];
+  real<lower = 0, upper = 1> alphaQN;
+  real<lower = 0, upper = 1> alphaQP;
   real<lower = 0> betaQ;
   real betaC;        
   
@@ -81,9 +81,9 @@ model{
 
       // Update Q-values. (Players can receive rewards at t == 0)
       if((reward[observation] - Q[decision[observation]]) < 0){
-        Q[decision[observation]] = Q[decision[observation]] + alphaQN[maximum[observation]] *(reward[observation] - Q[decision[observation]]); 
+        Q[decision[observation]] = Q[decision[observation]] + alphaQN *(reward[observation] - Q[decision[observation]]); 
       }else{
-        Q[decision[observation]] = Q[decision[observation]] + alphaQP[maximum[observation]] *(reward[observation] - Q[decision[observation]]); 
+        Q[decision[observation]] = Q[decision[observation]] + alphaQP *(reward[observation] - Q[decision[observation]]); 
       }
 
       // Update choice trace. Considers previous decision only

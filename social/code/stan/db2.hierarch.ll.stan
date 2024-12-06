@@ -28,13 +28,12 @@ data{
 // Parameters to estimate
 parameters{
   
-  // Population means: logit / log ensure ranges between 0 and 1 / larger than 0
-  
-  // Asocial reinforcement learning parameters
-  real logit_alphaQN[MAXIMUM]; // Different asocial learning weights for negative reward prediction errors between levels of resource abundance
-  real logit_alphaQP[MAXIMUM]; // Different asocial learning weights for position rpes between levels of resource abundance
+
+ // Population means: Retransforming logit / log ensure ranges between 0 and 1 / larger than 0
+  real logit_alphaQN; // Different asocial learning weights for negative reward prediction errors 
+  real logit_alphaQP; // Different asocial learning weights for position rpes 
   real log_betaQ; // Inverse temperature
-  real betaC;     // Autocorrelation strength
+  real betaC;            // Autocorrelation strength
   
   // Social reinforcement learning parameters
   real logit_alphaDBD[MAXIMUM, RATIO]; // Social learning weight for decision-based decision biasing
@@ -123,9 +122,9 @@ model{
 
       // Construct id specific learning rate
       if((reward[observation] - Q[decision[observation]]) < 0){
-        idalphaQ = inv_logit(logit_alphaQN[maximum[observation]] + idoffset[id[observation], 1]);
+        idalphaQ = inv_logit(logit_alphaQN + idoffset[id[observation], 1]);
       }else{
-        idalphaQ = inv_logit(logit_alphaQP[maximum[observation]] + idoffset[id[observation], 2]);
+        idalphaQ = inv_logit(logit_alphaQP + idoffset[id[observation], 2]);
       }
       
       // Update Q-values
@@ -146,11 +145,11 @@ generated quantities{
   // Declare variables
   matrix[5, 5] Rho; // Correlation matrix
 
-  real<lower = 0, upper = 1> alphaQN[MAXIMUM]; 
-  real<lower=0, upper=1> idalphaQN[ID, MAXIMUM];
+  real<lower = 0, upper = 1> alphaQN; 
+  real<lower=0, upper=1> idalphaQN[ID];
   
-  real<lower = 0, upper = 1> alphaQP[MAXIMUM]; 
-  real<lower=0, upper=1> idalphaQP[ID, MAXIMUM];
+  real<lower = 0, upper = 1> alphaQP; 
+  real<lower=0, upper=1> idalphaQP[ID];
   
   real<lower = 0> betaQ;
   real<lower=0> idbetaQ[ID];
@@ -162,11 +161,10 @@ generated quantities{
 
   // Transform population-level estimates
   betaQ = exp(log_betaQ);
-
+  alphaQN = inv_logit(logit_alphaQN);
+  alphaQP = inv_logit(logit_alphaQP);
+  
   for(m in 1:MAXIMUM){
-    alphaQN[m] = inv_logit(logit_alphaQN[m]);
-    alphaQP[m] = inv_logit(logit_alphaQP[m]);
-
     for(r in 1:RATIO){
       alphaDBD[m, r] = inv_logit(logit_alphaDBD[m, r]);
     }
@@ -174,14 +172,12 @@ generated quantities{
 
   // Compute and transform individual-level estimates
   for(i in 1:ID){
-
+    idalphaQN[i] = inv_logit(logit_alphaQN + idoffset[i, 1]);
+    idalphaQP[i] = inv_logit(logit_alphaQP + idoffset[i, 2]);
     idbetaQ[i] = exp(log_betaQ + idoffset[i, 3]);
     idbetaC[i] = betaC + idoffset[i, 4];
 
     for(m in 1:MAXIMUM){
-      idalphaQN[i, m] = inv_logit(logit_alphaQN[m] + idoffset[i, 1]);
-      idalphaQP[i, m] = inv_logit(logit_alphaQP[m] + idoffset[i, 2]);
-      
       for(r in 1:RATIO){
         idalphaDBD[i, m, r] = inv_logit(logit_alphaDBD[m, r] + idoffset[i, 5]);
       }
@@ -230,9 +226,9 @@ generated quantities{
 
       // Update Q-values.
       if((reward[observation] - Q[decision[observation]]) < 0){
-        Q[decision[observation]] = Q[decision[observation] ] + idalphaQN[id[observation], maximum[observation]] * (reward[observation] - Q[decision[observation]]); // + 1 is for indexing
+        Q[decision[observation]] = Q[decision[observation] ] + idalphaQN[id[observation]] * (reward[observation] - Q[decision[observation]]); // + 1 is for indexing
       }else{
-        Q[decision[observation]] = Q[decision[observation]] + idalphaQP[id[observation], maximum[observation]] * (reward[observation] - Q[decision[observation]]); // + 1 is for indexing
+        Q[decision[observation]] = Q[decision[observation]] + idalphaQP[id[observation]] * (reward[observation] - Q[decision[observation]]); // + 1 is for indexing
       }
 
       // Update choice trace. Considers previous decision only
