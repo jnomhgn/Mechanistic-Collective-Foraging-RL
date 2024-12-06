@@ -1,0 +1,252 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Social Parameter Recovery
+```{r setup-asoc-parrecov, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, results = 'markup', warning = TRUE)
+
+library(knitr)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(tibble)
+library(stringr)
+
+library(ggplot2)
+library(ggpubr)
+library(viridis)
+library(ggdist)
+
+library(rstan)
+library(tidybayes)
+library(bayesplot)
+library(randtoolbox)
+
+setwd("~/Users/MarienhagenJonathan/rlforaging")
+
+source("asocial/code/functions/softmax.R")
+source("asocial/code/functions/diagnostics.plot.R")
+source("asocial/code/functions/plot.par.recov.R")
+source("asocial/code/functions/getmodels.R")
+source("asocial/code/functions/m1.1.fixed.sim.R")
+source("asocial/code/functions/m2.1.fixed.sim.R")
+source("asocial/code/functions/m3.1.fixed.sim.R")
+source("asocial/code/functions/m4.1.fixed.sim.R")
+source("asocial/code/functions/m4.2.fixed.sim.R")
+source("asocial/code/functions/m4.3.fixed.sim.R")
+
+
+
+```
+```{r, directories, include=FALSE}
+if(!dir.exists("asocial/results")){dir.create("asocial/results")}
+if(!dir.exists("asocial/results/parrecov")){dir.create("asocial/results/parrecov")}
+if(!dir.exists("asocial/results/parrecov/diagnostics")){dir.create("asocial/results/parrecov/diagnostics")}
+
+```
+
+## Model
+The parameter recovery was run for the model that won the model comparison.
+```{r, model-asoc-parrecov, echo=TRUE, results='markup'}
+
+# Load winning model
+load(file = paste("asocial/results/modelcomp", "modelcomp.Rdata", sep = "/"))
+remove(results, comparison, comparison.named)
+
+# Parse name
+winner = gsub(pattern = ".hierarch", "", winner)
+
+# Get list of models
+models = getmodels(hierarch = FALSE) # Parameter recovery with fixed effects versions
+
+# Index winning model in list
+models = lapply(models, function(x) x[which(models$name == winner)])
+
+# Set model index for later
+if(length(models$name) == 1){mod = 1}else{warning("Your list of winning models contains more than one model. Something went wrong!")}
+```
+
+## Synthetic Data
+The parameter recovery was performed by first simulating synthetic datasets and 
+then fitting to winning model to this synthetic data. Each of the nsim number
+of simulations used a different combination of generating parameters, but was
+generated using the following synthetic experiment.
+```{r, experiment-asoc-parrecov, echo = T, results='markup'}
+# Number of simulated experiments
+nsim=10
+
+# Experimental parameters (identical for all simulations)
+exp.pars = list(
+  sessions = 18,
+  trials = 12,
+  nplayers = 5, # number of players per session
+  durations.vec = c(75, 90, 105)  # The simulation functions sample trial lengths from this vector (equally) 
+                                  # and randomly assigns them to the different environments
+)
+# Add unique ids for players (rows are sessions)
+exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
+
+# Environmental parameters (identical for all simulations)
+max = c(.5, .7, .9)
+ratio = c(.5, .65, .8, .95)
+env.pars = expand.grid(max=max, ratio=ratio)
+env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
+
+```
+
+## MCMC
+Models were estimated with the following MCMC settings.
+```{r, mcmc-asoc-parrecov, echo=T}
+# MCMC
+chains = 4
+cores = 4
+iter = 2000
+warmup = 1000
+refresh = 100
+```
+
+
+## Parameter Recovery
+
+
+The following code shows how the parameter recovery was computed
+```{r, asoc-parrecov, echo=T, results='markup', fig.width=24, fig.height=13.5}
+if(!exists(paste("asocial/results/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))){
+  
+  # Results list
+  results = list()
+  
+  # Get simulation function for model
+  f = get(models$sim[[mod]])
+  
+  # Generate sobol sequence
+  rl.pars = sobol(n = nsim, dim = length(models$free.pars[[mod]]), init = T)
+  
+  # Rescale to parameter range
+  rl.pars = sapply(1:ncol(rl.pars), function(x)
+    models$free.pars[[mod]][[x]][[1]] + 
+        (models$free.pars[[mod]][[x]][[2]] - models$free.pars[[mod]][[x]][[1]]) * rl.pars[, x]
+    ) 
+  
+  # Account for different variable types when nsim == 1 or > 1
+  if(nsim == 1){rl.pars = t(rl.pars)}else{rl.pars = rl.pars}
+  
+  # Rename
+  rl.pars = rl.pars %>%
+    as.data.frame() %>% 
+    `colnames<-`(names(models$free.pars[[mod]])) %>%
+    cbind(models$fixed.pars[[mod]])
+    
+  # Loop over simulations
+  for(sim in 1:nsim){
+  
+    # Write log to text file fot when knitting
+    prgrss = paste("Simulating from model", models$name[[mod]], ". Simulation", sim, "out of", nsim)
+    log.file = paste(paste("asocial/results/parrecov",
+                                    "log.txt", sep = "/"))
+    if(!file.exists(log.file)){file.create(log.file)}
+    write(prgrss, log.file, append = TRUE, ncolumns = 1)
+    
+    # Check if there are any nested parameters
+      if(any(sapply(models$free.pars.struct[[mod]], function(x) is.list(x)))){
+        
+        # Get nested lists in models free pars (pars with offsets)
+        indx = sapply(models$free.pars.struct[[mod]], function(x) is.list(x))
+        indx = indx[indx == TRUE]
+        
+        # "Unpack" nested list index to index rl.pars data frame
+        indx.df = lapply(names(indx), function(x) grepl(x, names(rl.pars)))
+        names(indx.df) = names(indx)
+        
+        
+        # Get rl.pars and add to sim pars
+        sim.pars = c(exp.pars, env.pars,
+                     lapply(indx.df, function(x) matrix(data = rl.pars[sim, x], nrow = length(unique(max)))), # nested pars
+                     rl.pars[sim, which(!apply(as.data.frame(indx.df), 1, any))] # non-nested pars
+        )
+        
+        # Unlist individual learning rates
+        if(models$name[[mod]] != "m4.3"){
+          sim.pars$alphaQN = unlist(sim.pars$alphaQN)
+          sim.pars$alphaQP = unlist(sim.pars$alphaQP)
+        }
+      }else{
+        # Get rl.pars and add to sim pars
+        sim.pars = c(exp.pars, env.pars, rl.pars[sim, ])
+      }
+    
+    # Simulate data
+    sim.data = f(sim.parameters = sim.pars)
+  
+    # Put data in list
+    stan.data = with(sim.data, list(
+      OBSERVATIONS=nrow(sim.data),
+      SESSIONS=max(unique(session)), session=session,
+      TRIALS=max(unique(trial)), trial=trial,
+      MAXIMUM=length(unique(max.fac)), maximum=max.fac,
+      RATIO=length(unique(ratio.fac)), ratio=ratio.fac,
+      PLAYERS=unique(nplayers),
+      TIMES=max(unique(time)), time=time,
+      DECISIONS=length(unique(decision)), decision=decision, 
+      REWARDS=length(unique(reward)), reward=reward
+    ))
+    
+    # Fit model
+    fit = stan(file = models$stan[[mod]], data = stan.data,
+               chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+    
+    # Plot and save some diagnostics
+    diag.list = diag.plot(model.fit = fit, plot.pars = names(models$free.pars[[mod]]))
+    ggexport(plotlist = diag.list, width = 1920, height = 1080,
+             filename = paste("asocial/results/parrecov/diagnostics", paste(models$name[[mod]], "sim", sim, "diagnostics", "jpeg",  sep = "."), sep = "/"))
+    
+    
+    # Summarise posterior
+    # Get generating parameters
+    true.pars = rl.pars[sim, names(models$free.pars[[mod]])] %>% 
+      pivot_longer(everything(), names_to = "par", values_to = "true.pars")
+    
+    fit.sum = fit %>% 
+      tidy_draws() %>%
+      select(names(models$free.pars[[mod]])) %>%
+      pivot_longer(everything(), names_to = "par", values_to = ".mean") %>%
+      group_by(par) %>%
+      mean_hdci() %>%
+      left_join(., true.pars, by = join_by(par)) %>%
+      mutate(sim = sim)
+      
+  
+    # Add to results list
+    results[[sim]] = fit.sum
+    
+    
+  }
+  
+  # Plot results for model we just simulated from
+  results = bind_rows(results) %>% 
+    mutate(par = factor(par, levels = names(models$free.pars[[mod]]))) # factorise for ordering when plotting
+  
+  # Save results for model 
+  save(results, file = paste("asocial/results/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))
+
+
+}else{
+    
+  # Save results for model 
+  load(file = paste("asocial/results/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))
+
+}
+
+p = plot.par.recov(model.name = models$name[[mod]],
+                     results = results, plot.pars = names(models$free.pars[[mod]]))
+  ggexport(p, width = 2560, height = 1440,
+           filename = paste("asocial/results/parrecov", paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))
+print(p)
+
+
+
+
+```
