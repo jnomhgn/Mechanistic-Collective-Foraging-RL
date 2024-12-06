@@ -72,36 +72,23 @@ getmodels <- function(hierarch=FALSE){
       free.pars = list(
         # arl
         list(
-          "alphaQN[1]" = c(0, 1), # Individual learning rate for negative rpes [MAXIMUM]
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1), # Individual learning rate for positive rpes [MAXIMUM]
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1), # Individual learning rate for negative rpes
+          "alphaQP" = c(0, 1), # Individual learning rate for positive rpes
           "betaQ" = c(0, 10),     # Inverse temp
           "betaC" = c(-4, 4)      # Autocorrelation
         ),
         # db1
         list(
-          "alphaQN[1]" = c(0, 1),
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1),
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1), 
+          "alphaQP" = c(0, 1), 
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          
           "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
         # db2
         list(
-          "alphaQN[1]" = c(0, 1),
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1),
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1), 
+          "alphaQP" = c(0, 1), 
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           
@@ -120,12 +107,8 @@ getmodels <- function(hierarch=FALSE){
         ),
         # vs1
         list(
-          "alphaQN[1]" = c(0, 1),
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1),
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1), 
+          "alphaQP" = c(0, 1), 
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           
@@ -133,12 +116,8 @@ getmodels <- function(hierarch=FALSE){
         ),
         # vs2
         list(
-          "alphaQN[1]" = c(0, 1),
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1),
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1), 
+          "alphaQP" = c(0, 1), 
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           
@@ -162,47 +141,23 @@ getmodels <- function(hierarch=FALSE){
       free.pars.struct = list(
         # arl
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC"
         ),
         # db1
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC",
           "alphaDBD"
         ),
         # db2
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC",
           "alphaDBD" = list(
@@ -222,32 +177,16 @@ getmodels <- function(hierarch=FALSE){
         ),
         # vs1
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC",
           "alphaVSD"
         ),
         # vs2
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC",
           "alphaVSD" = list(
@@ -339,36 +278,23 @@ getmodels <- function(hierarch=FALSE){
       free.pars.pop = list(
         # arl
         list(
-          "alphaQN[1]" = c(0, 1), # Individual learning rate for negative rpes [MAXIMUM]
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1), # Individual learning rate for positive rpes [MAXIMUM]
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1), # Individual learning rate for negative rpes 
+          "alphaQP" = c(0, 1), # Individual learning rate for positive rpes
           "betaQ" = c(0, 10),     # Inverse temp
           "betaC" = c(-4, 4)      # Autocorrelation
         ),
         # db1
         list(
-          "alphaQN[1]" = c(0, 1),
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1),
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          
           "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
         # db2
         list(
-          "alphaQN[1]" = c(0, 1),
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1),
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           
@@ -387,25 +313,16 @@ getmodels <- function(hierarch=FALSE){
         ),
         # vs1
         list(
-          "alphaQN[1]" = c(0, 1),
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1),
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          
           "alphaVSD" = c(0, 1)     # Social learning rate VS
         ),
         # vs2
         list(
-          "alphaQN[1]" = c(0, 1),
-          "alphaQN[2]" = c(0, 1),
-          "alphaQN[3]" = c(0, 1),
-          "alphaQP[1]" = c(0, 1),
-          "alphaQP[2]" = c(0, 1),
-          "alphaQP[3]" = c(0, 1),
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           
@@ -429,47 +346,23 @@ getmodels <- function(hierarch=FALSE){
       free.pars.pop.struct = list(
         # arl
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC"
         ),
         # db1
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC",
           "alphaDBD"
         ),
         # db2
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC",
           "alphaDBD" = list(
@@ -489,32 +382,16 @@ getmodels <- function(hierarch=FALSE){
         ),
         # vs1
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC",
           "alphaVSD"
         ),
         # vs2
         list(
-          "alphaQN" = list(
-            "alphaQN[1]",
-            "alphaQN[2]",
-            "alphaQN[3]"
-          ),
-          "alphaQP" = list(
-            "alphaQP[1]",
-            "alphaQP[2]",
-            "alphaQP[3]"
-          ),
+          "alphaQN",
+          "alphaQP",
           "betaQ",
           "betaC",
           "alphaVSD" = list(
