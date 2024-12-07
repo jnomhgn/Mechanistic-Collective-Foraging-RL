@@ -199,7 +199,7 @@ if(!exists(paste("asocial/results/parrecov", paste(models$name[[mod]], "Rdata", 
                chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
     
     # Plot and save some diagnostics
-    diag.list = diag.plot(model.fit = fit, plot.pars = names(models$free.pars[[mod]]))
+    diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars[[mod]]))
     ggexport(plotlist = diag.list, width = 1920, height = 1080,
              filename = paste("asocial/results/parrecov/diagnostics", paste(models$name[[mod]], "sim", sim, "diagnostics", "jpeg",  sep = "."), sep = "/"))
     

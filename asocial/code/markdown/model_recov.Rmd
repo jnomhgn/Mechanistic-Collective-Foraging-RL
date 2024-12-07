@@ -227,7 +227,7 @@ if(!exists(paste("asocial/results/modelrecov", "modrecov.rds", sep = "/"))){
                        chains = MCMC$chains, cores = MCMC$cores, iter = MCMC$iter, warmup = MCMC$warmup, refresh = MCMC$refresh)
         
         # Plot and save some diagnostics
-        diag.list = diag.plot(model.fit = fit, plot.pars = names(models$free.pars[[mfit]]))
+        diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars[[mfit]]))
         ggexport(plotlist = diag.list, width = 1920, height = 1080,
                  filename = paste("asocial/results/modelrecov/diagnostics",
                                   paste(
