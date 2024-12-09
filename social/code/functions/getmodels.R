@@ -8,35 +8,35 @@ getmodels <- function(hierarch=FALSE){
       # Solo, DB, VS
       name = list(
         "arl",
-        "db1",
-        "db2",
-        "vs1",
-        "vs2"
+        "dbn1",
+        "dbn2",
+        "vsn1",
+        "vsn2"
       ),
       
       sim = list(
         "arl.fixed.sim",
-        "db1.fixed.sim",
-        "db2.fixed.sim",
-        "vs1.fixed.sim",
-        "vs2.fixed.sim"
+        "dbn1.fixed.sim",
+        "dbn2.fixed.sim",
+        "vsn1.fixed.sim",
+        "vsn2.fixed.sim"
       ),
       
       # Without gq for loglik
       stan = list(
         "social/code/stan/arl.fixed.stan",
-        "social/code/stan/db1.fixed.stan",
-        "social/code/stan/db2.fixed.stan",
-        "social/code/stan/vs1.fixed.stan",
-        "social/code/stan/vs2.fixed.stan"
+        "social/code/stan/dbn1.fixed.stan",
+        "social/code/stan/dbn2.fixed.stan",
+        "social/code/stan/vsn1.fixed.stan",
+        "social/code/stan/vsn2.fixed.stan"
       ),
       # With gq for loglik
       stan.loglik = list(
         "social/code/stan/arl.fixed.ll.stan",
-        "social/code/stan/db1.fixed.ll.stan",
-        "social/code/stan/db2.fixed.ll.stan",
-        "social/code/stan/vs1.fixed.ll.stan",
-        "social/code/stan/vs2.fixed.ll.stan"
+        "social/code/stan/dbn1.fixed.ll.stan",
+        "social/code/stan/dbn2.fixed.ll.stan",
+        "social/code/stan/vsn1.fixed.ll.stan",
+        "social/code/stan/vsn2.fixed.ll.stan"
       ),
       
       # Fixed parameters
@@ -77,7 +77,7 @@ getmodels <- function(hierarch=FALSE){
           "betaQ" = c(0, 10),     # Inverse temp
           "betaC" = c(-4, 4)      # Autocorrelation
         ),
-        # db1
+        # dbn1
         list(
           "alphaQN" = c(0, 1), 
           "alphaQP" = c(0, 1), 
@@ -85,7 +85,7 @@ getmodels <- function(hierarch=FALSE){
           "betaC" = c(-4, 4),
           "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
-        # db2
+        # dbn2
         list(
           "alphaQN" = c(0, 1), 
           "alphaQP" = c(0, 1), 
@@ -105,7 +105,7 @@ getmodels <- function(hierarch=FALSE){
           "alphaDBD[2,4]" = c(0, 1),
           "alphaDBD[3,4]" = c(0, 1)
         ),
-        # vs1
+        # vsn1
         list(
           "alphaQN" = c(0, 1), 
           "alphaQP" = c(0, 1), 
@@ -114,7 +114,7 @@ getmodels <- function(hierarch=FALSE){
           
           "alphaVSD" = c(0, 1)     # Social learning rate VS
         ),
-        # vs2
+        # vsn2
         list(
           "alphaQN" = c(0, 1), 
           "alphaQP" = c(0, 1), 
@@ -146,7 +146,7 @@ getmodels <- function(hierarch=FALSE){
           "betaQ",
           "betaC"
         ),
-        # db1
+        # dbn1
         list(
           "alphaQN",
           "alphaQP",
@@ -154,7 +154,7 @@ getmodels <- function(hierarch=FALSE){
           "betaC",
           "alphaDBD"
         ),
-        # db2
+        # dbn2
         list(
           "alphaQN",
           "alphaQP",
@@ -175,7 +175,7 @@ getmodels <- function(hierarch=FALSE){
             "alphaDBD[3,4]"
           )
         ),
-        # vs1
+        # vsn1
         list(
           "alphaQN",
           "alphaQP",
@@ -183,7 +183,7 @@ getmodels <- function(hierarch=FALSE){
           "betaC",
           "alphaVSD"
         ),
-        # vs2
+        # vsn2
         list(
           "alphaQN",
           "alphaQP",
@@ -214,10 +214,10 @@ getmodels <- function(hierarch=FALSE){
       # Solo, DB, VS
       name = list(
         "arl.hierarch",
-        "db1.hierarch",
-        "db2.hierarch",
-        "vs1.hierarch",
-        "vs2.hierarch"
+        "dbn1.hierarch",
+        "dbn2.hierarch",
+        "vsn1.hierarch",
+        "vsn2.hierarch"
       ),
       
       sim = list(
@@ -231,18 +231,18 @@ getmodels <- function(hierarch=FALSE){
       # Without gq for loglik
       stan = list(
         "social/code/stan/arl.hierarch.stan",
-        "social/code/stan/db1.hierarch.stan",
-        "social/code/stan/db2.hierarch.stan",
-        "social/code/stan/vs1.hierarch.stan",
-        "social/code/stan/vs2.hierarch.stan"
+        "social/code/stan/dbn1.hierarch.stan",
+        "social/code/stan/dbn2.hierarch.stan",
+        "social/code/stan/vsn1.hierarch.stan",
+        "social/code/stan/vsn2.hierarch.stan"
       ),
       # With gq for loglik
       stan.loglik = list(
         "social/code/stan/arl.hierarch.ll.stan",
-        "social/code/stan/db1.hierarch.ll.stan",
-        "social/code/stan/db2.hierarch.ll.stan",
-        "social/code/stan/vs1.hierarch.ll.stan",
-        "social/code/stan/vs2.hierarch.ll.stan"
+        "social/code/stan/dbn1.hierarch.ll.stan",
+        "social/code/stan/dbn2.hierarch.ll.stan",
+        "social/code/stan/vsn1.hierarch.ll.stan",
+        "social/code/stan/vsn2.hierarch.ll.stan"
       ),
       
       # Fixed parameters
@@ -252,22 +252,22 @@ getmodels <- function(hierarch=FALSE){
           "Q.init" = .5,
           "C.init" = 0
         ),
-        # db1
+        # dbn1
         list(
           "Q.init" = .5,
           "C.init" = 0
         ),
-        # db2
+        # dbn2
         list(
           "Q.init" = .5,
           "C.init" = 0
         ),
-        # vs1
+        # vsn1
         list(
           "Q.init" = .5,
           "C.init" = 0
         ),
-        # vs2
+        # vsn2
         list(
           "Q.init" = .5,
           "C.init" = 0
@@ -283,7 +283,7 @@ getmodels <- function(hierarch=FALSE){
           "betaQ" = c(0, 10),     # Inverse temp
           "betaC" = c(-4, 4)      # Autocorrelation
         ),
-        # db1
+        # dbn1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
@@ -291,7 +291,7 @@ getmodels <- function(hierarch=FALSE){
           "betaC" = c(-4, 4),
           "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
-        # db2
+        # dbn2
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
@@ -311,7 +311,7 @@ getmodels <- function(hierarch=FALSE){
           "alphaDBD[2,4]" = c(0, 1),
           "alphaDBD[3,4]" = c(0, 1)
         ),
-        # vs1
+        # vsn1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
@@ -319,7 +319,7 @@ getmodels <- function(hierarch=FALSE){
           "betaC" = c(-4, 4),
           "alphaVSD" = c(0, 1)     # Social learning rate VS
         ),
-        # vs2
+        # vsn2
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
@@ -351,7 +351,7 @@ getmodels <- function(hierarch=FALSE){
           "betaQ",
           "betaC"
         ),
-        # db1
+        # dbn1
         list(
           "alphaQN",
           "alphaQP",
@@ -359,7 +359,7 @@ getmodels <- function(hierarch=FALSE){
           "betaC",
           "alphaDBD"
         ),
-        # db2
+        # dbn2
         list(
           "alphaQN",
           "alphaQP",
@@ -380,7 +380,7 @@ getmodels <- function(hierarch=FALSE){
             "alphaDBD[3,4]"
           )
         ),
-        # vs1
+        # vsn1
         list(
           "alphaQN",
           "alphaQP",
@@ -388,7 +388,7 @@ getmodels <- function(hierarch=FALSE){
           "betaC",
           "alphaVSD"
         ),
-        # vs2
+        # vsn2
         list(
           "alphaQN",
           "alphaQP",
