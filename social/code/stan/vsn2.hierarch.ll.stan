@@ -101,7 +101,7 @@ model{
         // Construct individual-level social learning weight
         idalphaVSD = inv_logit(logit_alphaVSD[maximum[observation], ratio[observation]] + idoffset[id[observation], 5]);
         // Compute social value of choice
-        Qsoc = to_vector(obsdec[observation, ]) / (PLAYERS - 1); // Computed outside of stan so that obsdec[observation, ] are the observed decisions for each option from the timestep observation-1
+        Qsoc = to_vector(obsdec[observation, ]); // Computed outside of stan so that obsdec[observation, ] are the observed decisions for each option from the timestep observation-1
         // Shape values
         Q = Q + idalphaVSD * (Qsoc - Q);
       }
@@ -202,7 +202,7 @@ generated quantities{
         C = [0, 0]';
       }{ // No social info on first time step
         // Compute social value of choice
-        Qsoc = to_vector(obsdec[observation, ]) / (PLAYERS - 1); // Computed outside of stan so that obsdec[observation, ] are the observed decisions for each option from the timestep observation-1
+        Qsoc = to_vector(obsdec[observation, ]); // Computed outside of stan so that obsdec[observation, ] are the observed decisions for each option from the timestep observation-1
         // Shape values
         Q = Q + idalphaVSD[id[observation], maximum[observation], ratio[observation]] * (Qsoc - Q);
       }

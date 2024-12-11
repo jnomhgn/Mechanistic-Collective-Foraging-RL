@@ -109,7 +109,7 @@ model{
         idalphaDBD = inv_logit(logit_alphaDBD + idoffset[id[observation], 5]);
 
         // Update individual policy using social policy
-        psoc = to_vector(obsdec[observation, ]) / (PLAYERS - 1);
+        psoc = to_vector(obsdec[observation, ]);
         p = p + idalphaDBD * (psoc - p);
       }
 
@@ -202,7 +202,7 @@ generated quantities{
       if(time[observation] != 0){ // No social info at first time step
 
         // Update individual policy using social policy
-        psoc = to_vector(obsdec[observation, ]) / (PLAYERS - 1);
+        psoc = to_vector(obsdec[observation, ]);
         p = p + idalphaDBD[id[observation]] * (psoc - p);
       }
 

@@ -49,16 +49,17 @@ from the data.
 path = "~/Users/MarienhagenJonathan/thesisvc/data/data_discrete_1s.csv"
 d = read.csv(path,colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
 
-# Set player id unique across sessions
-d = d %>% mutate(id = (session - 1) * 5  + player) %>% select(-player)
+# Rename and add player id that is unique across sessions
+d = d %>% mutate(decision = correct) %>% mutate(reward = catch) %>% mutate(nplayers = 5) %>%
+  mutate(id = (session - 1) * 5  + player) %>% select(-player)
 
 # Get social trials
 d = d %>% filter(social.fac == 2)
 
-# Compute observed decisions (as was done for synthetic data)
+# Compute observed decisions 
 d=d %>%
-  mutate(decision = correct) %>% mutate(reward = catch) %>% mutate(nplayers = 5) %>%
   arrange(session, trial, id, time.rounded) %>%
+  # Observed decisions
   group_by(session, trial, id) %>%
   mutate(decision.lag = lag(decision)) %>%
   group_by(session, trial, time.rounded) %>%
@@ -67,14 +68,14 @@ d=d %>%
   mutate(obs.dec.2 = obs.dec.2 - decision.lag) %>% # Subtract individual's own choice
   ungroup() %>%
   mutate(obs.dec.1 = nplayers - 1 - obs.dec.2) %>% # Lower yielding patch
-  select(-decision.lag) %>%
-  mutate(decision = decision + 1) %>% # Transform [0, 1] to [1, 2]
-  relocate(obs.dec.1, obs.dec.2,.after = nplayers)
+  mutate(obs.dec.1.norm = obs.dec.1 / (nplayers-1), obs.dec.2.norm = obs.dec.2 / (nplayers-1)) %>% # normalize
+  relocate(obs.dec.1, obs.dec.2,.after = nplayers) %>%
+  mutate(decision = decision + 1)# Transform [0, 1] to [1, 2]
 
 # Account for missing social information for stan
 d = d %>% 
-  mutate(obs.dec.1 = ifelse(is.na(obs.dec.1), 100, obs.dec.1)) %>%
-  mutate(obs.dec.2 = ifelse(is.na(obs.dec.2), 100, obs.dec.2))
+  mutate(obs.dec.1.norm = ifelse(is.na(obs.dec.1.norm), 100, obs.dec.1.norm)) %>%
+  mutate(obs.dec.2.norm = ifelse(is.na(obs.dec.2.norm), 100, obs.dec.2.norm))
 
 # Put experimental data in list
 stan.data.d = with(d, list(
@@ -87,7 +88,7 @@ stan.data.d = with(d, list(
   ID=max(id), id=id,
   TIMES=max(unique(time.rounded)), time=time.rounded,
   DECISIONS=length(unique(decision)), decision=decision, 
-  obsdec=cbind(obs.dec.1, obs.dec.2),
+  obsdec=cbind(obs.dec.1.norm, obs.dec.2.norm),
   REWARDS=length(unique(reward)), reward=reward
 ))
 ```

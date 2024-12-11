@@ -68,7 +68,7 @@ model{
         Q = [0.5, 0.5]';
         C = [0, 0]';
       }else{
-        Qsoc = to_vector(obsdec[observation, ]) / (PLAYERS - 1);
+        Qsoc = to_vector(obsdec[observation, ]);
         Q = Q + alphaVSD[maximum[observation], ratio[observation]] * (Qsoc - Q);
       }
       

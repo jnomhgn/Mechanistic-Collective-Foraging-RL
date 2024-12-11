@@ -113,7 +113,7 @@ model{
         idalphaDBD = inv_logit(logit_alphaDBD[maximum[observation], ratio[observation]] + idoffset[id[observation], 5]);
 
         // Update individual policy using social policy
-        psoc = to_vector(obsdec[observation, ]) / (PLAYERS - 1);
+        psoc = to_vector(obsdec[observation, ]);
         p = p + idalphaDBD * (psoc - p);
       }
 

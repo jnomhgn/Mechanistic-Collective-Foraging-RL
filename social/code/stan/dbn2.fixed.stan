@@ -74,7 +74,7 @@ model{
       
       // Decision biasing: Update individual policy using social policy
       if(time[observation] != 0){
-        psoc = to_vector(obsdec[observation, ]) / (PLAYERS - 1);
+        psoc = to_vector(obsdec[observation, ]);
         p = p + alphaDBD[maximum[observation], ratio[observation]] * (psoc - p);
       }
 
