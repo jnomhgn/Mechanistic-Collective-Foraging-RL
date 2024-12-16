@@ -220,7 +220,8 @@ getmodels <- function(hierarch=FALSE){
         "vsn2.hierarch",
         "dbr1.hierarch", 
         "vsr1.hierarch",
-        "dbnvsr1.hierarch"
+        "dbnvsr1.hierarch",
+        "vsndbr1.hierarch"
       ),
       
       sim = list(
@@ -241,7 +242,9 @@ getmodels <- function(hierarch=FALSE){
         "social/code/stan/vsn2.hierarch.stan",
         "social/code/stan/dbr1.hierarch.stan",
         "social/code/stan/vsr1.hierarch.stan",
-        "social/code/stan/dbnvsr1.hierarch.stan"
+        "social/code/stan/dbnvsr1.hierarch.stan",
+        "social/code/stan/vsndbr1.hierarch.stan"
+        
       ),
       # With gq for loglik
       stan.loglik = list(
@@ -252,7 +255,9 @@ getmodels <- function(hierarch=FALSE){
         "social/code/stan/vsn2.hierarch.ll.stan",
         "social/code/stan/dbr1.hierarch.ll.stan",
         "social/code/stan/vsr1.hierarch.ll.stan",
-        "social/code/stan/dbnvsr1.hierarch.ll.stan"
+        "social/code/stan/dbnvsr1.hierarch.ll.stan",
+        "social/code/stan/vsndbr1.hierarch.ll.stan"
+        
         
       ),
       
@@ -294,6 +299,11 @@ getmodels <- function(hierarch=FALSE){
           "C.init" = 0
         ),
         # dbnvsr1
+        list(
+          "Q.init" = .5,
+          "C.init" = 0
+        ),
+        # vsndbr1
         list(
           "Q.init" = .5,
           "C.init" = 0
@@ -393,6 +403,17 @@ getmodels <- function(hierarch=FALSE){
           "alphaVSR" = c(0, 1),    # Social learning rate VS
           "alphaDBN" = c(0, 1)    # Social learning rate DB
           
+        ),
+        
+        #  vsndbr1
+        list(
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
+          "betaQ" = c(0, 10),
+          "betaC" = c(-4, 4),
+          "alphaVSN" = c(0, 1),    # Social learning rate VS
+          "alphaDBR" = c(0, 1)    # Social learning rate DB
+          
         )
         
         
@@ -491,6 +512,16 @@ getmodels <- function(hierarch=FALSE){
           "betaC" = c(-4, 4),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
           "alphaDBN" = c(0, 1)    # Social learning rate DB
+        ),
+        
+        # vsndbr1
+        list(
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
+          "betaQ" = c(0, 10),
+          "betaC" = c(-4, 4),
+          "alphaVSN" = c(0, 1),    # Social learning rate VS
+          "alphaDBR" = c(0, 1)    # Social learning rate DB
         )
       )
     )
