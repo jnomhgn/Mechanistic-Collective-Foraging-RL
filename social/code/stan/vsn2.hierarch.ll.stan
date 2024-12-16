@@ -200,7 +200,7 @@ generated quantities{
       if(time[observation] == 0){
         Q = [0.5, 0.5]';
         C = [0, 0]';
-      }{ // No social info on first time step
+      }else{ // No social info on first time step
         // Compute social value of choice
         Qsoc = to_vector(obsdec[observation, ]); // Computed outside of stan so that obsdec[observation, ] are the observed decisions for each option from the timestep observation-1
         // Shape values
