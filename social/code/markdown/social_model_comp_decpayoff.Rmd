@@ -156,7 +156,7 @@ if(!exists(paste("social/results/modelcomp_decpayoff", "modelcomp_decpayoff.Rdat
     saveRDS(fit, paste("social/results/modelcomp_decpayoff", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
 
     # Plot some diagnostics for population means
-    diag.list = diag.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
+    diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
     ggexport(plotlist = diag.list, width = 1920, height = 1080,
                    filename = paste("social/results/modelcomp_decpayoff/diagnostics",
                                     paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
