@@ -431,8 +431,8 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          "alphaVSNR" = c(0, 1),    # Social learning rate VS
-          "sigmaVSNR" = c(0, 1)    # Social learning rate VS
+          "alphaVSDR" = c(0, 1),    # Social learning rate VS
+          "sigmaVSDR" = c(0, 1)    # Social learning rate VS
         )
         
         
@@ -549,8 +549,8 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          "alphaVSNR" = c(0, 1),    # Social learning rate VS
-          "sigmaVSNR" = c(0, 1)    # Social learning rate VS
+          "alphaVSDR" = c(0, 1),    # Social learning rate VS
+          "sigmaVSDR" = c(0, 1)    # Social learning rate VS
         )
       )
     )
