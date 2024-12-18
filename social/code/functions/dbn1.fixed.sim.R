@@ -106,9 +106,9 @@ dbn1.fixed.sim <- function(sim.parameters){
             
             # Update Q-values for t + 1
             if(reward == 0){
-              Q[player, decision] = Q[player, decision] + alphaQN[max.fac[trial]] * (reward - Q[player, decision])
+              Q[player, decision] = Q[player, decision] + alphaQN * (reward - Q[player, decision])
             }else{
-              Q[player, decision] = Q[player, decision] + alphaQP[max.fac[trial]] * (reward - Q[player, decision])
+              Q[player, decision] = Q[player, decision] + alphaQP * (reward - Q[player, decision])
             }
             
             # Update choice trace for t + 1
