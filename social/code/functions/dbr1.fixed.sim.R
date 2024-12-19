@@ -83,9 +83,6 @@ dbr1.fixed.sim <- function(sim.parameters){
             
               # If p.soc[player] == NaN, no reward-based DB.
               if(!is.na(p.soc[player])){
-                
-                if(is.na( p[dec.freq[player]] + alphaDBR * (p.soc[player] - p[dec.freq[player]]) )){break}
-                
                 p[dec.freq[player]] = p[dec.freq[player]] + alphaDBR * (p.soc[player] - p[dec.freq[player]]) 
                 p[3 - dec.freq[player]] = 1 -  p[dec.freq[player]]
               }

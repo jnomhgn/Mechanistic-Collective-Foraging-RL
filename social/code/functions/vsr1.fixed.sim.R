@@ -65,11 +65,10 @@ vsr1.fixed.sim <- function(sim.parameters){
             
             # Value shaping: Update individual Q-values for upcoming trial using this social info
             for(x in 1:nplayers){
-              
               # Only if there was another player at patch
               if(!is.na(Q.soc[x])){
                 Q[x, dec.freq[x]] = Q[x, dec.freq[x]] + alphaVSR * (Q.soc[x] - Q[x, dec.freq[x]])
-                Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]]
+                #Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]]
               }
               
             }
