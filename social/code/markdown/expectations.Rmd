@@ -1,0 +1,264 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# Expectations
+```{r setup-behsigsoc, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, results = 'markup', warning = TRUE)
+
+library(knitr)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(tibble)
+library(stringr)
+
+library(ggplot2)
+library(ggpubr)
+library(viridis)
+library(ggdist)
+library(ggridges)
+
+library(rstan)
+library(tidybayes)
+library(bayesplot)
+library(randtoolbox)
+
+# Source functions
+setwd("~/Users/MarienhagenJonathan/rlforaging")
+function.list = paste0("social/code/functions/", list.files("social/code/functions"))
+function.list = function.list[sapply(function.list, function(x) !grepl("2", x))]
+sapply(function.list, source, .GlobalEnv)
+
+```
+```{r, directories-behsigsoc, include=FALSE}
+if(!dir.exists("social/results")){dir.create("social/results")}
+if(!dir.exists("social/results/expectations")){dir.create("social/results/expectations")}
+```
+
+
+## Experimental data structure
+```{r, expect-experiment, echo = T, results='markup'}
+# Number of simulated experiments
+nsim = 5
+
+# Experimental parameters (identical for all simulations)
+exp.pars = list(
+  sessions = 18,
+  trials = 12,
+  nplayers = 5, # number of players per session
+  durations.vec = c(75, 90, 105)  # The simulation functions sample trial lengths from this vector (equally) 
+                                  # and randomly assigns them to the different environments
+)
+# Add unique ids for players (rows are sessions)
+exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
+
+# Environmental parameters (identical for all simulations)
+max = round(c(.5, .7, .9), digits = 2)
+ratio = round(c(.5, .65, .8, .95), digits = 2)
+env.pars = expand.grid(max=max, ratio=ratio)
+env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
+
+```
+
+## Models with 1 social learning parameter (dbn, vsn, dbr, vsr)
+```{r, expect-1alpha-rlpars, echo=TRUE}
+# Get model list
+models = getmodels()
+
+# Drop versions with adaptive social learning weights
+# models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] )
+
+# Select models with single social learning parameter (and arl model)
+models=lapply(models,function(x) x[models$name %in% c("arl.fixed", "dbn1.fixed", "vsn1.fixed", "dbr1.fixed", "vsr1.fixed")] )
+
+# Load ARL model fit
+fit = readRDS("asocial/results/modelcomp/m4.1.fit.rds")
+
+# Get ARL parameter estimates
+draws = fit %>%
+  tidy_draws() %>%
+  select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]]))
+arl.pars = apply(draws, 2, mean)
+
+# Remove fit
+remove(fit)
+
+# Set social learning weights for decision- and reward- based DB and VS 
+srl.pars = c("alphaDBD", "alphaVSD", "alphaDBR", "alphaVSR") 
+srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .25)) %>%
+  `colnames<-`(srl.pars)
+
+# Merge
+rl.pars = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>% 
+  cbind(t(arl.pars)) %>% cbind(srl.pars)
+```
+
+
+```{r, expect-1alpha-compute, eval=TRUE, echo=TRUE, results='markup'}
+log.txt = "social/results/expectations/log.txt"
+if(!file.exists(log.txt)){file.create(log.txt)}
+
+# Add caching
+if(!file.exists(paste("social/results/expectations", "expec_1par.rds", sep = "/"))){
+  
+  sink(log.txt, append = T)
+
+  # Results list
+  results = list(
+    rew.acc = list(),
+    acc.time = list(),
+    switches = list(), switches.time = list()
+  )
+  
+  for(mod in 1:length(models$name)){
+
+    # Get function
+    f = get(models$sim[[mod]])
+    
+    for(parcomb in 1:nrow(rl.pars)){
+
+      # Get rl.pars and add to sim pars
+      sim.pars = c(exp.pars, env.pars, rl.pars[parcomb, ])
+      
+      
+      # Loop over number of simulations
+      for(sim in 1:nsim){
+        
+        if(exists("end.time")){
+          print(paste("This took:", (end.time - start.time), "seconds" ))
+        }
+        start.time = Sys.time()
+        
+        prgrss = paste("Simulating from model", models$name[[mod]], 
+                       ". Parameter combination", parcomb, 
+                       ", simulation ", sim)
+        print(prgrss)
+        
+        # Simulate data
+        sim.data = f(sim.parameters = sim.pars)
+        
+        # Add sim parameters
+        sim.data = sim.data %>%
+          mutate(decision = decision - 1) %>%
+          cbind(model=models$name[[mod]], parcomb=parcomb) %>%
+          bind_cols(rl.pars[parcomb, ]) %>%
+          mutate(alphaS = alphaDBD) %>%
+          mutate(sim = sim) %>%
+          relocate(model, parcomb, sim)
+        
+        # Compute mean individual accuracy and rewards
+        rew.acc = sim.data %>%
+          # Compute individual accuracy and rewards on each trial 
+          group_by(sim, model, alphaS, session, trial, player, duration, ratio, max) %>% # for each individual trial
+          reframe(acc = sum(decision), 
+                  rew = sum(reward)) %>%
+          mutate(acc = acc / (duration + 1)) %>%
+          mutate(rew = rew / (duration + 1)) %>%
+          # Compute average individual accuracy 
+          group_by(sim, model, alphaS, ratio, max) %>% 
+          reframe(acc.mean = mean(acc), rew.mean = mean(rew)) 
+        
+        # Save
+        results$rew.acc = append(results$rew.acc, list(rew.acc))
+        
+        # Compute mean individual accuracy ~ time
+        acc.time = sim.data %>%
+          # Compute average individual accuracy at each time step
+          group_by(sim, model, alphaS, time, ratio, max) %>%
+          reframe(frac.corr = mean(decision)) 
+        
+        # Save
+        results$acc.time = append(results$acc.time, list(acc.time))
+        
+        # Compute mean switch rate
+        switches = sim.data %>%
+          group_by(model, alphaS, sim, session, trial, player, duration, ratio, max) %>%
+          mutate(switches = ifelse(lag(decision) != decision, 1, 0)) %>%
+          reframe(switches = sum(switches, na.rm=T) / duration) %>%
+          group_by(model, alphaS, sim, ratio, max) %>%
+          reframe(switches.mean = mean(switches)) 
+        
+        # Save
+        results$switches = append(results$switches, list(switches))
+        
+        # Compute mean switches ~ time
+        switches.time = sim.data %>%
+          group_by(model, alphaS, sim, session, trial, player, duration, ratio, max) %>%
+          mutate(switch = ifelse(lag(decision) != decision, 1, 0)) %>%
+          group_by(model, alphaS, sim, time, ratio, max) %>%
+          reframe(switch.frac = sum(switch, na.rm = T) / max(player)) 
+        
+         # Save
+        results$switches.time = append(results$switches.time, list(switches.time))
+        
+        # End time
+        end.time = Sys.time()
+        
+      }
+      
+    }
+  }
+  
+  results = lapply(results, function(x) bind_rows(x))
+  saveRDS(results, file = 
+            paste("social/results/expectations", "expec_1par.rds", sep = "/"))
+  
+  sink()
+  
+}else{
+  results = readRDS(file = paste("social/results/expectations", "expec_1par.rds", sep = "/"))
+}
+
+
+```
+
+### Plot
+```{r, expect-1alpha-plot, echo=TRUE}
+results$acc.time %>%
+    ggplot(aes(x=time, y=frac.corr, col = model, group=interaction(model, sim))) + 
+    geom_line() + 
+    facet_grid(ratio ~ max)
+
+results$switches.time %>%
+    ggplot(aes(x=time, y=switch.frac, col = model, group=interaction(model, sim))) + 
+    geom_line() + 
+    facet_grid(ratio ~ max)
+```
+
+## Models with 2 social learning parameter (dbndbr, vsndbr, dbrvsn, vsnvsr)
+```{r, expect-2alpha-rlpars, echo=TRUE}
+# Get model list
+models = getmodels()
+
+# Drop versions with adaptive social learning weights
+# models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] )
+
+# Select models with single social learning parameter (and arl model)
+models=lapply(models,function(x) x[models$name %in% c("dbnvsr1.fixed", "vsndbr1.fixed", "dbndbr1.fixed", "vsnvsr1.fixed")] )
+
+# Load ARL model fit
+fit = readRDS("asocial/results/modelcomp/m4.1.fit.rds")
+
+# Get ARL parameter estimates
+draws = fit %>%
+  tidy_draws() %>%
+  select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]]))
+arl.pars = apply(draws, 2, mean)
+
+# Remove fit
+remove(fit)
+
+# Set social learning weights for decision- and reward- based DB and VS 
+srl.pars = c("alphaDBD", "alphaVSD", "alphaDBR", "alphaVSR") 
+srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .5)) %>%
+  `colnames<-`(srl.pars)
+
+# Merge
+rl.pars = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>% 
+  cbind(t(arl.pars)) %>% cbind(srl.pars)
+```
+
+
+
