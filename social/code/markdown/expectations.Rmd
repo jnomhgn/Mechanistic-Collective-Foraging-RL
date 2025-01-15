@@ -87,7 +87,7 @@ remove(fit)
 
 # Set social learning weights for decision- and reward- based DB and VS 
 srl.pars = c("alphaDBD", "alphaVSD", "alphaDBR", "alphaVSR") 
-srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .25)) %>%
+srl.pars = sapply(srl.pars, function(x) seq(0, .25, by = .05)) %>%
   `colnames<-`(srl.pars)
 
 # Merge
@@ -216,15 +216,333 @@ if(!file.exists(paste("social/results/expectations", "expec_1par.rds", sep = "/"
 
 ### Plot
 ```{r, expect-1alpha-plot, echo=TRUE}
-results$acc.time %>%
-    ggplot(aes(x=time, y=frac.corr, col = model, group=interaction(model, sim))) + 
-    geom_line() + 
-    facet_grid(ratio ~ max)
 
-results$switches.time %>%
-    ggplot(aes(x=time, y=switch.frac, col = model, group=interaction(model, sim))) + 
-    geom_line() + 
-    facet_grid(ratio ~ max)
+# List to save plots to
+plot.list = list()
+    
+# Facet labels
+max.labs = paste("Maximum Yield", sort(unique(results$rew.acc$max)))
+names(max.labs) = sort(unique(results$rew.acc$max))
+
+ratio.labs = paste("Yield Ratio", sort(unique(results$rew.acc$ratio)))
+names(ratio.labs) = sort(unique(results$rew.acc$ratio))
+
+facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
+    
+# Individual Accuracy
+plot.data = results$rew.acc %>%
+  # Summarise sampling distribution
+  group_by(model, alphaS, ratio, max) %>%
+  reframe(ind.acc.mean= mean(acc.mean),
+          ind.acc.lower = quantile(acc.mean, probs = .025),
+          ind.acc.upper = quantile(acc.mean, probs = .975))
+
+plot.data = results$rew.acc %>%
+      group_by(sim, model, ratio, max) %>%
+      mutate(acc.delta = acc.mean - acc.mean[which(alphaS == 0)]) %>%
+      # Summarise sampling distribution
+      group_by(model, alphaS, ratio, max) %>%
+      reframe(acc.delta.mean= mean(acc.delta),
+              acc.delta.lower = quantile(acc.delta, probs = .025),
+              acc.delta.upper = quantile(acc.delta, probs = .975))
+
+# Decision-based DB vs. VS
+p = plot.data %>% filter(model %in% c("dbn1.fixed", "vsn1.fixed")) %>%
+      ggplot(aes(x=alphaS, fill=as.factor(model))) + 
+      labs(y="Individual Accuracy \n") +
+      scale_y_continuous(breaks=seq(-0.5, 1, by=.1))+
+      scale_x_continuous(name=bquote(paste("\n ", alpha[DBn], " / ", alpha[VSn])), breaks = seq(0, 1, by=.1))+
+      scale_fill_viridis(discrete = T, begin = .1, end = .8, 
+                         name="Model", labels=c("DBn", "VSn")) +
+      geom_hline(yintercept = 0, lty=2)+
+      geom_hline(yintercept = 0.05, lty=2)+
+      geom_pointrange(aes(y=acc.delta.mean, ymin=acc.delta.lower, ymax=acc.delta.upper), shape=21, size=1, lwd=1) +
+      theme_linedraw(base_size = 11) +
+      theme(text = element_text(size=rel(5)),
+            strip.text.x = element_text(size=rel(7)),
+            strip.text.y = element_text(size=rel(7)), 
+            axis.text.x = element_text(size=rel(7)),
+            axis.title.x = element_text(size=rel(7)),
+            axis.text.y = element_text(size=rel(7)),
+            axis.title.y = element_text(size=rel(7)),
+            legend.text = element_text(size=rel(7)), 
+            legend.title = element_text(size=rel(7)),
+            plot.title = element_text(hjust = 0.5, size = rel(8)),
+            plot.margin = margin(1,1,1,1, "cm")) +
+      facet_grid(ratio ~ max, labeller = facet.labeller)
+p
+plot.list =  append(plot.list, list(p))
+
+
+# Reward-based DB vs. VS
+p = plot.data %>% filter(model %in% c("dbr1.fixed", "vsr1.fixed")) %>%
+      ggplot(aes(x=alphaS, fill=as.factor(model))) + 
+      labs(y="Individual Accuracy \n") +
+      scale_y_continuous(breaks=seq(-0.5, 1, by=.1))+
+      scale_x_continuous(name=bquote(paste("\n ", alpha[DBr], " / ", alpha[VSr])), breaks = seq(0, 1, by=.1))+
+      scale_fill_viridis(discrete = T, begin = .1, end = .8, 
+                         name="Model", labels=c("DBr", "VSr")) +
+      geom_hline(yintercept = 0, lty=2)+
+      geom_hline(yintercept = 0.05, lty=2)+
+      geom_pointrange(aes(y=acc.delta.mean, ymin=acc.delta.lower, ymax=acc.delta.upper), shape=21, size=1, lwd=1) +
+      theme_linedraw(base_size = 11) +
+      theme(text = element_text(size=rel(5)),
+            strip.text.x = element_text(size=rel(7)),
+            strip.text.y = element_text(size=rel(7)), 
+            axis.text.x = element_text(size=rel(7)),
+            axis.title.x = element_text(size=rel(7)),
+            axis.text.y = element_text(size=rel(7)),
+            axis.title.y = element_text(size=rel(7)),
+            legend.text = element_text(size=rel(7)), 
+            legend.title = element_text(size=rel(7)),
+            plot.title = element_text(hjust = 0.5, size = rel(8)),
+            plot.margin = margin(1,1,1,1, "cm")) +
+      facet_grid(ratio ~ max, labeller = facet.labeller)
+p
+plot.list =  append(plot.list, list(p))
+
+
+# Individual Accuracy over time
+plot.data = results$acc.time %>%
+  group_by(model, alphaS, ratio, max, time) %>%
+  reframe(frac.corr.mean = mean(frac.corr)) %>%
+  group_by(model, ratio, max, time) %>%
+  mutate(delta.mean = frac.corr.mean - frac.corr.mean[which(alphaS == 0)])
+    
+# Decision-based DB vs. VS
+p1=plot.data %>% filter(model == "dbn1.fixed") %>%
+  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
+  geom_line(alpha=.75, lty=2) +
+  geom_hline(yintercept = 0, lty=2)+
+  geom_hline(yintercept = 0.1, lty=2) +
+  scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
+  
+  scale_color_viridis(name=bquote(paste(alpha[DBn], " / ", alpha[VSn], "\n")), end = 1) +
+  theme(text = element_text(size=20),
+        plot.title = element_text(hjust = 0.5),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  labs(x="\n Time", y="Difference in Individual Accuracy \n") +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+p1
+
+p2=plot.data %>% filter(model == "vsn1.fixed") %>%
+  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
+  geom_line(alpha=.75, lty=2) +
+  geom_hline(yintercept = 0, lty=2)+
+  geom_hline(yintercept = 0.1, lty=2) +
+  scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
+  
+  scale_color_viridis(name=bquote(paste(alpha[DBn], " / ", alpha[VSn], "\n")), end = 1) +
+  theme(text = element_text(size=20),
+        plot.title = element_text(hjust = 0.5),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  labs(x="\n Time", y="") +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+p2
+p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
+              labels = c("a", "b"), font.label = list(size=rel(30)))
+ggexport(p, width = 2800, height = 1440, 
+         filename = "social/results/expectations/acctime_dbn_vsn.jpeg")
+
+# Reward-based DB vs. VS
+p1=plot.data %>% filter(model == "dbr1.fixed") %>%
+  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
+  geom_line(alpha=.75, lty=2) +
+  geom_hline(yintercept = 0, lty=2)+
+  geom_hline(yintercept = 0.1, lty=2) +
+  scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
+  
+  scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr], "\n")), end = 1) +
+  theme(text = element_text(size=20),
+        plot.title = element_text(hjust = 0.5),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  labs(x="\n Time", y="Difference in Individual Accuracy \n") +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+p1
+
+p2=plot.data %>% filter(model == "vsr1.fixed") %>%
+  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
+  geom_line(alpha=.75, lty=2) +
+  geom_hline(yintercept = 0, lty=2)+
+  geom_hline(yintercept = 0.1, lty=2) +
+  scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
+  
+  scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr], "\n")), end = 1) +
+  theme(text = element_text(size=20),
+        plot.title = element_text(hjust = 0.5),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  labs(x="\n Time", y="") +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+p2
+p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
+              labels = c("a", "b"), font.label = list(size=rel(30)))
+ggexport(p, width = 2800, height = 1440, 
+         filename = "social/results/expectations/acctime_dbr_vsr.jpeg")
+
+# Switch-rate over time
+plot.data = results$switches.time %>%
+  group_by(model, alphaS, ratio, max, time) %>%
+  reframe(switch.frac.mean = mean(switch.frac)) %>%
+  group_by(model, ratio, max, time) %>%
+  mutate(delta.mean = switch.frac.mean - switch.frac.mean[which(alphaS == 0)])
+    
+# Decision-based DB vs. VS
+p1 = plot.data %>% filter(model == "dbn1.fixed") %>%
+  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
+  geom_line(alpha=.5, lty=2) +
+  #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
+  labs(x="\n Time", y="Difference in Switch Rate \n") +
+  #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
+  scale_color_viridis(name=bquote(paste(alpha[DBn], " / ", alpha[VSn],  "\n")), end = 1) +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+p1
+    
+p2 = plot.data %>% filter(model == "vsn1.fixed") %>%
+  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
+  geom_line(alpha=.5, lty=2) +
+  #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
+  labs(x="\n Time", y="") +
+  #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
+  scale_color_viridis(name=bquote(paste(alpha[DBn], " / ", alpha[VSn],  "\n")), end = 1) +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+p2
+    
+p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
+              labels = c("a", "b"), font.label = list(size=rel(30)))
+ggexport(p, width = 2800, height = 1440, 
+         filename = "social/results/expectations/switchtime_dbn_vsn.jpeg")
+
+# Reward-based DB vs. VS
+p1 = plot.data %>% filter(model == "dbr1.fixed") %>%
+  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
+  geom_line(alpha=.5, lty=2) +
+  #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
+  labs(x="\n Time", y="Difference in Switch Rate \n") +
+  #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
+  scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr],  "\n")), end = 1) +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+p1
+    
+p2 = plot.data %>% filter(model == "vsr1.fixed") %>%
+  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
+  geom_line(alpha=.5, lty=2) +
+  #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
+  labs(x="\n Time", y="") +
+  #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
+  scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr],  "\n")), end = 1) +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+p2
+    
+p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
+              labels = c("a", "b"), font.label = list(size=rel(30)))
+ggexport(p, width = 2800, height = 1440, 
+         filename = "social/results/expectations/switchtime_dbr_vsr.jpeg")
+
+    
 ```
 
 ## Models with 2 social learning parameter (dbndbr, vsndbr, dbrvsn, vsnvsr)
