@@ -148,20 +148,35 @@ dbn2.fixed.sim <- function(sim.parameters){
       relocate(session, trial, player, time, duration, max, ratio) %>% 
       arrange(session, trial, player, time)
     
-    # Compute observed decisions (as would have to be done from real data)
-    sim.data = sim.data %>%
-      mutate(decision = decision - 1) %>%
+    # Compute observed decisions and observed payoffs
+    sim.data=sim.data %>%
+      mutate(decision = decision - 1) %>% # Transform [1, 2] to [0, 1]
+      arrange(session, trial, player, time) %>%
+      # Observed decisions
       group_by(session, trial, player) %>%
       mutate(decision.lag = lag(decision)) %>%
       group_by(session, trial, time) %>%
-      mutate(obs.dec.2 = sum(decision.lag)) %>%
+      mutate(obs.dec.2 = sum(decision.lag)) %>% # Number of individuals choosing higher yielding patch
       ungroup() %>%
-      mutate(obs.dec.2 = obs.dec.2 - decision.lag) %>%
+      mutate(obs.dec.2 = obs.dec.2 - decision.lag) %>% # Subtract individual's own choice
       ungroup() %>%
-      mutate(obs.dec.1 = nplayers - 1 - obs.dec.2) %>%
-      select(-decision.lag) %>%
-      mutate(decision = decision + 1) %>%
-      relocate(obs.dec.1, obs.dec.2,.after = nplayers)
+      mutate(obs.dec.1 = nplayers - 1 - obs.dec.2) %>% # Lower yielding patch
+      mutate(obs.dec.1.norm = obs.dec.1 / (nplayers-1), obs.dec.2.norm = obs.dec.2 / (nplayers-1)) %>% # normalize
+      relocate(obs.dec.1, obs.dec.2,.after = nplayers) %>%
+      # Observed payoffs
+      arrange(session, trial, player, time) %>%
+      group_by(session, trial, player) %>%
+      mutate(reward.lag = lag(reward)) %>% 
+      group_by(session, trial, time, decision.lag) %>%
+      mutate(obs.rew = sum(reward.lag)) %>% # Rewards obtained by all players at each patch
+      group_by(session, trial, player) %>%
+      mutate(obs.rew = obs.rew - reward.lag) %>% # Minus rewards obtained by individuals themselves
+      mutate(obs.rew.norm = ifelse(decision.lag == 0, obs.rew / obs.dec.1, obs.rew / obs.dec.2)) %>% # normalize
+      # mutate(obs.rew.norm = ifelse(decision.lag == 0, 
+      #                              ifelse(obs.dec.1 == 0, 0, obs.rew / obs.dec.1),
+      #                              ifelse(obs.dec.2 == 0, 0, obs.rew / obs.dec.2))) %>% # normalize
+      mutate(decision = decision + 1) %>% # Transform [0, 1] to [1, 2]
+      arrange(session, trial, player, time)
     
     
     return(sim.data)
