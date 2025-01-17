@@ -41,7 +41,7 @@ if(!dir.exists("social/results/expectations")){dir.create("social/results/expect
 ## Experimental data structure
 ```{r, expect-experiment, echo = T, results='markup'}
 # Number of simulated experiments
-nsim = 5
+nsim = 15
 
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
@@ -87,7 +87,7 @@ remove(fit)
 
 # Set social learning weights for decision- and reward- based DB and VS 
 srl.pars = c("alphaDBD", "alphaVSD", "alphaDBR", "alphaVSR") 
-srl.pars = sapply(srl.pars, function(x) seq(0, .25, by = .05)) %>%
+srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .01)) %>%
   `colnames<-`(srl.pars)
 
 # Merge
@@ -271,8 +271,9 @@ p = plot.data %>% filter(model %in% c("dbn1.fixed", "vsn1.fixed")) %>%
             plot.margin = margin(1,1,1,1, "cm")) +
       facet_grid(ratio ~ max, labeller = facet.labeller)
 p
-plot.list =  append(plot.list, list(p))
-
+#plot.list =  append(plot.list, list(p))
+ggexport(p, width = 2800, height = 1440, 
+         filename = "social/results/expectations/acc_dbn_vsn.jpeg")
 
 # Reward-based DB vs. VS
 p = plot.data %>% filter(model %in% c("dbr1.fixed", "vsr1.fixed")) %>%
@@ -299,8 +300,9 @@ p = plot.data %>% filter(model %in% c("dbr1.fixed", "vsr1.fixed")) %>%
             plot.margin = margin(1,1,1,1, "cm")) +
       facet_grid(ratio ~ max, labeller = facet.labeller)
 p
-plot.list =  append(plot.list, list(p))
-
+#plot.list =  append(plot.list, list(p))
+ggexport(p, width = 2800, height = 1440, 
+         filename = "social/results/expectations/acc_dbr_vsr.jpeg")
 
 # Individual Accuracy over time
 plot.data = results$acc.time %>%
@@ -311,12 +313,11 @@ plot.data = results$acc.time %>%
     
 # Decision-based DB vs. VS
 p1=plot.data %>% filter(model == "dbn1.fixed") %>%
-  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=.75, lty=2) +
+  ggplot(aes(x=time, y=delta.mean, group=alphaS, col=alphaS)) +
+  geom_line(alpha=1, lty=2) +
   geom_hline(yintercept = 0, lty=2)+
   geom_hline(yintercept = 0.1, lty=2) +
   scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
-  
   scale_color_viridis(name=bquote(paste(alpha[DBn], " / ", alpha[VSn], "\n")), end = 1) +
   theme(text = element_text(size=20),
         plot.title = element_text(hjust = 0.5),
@@ -339,8 +340,8 @@ p1=plot.data %>% filter(model == "dbn1.fixed") %>%
 p1
 
 p2=plot.data %>% filter(model == "vsn1.fixed") %>%
-  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=.75, lty=2) +
+  ggplot(aes(x=time, y=delta.mean, group=alphaS, col=alphaS)) +
+  geom_line(alpha=1, lty=2) +
   geom_hline(yintercept = 0, lty=2)+
   geom_hline(yintercept = 0.1, lty=2) +
   scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
@@ -372,8 +373,8 @@ ggexport(p, width = 2800, height = 1440,
 
 # Reward-based DB vs. VS
 p1=plot.data %>% filter(model == "dbr1.fixed") %>%
-  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=.75, lty=2) +
+  ggplot(aes(x=time, y=delta.mean, group=alphaS, col=alphaS)) +
+  geom_line(alpha=1, lty=2) +
   geom_hline(yintercept = 0, lty=2)+
   geom_hline(yintercept = 0.1, lty=2) +
   scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
@@ -400,8 +401,8 @@ p1=plot.data %>% filter(model == "dbr1.fixed") %>%
 p1
 
 p2=plot.data %>% filter(model == "vsr1.fixed") %>%
-  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=.75, lty=2) +
+  ggplot(aes(x=time, y=delta.mean, group=alphaS, col=alphaS)) +
+  geom_line(alpha=1, lty=2) +
   geom_hline(yintercept = 0, lty=2)+
   geom_hline(yintercept = 0.1, lty=2) +
   scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
@@ -440,8 +441,8 @@ plot.data = results$switches.time %>%
     
 # Decision-based DB vs. VS
 p1 = plot.data %>% filter(model == "dbn1.fixed") %>%
-  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=.5, lty=2) +
+  ggplot(aes(x=time, y=delta.mean, group=alphaS, col=alphaS)) +
+  geom_line(alpha=1, lty=2) +
   #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
   labs(x="\n Time", y="Difference in Switch Rate \n") +
   #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
@@ -463,8 +464,8 @@ p1 = plot.data %>% filter(model == "dbn1.fixed") %>%
 p1
     
 p2 = plot.data %>% filter(model == "vsn1.fixed") %>%
-  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=.5, lty=2) +
+  ggplot(aes(x=time, y=delta.mean, group=alphaS, col=alphaS)) +
+  geom_line(alpha=1, lty=2) +
   #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
   labs(x="\n Time", y="") +
   #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
@@ -492,8 +493,8 @@ ggexport(p, width = 2800, height = 1440,
 
 # Reward-based DB vs. VS
 p1 = plot.data %>% filter(model == "dbr1.fixed") %>%
-  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=.5, lty=2) +
+  ggplot(aes(x=time, y=delta.mean, group=alphaS, col=alphaS)) +
+  geom_line(alpha=1, lty=2) +
   #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
   labs(x="\n Time", y="Difference in Switch Rate \n") +
   #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
@@ -515,8 +516,8 @@ p1 = plot.data %>% filter(model == "dbr1.fixed") %>%
 p1
     
 p2 = plot.data %>% filter(model == "vsr1.fixed") %>%
-  ggplot(aes(x=time, y=delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=.5, lty=2) +
+  ggplot(aes(x=time, y=delta.mean, group=alphaS, col=alphaS)) +
+  geom_line(alpha=1, lty=2) +
   #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
   labs(x="\n Time", y="") +
   #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
@@ -545,38 +546,38 @@ ggexport(p, width = 2800, height = 1440,
     
 ```
 
-## Models with 2 social learning parameter (dbndbr, vsndbr, dbrvsn, vsnvsr)
-```{r, expect-2alpha-rlpars, echo=TRUE}
-# Get model list
-models = getmodels()
+<!-- ## Models with 2 social learning parameter (dbndbr, vsndbr, dbrvsn, vsnvsr) -->
+<!-- ```{r, expect-2alpha-rlpars, echo=TRUE} -->
+<!-- # Get model list -->
+<!-- models = getmodels() -->
 
-# Drop versions with adaptive social learning weights
-# models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] )
+<!-- # Drop versions with adaptive social learning weights -->
+<!-- # models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] ) -->
 
-# Select models with single social learning parameter (and arl model)
-models=lapply(models,function(x) x[models$name %in% c("dbnvsr1.fixed", "vsndbr1.fixed", "dbndbr1.fixed", "vsnvsr1.fixed")] )
+<!-- # Select models with single social learning parameter (and arl model) -->
+<!-- models=lapply(models,function(x) x[models$name %in% c("dbnvsr1.fixed", "vsndbr1.fixed", "dbndbr1.fixed", "vsnvsr1.fixed")] ) -->
 
-# Load ARL model fit
-fit = readRDS("asocial/results/modelcomp/m4.1.fit.rds")
+<!-- # Load ARL model fit -->
+<!-- fit = readRDS("asocial/results/modelcomp/m4.1.fit.rds") -->
 
-# Get ARL parameter estimates
-draws = fit %>%
-  tidy_draws() %>%
-  select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]]))
-arl.pars = apply(draws, 2, mean)
+<!-- # Get ARL parameter estimates -->
+<!-- draws = fit %>% -->
+<!--   tidy_draws() %>% -->
+<!--   select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]])) -->
+<!-- arl.pars = apply(draws, 2, mean) -->
 
-# Remove fit
-remove(fit)
+<!-- # Remove fit -->
+<!-- remove(fit) -->
 
-# Set social learning weights for decision- and reward- based DB and VS 
-srl.pars = c("alphaDBD", "alphaVSD", "alphaDBR", "alphaVSR") 
-srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .5)) %>%
-  `colnames<-`(srl.pars)
+<!-- # Set social learning weights for decision- and reward- based DB and VS  -->
+<!-- srl.pars = c("alphaDBD", "alphaVSD", "alphaDBR", "alphaVSR")  -->
+<!-- srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .5)) %>% -->
+<!--   `colnames<-`(srl.pars) -->
 
-# Merge
-rl.pars = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>% 
-  cbind(t(arl.pars)) %>% cbind(srl.pars)
-```
+<!-- # Merge -->
+<!-- rl.pars = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>%  -->
+<!--   cbind(t(arl.pars)) %>% cbind(srl.pars) -->
+<!-- ``` -->
 
 
 
