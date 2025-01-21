@@ -214,7 +214,7 @@ getmodels <- function(hierarch=FALSE){
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
-          "alphaDBN" = c(0, 1)    # Social learning rate DB
+          "alphaDBD" = c(0, 1)    # Social learning rate DB
           
         ),
         
@@ -224,7 +224,7 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          "alphaVSN" = c(0, 1),    # Social learning rate VS
+          "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
@@ -343,7 +343,7 @@ getmodels <- function(hierarch=FALSE){
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
-          "alphaDBN" = c(0, 1)    # Social learning rate DB
+          "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
         
         # vsndbr1
@@ -352,7 +352,7 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          "alphaVSN" = c(0, 1),    # Social learning rate VS
+          "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
@@ -587,7 +587,7 @@ getmodels <- function(hierarch=FALSE){
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
-          "alphaDBN" = c(0, 1)    # Social learning rate DB
+          "alphaDBD" = c(0, 1)    # Social learning rate DB
           
         ),
         
@@ -597,7 +597,7 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          "alphaVSN" = c(0, 1),    # Social learning rate VS
+          "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
@@ -716,7 +716,7 @@ getmodels <- function(hierarch=FALSE){
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
-          "alphaDBN" = c(0, 1)    # Social learning rate DB
+          "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
         
         # vsndbr1
@@ -725,7 +725,7 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          "alphaVSN" = c(0, 1),    # Social learning rate VS
+          "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
@@ -842,7 +842,7 @@ getmodels <- function(hierarch=FALSE){
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
-          "alphaDBN" = c(0, 1)    # Social learning rate DB
+          "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
         
         # vsndbr1
@@ -851,7 +851,7 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP" = c(0, 1),
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
-          "alphaVSN" = c(0, 1),    # Social learning rate VS
+          "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
