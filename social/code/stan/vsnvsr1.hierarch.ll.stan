@@ -106,13 +106,18 @@ model{
         idsigmaVSDR = inv_logit(logit_sigmaVSDR + idoffset[id[observation], 6]);
         
         // Compute social value of choice
-        Qsoc = (1 - idsigmaVSDR) * obsdec[observation, decision[observation-1]] + idsigmaVSDR * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
+	if(obsrew[observation] == 100){ // If nobody else at patch of who to observe rewards
+		Qsoc = obsdec[observation, decision[observation-1]];
+	}else{
+		Qsoc = (1 - idsigmaVSDR) * obsdec[observation, decision[observation-1]] + idsigmaVSDR * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
+        
+	}
         
         // Shape values
         Q[decision[observation-1]] = Q[decision[observation-1]] + idalphaVSDR * (Qsoc - Q[decision[observation-1]]);
         
         // Adjust other option
-        Q[3 - decision[observation-1]] = 1 - Q[3 - decision[observation-1]];
+        // Q[3 - decision[observation-1]] = 1 - Q[3 - decision[observation-1]];
       }
       
       // Construct id specific inverse temp and autocorrelation
@@ -209,14 +214,18 @@ generated quantities{
         C = [0, 0]';
       }else{ // Value shaping
         
-        // Compute social value of choice
-        Qsoc = (1 - idsigmaVSDR[id[observation]]) * obsdec[observation, decision[observation-1]] + idsigmaVSDR[id[observation]] * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
-        
+	// Compute social value of choice
+	if(obsrew[observation] == 100){ // If nobody else at patch of who to observe rewards
+		Qsoc = obsdec[observation, decision[observation-1]];
+	}else{
+		Qsoc = (1 - idsigmaVSDR[id[observation]]) * obsdec[observation, decision[observation-1]] + idsigmaVSDR[id[observation]] * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
+	}        
+
         // Shape values
         Q[decision[observation-1]] = Q[decision[observation-1]] + idalphaVSDR[id[observation]] * (Qsoc - Q[decision[observation-1]]);
         
         // Adjust other option
-        Q[3 - decision[observation-1]] = 1 - Q[3 - decision[observation-1]];
+        // Q[3 - decision[observation-1]] = 1 - Q[3 - decision[observation-1]];
       }
       
 

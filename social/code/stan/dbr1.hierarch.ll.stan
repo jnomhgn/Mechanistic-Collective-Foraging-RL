@@ -116,10 +116,12 @@ model{
         // Thus, asocial choice probability for decision[observation-1] is updated with social
         // choice probability based on obsrew[observation]
         psoc = obsrew[observation];
-        // Update chosen option
-        p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBR * (psoc - p[decision[observation-1]]);
-        // Adjust other option
-        p[3 - decision[observation-1]] = 1 - p[decision[observation-1]];
+        // Update chosen option if someone else at patch of who to observe rewards
+	if(psoc != 100){
+		p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBR * (psoc - p[decision[observation-1]]);
+        	// Adjust other option
+        	p[3 - decision[observation-1]] = 1 - p[decision[observation-1]];
+	}
         
       }
 
@@ -213,10 +215,17 @@ generated quantities{
 
         // Update individual policy using social policy
         psoc = obsrew[observation];
-        // Update chosen option
-        p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBR[id[observation]] * (psoc - p[decision[observation-1]]);
-        // Adjust other option
-        p[3 - decision[observation-1]] = 1 - p[decision[observation-1]];
+
+	if(psoc != 100){
+		// Update chosen option
+        	p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBR[id[observation]] * (psoc - p[decision[observation-1]]);
+        	// Adjust other option
+        	p[3 - decision[observation-1]] = 1 - p[decision[observation-1]];
+	}
+
+
+
+        
       }
 
       // Compute log likelyhood of data given policy

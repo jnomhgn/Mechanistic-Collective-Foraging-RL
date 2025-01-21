@@ -116,7 +116,12 @@ model{
         idsigmaDBDR = inv_logit(logit_sigmaDBDR + idoffset[id[observation], 6]);
         
         // Compute social value of choice
-        psoc = (1 - idsigmaDBDR) * obsdec[observation, decision[observation-1]] + idsigmaDBDR * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
+	if(obsrew[observation] == 100){ // if obsrew == na, i.e. if nobody else at patch
+		psoc = obsdec[observation, decision[observation-1]];
+	}else{
+		psoc = (1 - idsigmaDBDR) * obsdec[observation, decision[observation-1]] + idsigmaDBDR * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
+	}
+        
         
         // Update chosen option
         p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBDR * (psoc - p[decision[observation-1]]);
@@ -218,9 +223,13 @@ generated quantities{
       // Decision biasing
       if(time[observation] != 0){ // No social info at first time step
         
-        // Compute social value of choice
-        psoc = (1 - idsigmaDBDR[id[observation]]) * obsdec[observation, decision[observation-1]] + idsigmaDBDR[id[observation]] * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
         
+	if(obsrew[observation] == 100){ // if obsrew == na, i.e. if nobody else at patch
+		psoc = obsdec[observation, decision[observation-1]];
+	}else{
+		psoc = (1 - idsigmaDBDR[id[observation]]) * obsdec[observation, decision[observation-1]] + idsigmaDBDR[id[observation]] * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
+	}
+
         // Update chosen option
         p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBDR[id[observation]] * (psoc - p[decision[observation-1]]);
         

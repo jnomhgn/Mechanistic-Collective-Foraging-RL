@@ -100,10 +100,15 @@ model{
         idalphaVSR = inv_logit(logit_alphaVSR + idoffset[id[observation], 5]);
         // Compute social value of choice
         Qsoc = obsrew[observation]; // Computed outside of stan so that obsrew[observation] are the observed rewards for each option from the timestep observation-1
-        // Shape values
-        Q[decision[observation-1]] = Q[decision[observation-1]] + idalphaVSR * (Qsoc - Q[decision[observation-1]]);
-        // Adjust other option
-        Q[3 - decision[observation-1]] = 1 - Q[3 - decision[observation-1]];
+        
+	if(Qsoc != 100){
+        	// Shape values
+        	Q[decision[observation-1]] = Q[decision[observation-1]] + idalphaVSR * (Qsoc - Q[decision[observation-1]]);
+        	// Adjust other option
+        	// Q[3 - decision[observation-1]] = 1 - Q[3 - decision[observation-1]];
+      	}
+
+	
         
       }
       
@@ -197,10 +202,13 @@ generated quantities{
       }else{ // No social info on first time step
         // Compute social value of choice
         Qsoc = obsrew[observation]; // Computed outside of stan so that obsrew[observation] are the observed rewards for each option from the timestep observation-1
-        // Shape values
-        Q[decision[observation-1]] = Q[decision[observation-1]] + idalphaVSR[id[observation]] * (Qsoc - Q[decision[observation-1]]);
-        // Adjust other option
-        Q[3 - decision[observation-1]] = 1 - Q[3 - decision[observation-1]];
+        
+	if(Qsoc != 100){
+        	// Shape values
+        	Q[decision[observation-1]] = Q[decision[observation-1]] + idalphaVSR[id[observation]] * (Qsoc - Q[decision[observation-1]]);
+        	// Adjust other option
+        	// Q[3 - decision[observation-1]] = 1 - Q[3 - decision[observation-1]];
+      	}
         
       }
 
