@@ -97,7 +97,7 @@ rl.pars = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data
 
 
 ```{r, expect-1alpha-compute, eval=TRUE, echo=TRUE, results='markup'}
-log.txt = "social/results/expectations/log.txt"
+log.txt = "social/results/expectations/log_1par.txt"
 if(!file.exists(log.txt)){file.create(log.txt)}
 
 # Add caching
@@ -546,38 +546,416 @@ ggexport(p, width = 2800, height = 1440,
     
 ```
 
-<!-- ## Models with 2 social learning parameter (dbndbr, vsndbr, dbrvsn, vsnvsr) -->
-<!-- ```{r, expect-2alpha-rlpars, echo=TRUE} -->
-<!-- # Get model list -->
-<!-- models = getmodels() -->
+## Models with 2 social learning parameter but only db or vs (dbndbr, vsnvsr)
+```{r, expect-2alpha-rlpars, echo=TRUE}
+# Get model list
+models = getmodels()
 
-<!-- # Drop versions with adaptive social learning weights -->
-<!-- # models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] ) -->
+# Drop versions with adaptive social learning weights
+# models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] )
 
-<!-- # Select models with single social learning parameter (and arl model) -->
-<!-- models=lapply(models,function(x) x[models$name %in% c("dbnvsr1.fixed", "vsndbr1.fixed", "dbndbr1.fixed", "vsnvsr1.fixed")] ) -->
+# Select models with two social learning parameter
+models=lapply(models,function(x) x[models$name %in% c("arl.fixed", "vsnvsr1.fixed", "dbndbr1.fixed")] )
 
-<!-- # Load ARL model fit -->
-<!-- fit = readRDS("asocial/results/modelcomp/m4.1.fit.rds") -->
+# Load ARL model fit
+fit = readRDS("asocial/results/modelcomp/m4.1.fit.rds")
 
-<!-- # Get ARL parameter estimates -->
-<!-- draws = fit %>% -->
-<!--   tidy_draws() %>% -->
-<!--   select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]])) -->
-<!-- arl.pars = apply(draws, 2, mean) -->
+# Get ARL parameter estimates
+draws = fit %>%
+  tidy_draws() %>%
+  select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]]))
+arl.pars = apply(draws, 2, mean)
 
-<!-- # Remove fit -->
-<!-- remove(fit) -->
+# Remove fit
+remove(fit)
 
-<!-- # Set social learning weights for decision- and reward- based DB and VS  -->
-<!-- srl.pars = c("alphaDBD", "alphaVSD", "alphaDBR", "alphaVSR")  -->
-<!-- srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .5)) %>% -->
-<!--   `colnames<-`(srl.pars) -->
+# Set social learning weights for decision- and reward- based DB and VS
+srl.pars = expand.grid( 
+  "alphaDBDR" = unique(c(seq(0, .1, by=.02), seq(.1, 1, by=.1))), 
+  "sigmaDBDR" = seq(0, 1, by=.1)
+  ) %>%
+  mutate(alphaVSDR = alphaDBDR, sigmaVSDR = sigmaDBDR)
 
-<!-- # Merge -->
-<!-- rl.pars = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>%  -->
-<!--   cbind(t(arl.pars)) %>% cbind(srl.pars) -->
-<!-- ``` -->
+# Merge
+rl.pars = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>%
+  cbind(t(arl.pars)) %>% cbind(srl.pars)
+```
 
+```{r, expect-2alpha-convex-compute, eval=TRUE, echo=TRUE, results='markup'}
+log.txt = "social/results/expectations/log_2pars_convex.txt"
+if(!file.exists(log.txt)){file.create(log.txt)}
+
+# Add caching
+if(!file.exists(paste("social/results/expectations", "expec_2pars_convex.rds", sep = "/"))){
+  
+  sink(log.txt, append = T)
+
+  # Results list
+  results = list(
+    rew.acc = list(),
+    acc.time = list(),
+    switches = list(), switches.time = list()
+  )
+  
+  for(mod in 1:length(models$name)){
+
+    # Get function
+    f = get(models$sim[[mod]])
+    
+    for(parcomb in 1:nrow(rl.pars)){
+
+      # Get rl.pars and add to sim pars
+      sim.pars = c(exp.pars, env.pars, rl.pars[parcomb, ])
+      
+      
+      # Loop over number of simulations
+      for(sim in 1:nsim){
+        
+        if(exists("end.time")){
+          print(paste("This took:", (end.time - start.time), "seconds" ))
+        }
+        start.time = Sys.time()
+        
+        prgrss = paste("Simulating from model", models$name[[mod]], 
+                       ". Parameter combination", parcomb, 
+                       ", simulation ", sim)
+        print(prgrss)
+        
+        # Simulate data
+        sim.data = f(sim.parameters = sim.pars)
+        
+        # Add sim parameters
+        sim.data = sim.data %>%
+          mutate(decision = decision - 1) %>%
+          cbind(model=models$name[[mod]], parcomb=parcomb) %>%
+          bind_cols(rl.pars[parcomb, ]) %>%
+          mutate(alphaS = alphaDBDR, sigmaS=sigmaDBDR) %>%
+          mutate(sim = sim) %>%
+          relocate(model, parcomb, sim)
+        
+        # Compute mean individual accuracy and rewards
+        rew.acc = sim.data %>%
+          # Compute individual accuracy and rewards on each trial 
+          group_by(sim, model, alphaS, sigmaS, session, trial, player, duration, ratio, max) %>% # for each individual trial
+          reframe(acc = sum(decision), 
+                  rew = sum(reward)) %>%
+          mutate(acc = acc / (duration + 1)) %>%
+          mutate(rew = rew / (duration + 1)) %>%
+          # Compute average individual accuracy 
+          group_by(sim, model, alphaS, sigmaS, ratio, max) %>% 
+          reframe(acc.mean = mean(acc), rew.mean = mean(rew)) 
+        
+        # Save
+        results$rew.acc = append(results$rew.acc, list(rew.acc))
+        
+        # Compute mean individual accuracy ~ time
+        acc.time = sim.data %>%
+          # Compute average individual accuracy at each time step
+          group_by(sim, model, alphaS, sigmaS, time, ratio, max) %>%
+          reframe(frac.corr = mean(decision)) 
+        
+        # Save
+        results$acc.time = append(results$acc.time, list(acc.time))
+        
+        # Compute mean switch rate
+        switches = sim.data %>%
+          group_by(model, alphaS, sigmaS, sim, session, trial, player, duration, ratio, max) %>%
+          mutate(switches = ifelse(lag(decision) != decision, 1, 0)) %>%
+          reframe(switches = sum(switches, na.rm=T) / duration) %>%
+          group_by(model, alphaS, sigmaS, sim, ratio, max) %>%
+          reframe(switches.mean = mean(switches)) 
+        
+        # Save
+        results$switches = append(results$switches, list(switches))
+        
+        # Compute mean switches ~ time
+        switches.time = sim.data %>%
+          group_by(model, alphaS, sigmaS, sim, session, trial, player, duration, ratio, max) %>%
+          mutate(switch = ifelse(lag(decision) != decision, 1, 0)) %>%
+          group_by(model, alphaS, sigmaS, sim, time, ratio, max) %>%
+          reframe(switch.frac = sum(switch, na.rm = T) / max(player)) 
+        
+         # Save
+        results$switches.time = append(results$switches.time, list(switches.time))
+        
+        # End time
+        end.time = Sys.time()
+        
+      }
+      
+    }
+  }
+  
+  results = lapply(results, function(x) bind_rows(x))
+  saveRDS(results, file = 
+            paste("social/results/expectations", "expec_2pars_convex.rds", sep = "/"))
+  
+  sink()
+  
+}else{
+  results = readRDS(file = paste("social/results/expectations", "expec_2pars_convex.rds", sep = "/"))
+}
+
+
+```
+
+### Plot
+```{r, expect-1alpha-plot, echo=TRUE}
+
+# List to save plots to
+plot.list = list()
+    
+# Facet labels
+max.labs = paste("Maximum Yield", sort(unique(results$rew.acc$max)))
+names(max.labs) = sort(unique(results$rew.acc$max))
+
+ratio.labs = paste("Yield Ratio", sort(unique(results$rew.acc$ratio)))
+names(ratio.labs) = sort(unique(results$rew.acc$ratio))
+
+facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
+    
+
+
+# Individual Accuracy over time
+plot.data = results$acc.time %>%
+  group_by(model, alphaS, sigmaS, ratio, max, time) %>%
+  reframe(frac.corr.mean = mean(frac.corr)) 
+    
+plot.data %>% 
+  ggplot(aes(x=time, y=frac.corr.mean, group=model, col=model)) +
+  geom_line(alpha=1) +
+  #scale_color_viridis(name=bquote(paste(alpha[DBn], " / ", alpha[VSn], "\n")), end = 1) +
+  theme(text = element_text(size=20),
+        plot.title = element_text(hjust = 0.5),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  labs(x="\n Time", y="Difference in Individual Accuracy \n") +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+
+
+
+
+    
+```
+
+
+
+
+## Models with 2 social learning parameter but only both db and vs (dbnvsr, vsndbr)
+```{r, expect-2alpha-rlpars, echo=TRUE}
+# Get model list
+models = getmodels(hierarch = FALSE)
+
+# Drop versions with adaptive social learning weights
+# models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] )
+
+# Select models with two social learning parameter
+models=lapply(models,function(x) x[models$name %in% c("arl.fixed", "dbnvsr1.fixed", "vsndbr1.fixed")] )
+
+# Load ARL model fit
+fit = readRDS("asocial/results/modelcomp/m4.1.fit.rds")
+
+# Get ARL parameter estimates
+draws = fit %>%
+  tidy_draws() %>%
+  select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]]))
+arl.pars = apply(draws, 2, mean)
+
+# Remove fit
+remove(fit)
+
+# Set social learning weights for decision- and reward- based DB and VS
+srl.pars = expand.grid( 
+  "alphaDBD" = unique(c(seq(0, .1, by=.02), seq(.1, 1, by=.1))), 
+  "alphaVSR" = unique(c(seq(0, .1, by=.02), seq(.1, 1, by=.1)))
+  ) %>%
+  mutate(alphaVSD = alphaDBD, alphaDBR = alphaVSR)
+
+# Merge
+rl.pars = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>%
+  cbind(t(arl.pars)) %>% cbind(srl.pars)
+```
+
+```{r, expect-2alpha-compute, eval=TRUE, echo=TRUE, results='markup'}
+log.txt = "social/results/expectations/log_2pars.txt"
+if(!file.exists(log.txt)){file.create(log.txt)}
+
+# Add caching
+if(!file.exists(paste("social/results/expectations", "expec_2pars.rds", sep = "/"))){
+  
+  sink(log.txt, append = T)
+
+  # Results list
+  results = list(
+    rew.acc = list(),
+    acc.time = list(),
+    switches = list(), switches.time = list()
+  )
+  
+  # for(mod in 1:length(models$name)){
+  for(mod in c(1, 2)){
+
+    # Get function
+    f = get(models$sim[[mod]])
+    
+    #for(parcomb in 1:nrow(rl.pars)){
+    for(parcomb in c(1)){
+
+      # Get rl.pars and add to sim pars
+      sim.pars = c(exp.pars, env.pars, rl.pars[parcomb, ])
+      
+      
+      # Loop over number of simulations
+      for(sim in 1:nsim){
+        
+        if(exists("end.time")){
+          print(paste("This took:", (end.time - start.time), "seconds" ))
+        }
+        start.time = Sys.time()
+        
+        prgrss = paste("Simulating from model", models$name[[mod]], 
+                       ". Parameter combination", parcomb, 
+                       ", simulation ", sim)
+        print(prgrss)
+        
+        # Simulate data
+        sim.data = f(sim.parameters = sim.pars)
+        
+        # Add sim parameters
+        sim.data = sim.data %>%
+          mutate(decision = decision - 1) %>%
+          cbind(model=models$name[[mod]], parcomb=parcomb) %>%
+          bind_cols(rl.pars[parcomb, ]) %>%
+          mutate(sim = sim) %>%
+          relocate(model, parcomb, sim)
+        
+        # Compute mean individual accuracy and rewards
+        rew.acc = sim.data %>%
+          # Compute individual accuracy and rewards on each trial 
+          group_by(sim, model, alphaVSD, alphaVSR, alphaDBD, alphaDBR, session, trial, player, duration, ratio, max) %>% # for each individual trial
+          reframe(acc = sum(decision), 
+                  rew = sum(reward)) %>%
+          mutate(acc = acc / (duration + 1)) %>%
+          mutate(rew = rew / (duration + 1)) %>%
+          # Compute average individual accuracy 
+          group_by(sim, model, alphaVSD, alphaVSR, alphaDBD, alphaDBR, ratio, max) %>% 
+          reframe(acc.mean = mean(acc), rew.mean = mean(rew)) 
+        
+        # Save
+        results$rew.acc = append(results$rew.acc, list(rew.acc))
+        
+        # Compute mean individual accuracy ~ time
+        acc.time = sim.data %>%
+          # Compute average individual accuracy at each time step
+          group_by(sim, model, alphaVSD, alphaVSR, alphaDBD, alphaDBR, time, ratio, max) %>%
+          reframe(frac.corr = mean(decision)) 
+        
+        # Save
+        results$acc.time = append(results$acc.time, list(acc.time))
+        
+        # Compute mean switch rate
+        switches = sim.data %>%
+          group_by(model, alphaVSD, alphaVSR, alphaDBD, alphaDBR, sim, session, trial, player, duration, ratio, max) %>%
+          mutate(switches = ifelse(lag(decision) != decision, 1, 0)) %>%
+          reframe(switches = sum(switches, na.rm=T) / duration) %>%
+          group_by(model, alphaVSD, alphaVSR, alphaDBD, alphaDBR, sim, ratio, max) %>%
+          reframe(switches.mean = mean(switches)) 
+        
+        # Save
+        results$switches = append(results$switches, list(switches))
+        
+        # Compute mean switches ~ time
+        switches.time = sim.data %>%
+          group_by(model, alphaVSD, alphaVSR, alphaDBD, alphaDBR, sim, session, trial, player, duration, ratio, max) %>%
+          mutate(switch = ifelse(lag(decision) != decision, 1, 0)) %>%
+          group_by(model, alphaVSD, alphaVSR, alphaDBD, alphaDBR, sim, time, ratio, max) %>%
+          reframe(switch.frac = sum(switch, na.rm = T) / max(player)) 
+        
+         # Save
+        results$switches.time = append(results$switches.time, list(switches.time))
+        
+        # End time
+        end.time = Sys.time()
+        
+      }
+      
+    }
+  }
+  
+  results = lapply(results, function(x) bind_rows(x))
+  saveRDS(results, file = 
+            paste("social/results/expectations", "expec_2pars.rds", sep = "/"))
+  
+  sink()
+  
+}else{
+  results = readRDS(file = paste("social/results/expectations", "expec_2pars.rds", sep = "/"))
+}
+
+
+```
+
+### Plot
+```{r, expect-2alpha-plot, echo=TRUE}
+
+# List to save plots to
+plot.list = list()
+    
+# Facet labels
+max.labs = paste("Maximum Yield", sort(unique(results$rew.acc$max)))
+names(max.labs) = sort(unique(results$rew.acc$max))
+
+ratio.labs = paste("Yield Ratio", sort(unique(results$rew.acc$ratio)))
+names(ratio.labs) = sort(unique(results$rew.acc$ratio))
+
+facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
+    
+
+
+# Individual Accuracy over time
+plot.data = results$acc.time %>%
+  group_by(model, alphaVSD, alphaVSR, alphaDBD, alphaDBR, ratio, max, time) %>%
+  reframe(frac.corr.mean = mean(frac.corr)) 
+    
+plot.data %>% 
+  ggplot(aes(x=time, y=frac.corr.mean, group=model, col=model)) +
+  geom_line(alpha=1) +
+  #scale_color_viridis(name=bquote(paste(alpha[DBn], " / ", alpha[VSn], "\n")), end = 1) +
+  theme(text = element_text(size=20),
+        plot.title = element_text(hjust = 0.5),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  labs(x="\n Time", y="Difference in Individual Accuracy \n") +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(3.5)), 
+        legend.key.size = unit(2, "cm"),
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  facet_grid(ratio ~ max, labeller = facet.labeller)
+
+
+
+
+    
+```
 
 
