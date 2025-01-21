@@ -38,7 +38,7 @@ vsnvsr1.fixed.sim <- function(sim.parameters){
         # Initialize choice trace (only last trial in our case) to 0 (Katahira 2018)
         C = matrix(C.init, nrow = nplayers, ncol = 2 )
         
-        # Initialize array of social choice probabilities
+        # Initialize array of social values
         Q.soc = array(NA, dim = c(nplayers))
         
         # Track distribution of decisions
@@ -69,12 +69,12 @@ vsnvsr1.fixed.sim <- function(sim.parameters){
             
             # Convex combination
             Q.soc = ifelse(is.na(obs.rew), obs.dec, 
-                           (1 - sigmaDBDR) * obs.dec + sigmaVSDR * obs.rew)
+                           (1 - sigmaVSDR) * obs.dec + sigmaVSDR * obs.rew)
             
             # Value shaping: Update individual Q-values for upcoming trial using this social info
             for(x in 1:nplayers){
               Q[x, dec.freq[x]] = Q[x, dec.freq[x]] + alphaVSDR * (Q.soc[x] - Q[x, dec.freq[x]])
-              Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]]
+              # Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]] # The sum of the Q-Values need not be 1 (e.g. c(.5, .41)). Thus, this piece of code might change values even if alphaVSR = 0.
             }
             
           }
