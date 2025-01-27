@@ -38,8 +38,8 @@ vsndbr1.fixed.sim <- function(sim.parameters){
         # Initialize choice trace (only last trial in our case) to 0 (Katahira 2018)
         C = matrix(C.init, nrow = nplayers, ncol = 2 )
         
-        # Initialize array of social choice probabilities
-        p.soc = array(NA, dim = c(nplayers))
+        # Initialize matrix of social choice probabilities
+        p.soc = matrix(NA, nrow = nplayers, ncol = 2)
         
         # Initialize matrix of social values
         Q.soc = matrix(NA, nrow = nplayers, ncol = 2 )
@@ -65,9 +65,14 @@ vsndbr1.fixed.sim <- function(sim.parameters){
             
             # Number of other group members at same patch obtaining rewards
             obs.rew = sapply(1:nplayers, function(x) sum(rew.freq[dec.freq == dec.freq[x]]) - rew.freq[x])
+            obs.rew = sapply(1:nplayers, function(x) obs.rew[x] / obs.dec[x, dec.freq[x]])
+            # Note, if obs.dec[x, dec.freq[x]] == 0, i.e. if no other player was 
+            # present at the same patch, p.soc will be NaN.
             
-            # Normalize
-            p.soc = sapply(1:nplayers, function(x) obs.rew[x] / obs.dec[x, dec.freq[x]])
+            for(x in 1:nplayers){
+              p.soc[x, dec.freq[x]] = obs.rew[x]
+              p.soc[x, 3 - dec.freq[x]] = 1 - obs.rew[x]
+            }
             
             # Value shaping: Update individual Q-values for upcoming trial using this social info
             Q = t(sapply(1:nplayers, function(x) Q[x, ] + alphaVSD * ( Q.soc[x, ] - Q[x, ])))
@@ -84,9 +89,8 @@ vsndbr1.fixed.sim <- function(sim.parameters){
             if(time != 0){
               
               # If p.soc[player] == NaN, no reward-based DB.
-              if(!is.na(p.soc[player])){
-                p[dec.freq[player]] = p[dec.freq[player]] + alphaDBR * (p.soc[player] - p[dec.freq[player]]) 
-                p[3 - dec.freq[player]] = 1 -  p[dec.freq[player]]
+              if(!any(is.na(p.soc[player, ]))){
+                p = p + alphaDBR * (p.soc[player, ] - p) 
               }
               
             }

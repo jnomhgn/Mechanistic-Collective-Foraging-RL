@@ -38,8 +38,8 @@ dbndbr1.fixed.sim <- function(sim.parameters){
         # Initialize choice trace (only last trial in our case) to 0 (Katahira 2018)
         C = matrix(C.init, nrow = nplayers, ncol = 2 )
         
-        # Initialize array of social choice probabilities
-        p.soc = array(NA, dim = c(nplayers))
+        # Initialize matrix of social choice probabilities
+        p.soc = matrix(NA, nrow = nplayers, ncol = 2)
         
         # Track distribution of decisions
         dec.freq = array(NA, dim = c(nplayers))
@@ -68,8 +68,17 @@ dbndbr1.fixed.sim <- function(sim.parameters){
             obs.dec = obs.dec / (nplayers-1)
             
             # Convex combination
-            p.soc = ifelse(is.na(obs.rew), obs.dec, 
-                           (1 - sigmaDBDR) * obs.dec + sigmaDBDR * obs.rew)
+            for(x in 1:nplayers){
+              if(is.na(obs.rew[x])){
+                p.soc[x, dec.freq[x]] = obs.dec[x]
+                p.soc[x, 3 - dec.freq[x]] = 1 - obs.dec[x]
+              }else{
+                p.soc[x, dec.freq[x]] = (1 - sigmaDBDR) * obs.dec[x] + sigmaDBDR * obs.rew[x]
+                p.soc[x, 3 - dec.freq[x]] = 1 - p.soc[x, dec.freq[x]]
+              }
+              
+            }
+
 
           }
           
@@ -81,8 +90,7 @@ dbndbr1.fixed.sim <- function(sim.parameters){
             
             # Bias decision using social information
             if(time != 0){
-              p[dec.freq[player]] = p[dec.freq[player]] + alphaDBDR * (p.soc[player] - p[dec.freq[player]]) 
-              p[3 - dec.freq[player]] = 1 -  p[dec.freq[player]]
+              p = p + alphaDBDR * (p.soc[player, ] - p) 
             }
             
             
