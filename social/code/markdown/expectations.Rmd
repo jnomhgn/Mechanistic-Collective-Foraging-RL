@@ -804,14 +804,14 @@ if(!file.exists(paste("social/results/expectations", "expec_2pars.rds", sep = "/
     switches = list(), switches.time = list()
   )
   
-  # for(mod in 1:length(models$name)){
-  for(mod in c(1, 2)){
+  for(mod in 1:length(models$name)){
+
 
     # Get function
     f = get(models$sim[[mod]])
     
-    #for(parcomb in 1:nrow(rl.pars)){
-    for(parcomb in c(1)){
+    for(parcomb in 1:nrow(rl.pars)){
+
 
       # Get rl.pars and add to sim pars
       sim.pars = c(exp.pars, env.pars, rl.pars[parcomb, ])
