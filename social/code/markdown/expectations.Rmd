@@ -41,7 +41,7 @@ if(!dir.exists("social/results/expectations")){dir.create("social/results/expect
 ## Experimental data structure
 ```{r, expect-experiment, echo = T, results='markup'}
 # Number of simulated experiments
-nsim = 15
+nsim = 25
 
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
