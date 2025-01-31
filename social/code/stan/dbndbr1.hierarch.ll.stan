@@ -81,7 +81,7 @@ model{
   vector[DECISIONS] Q; // Value of each state
   vector[DECISIONS] C; // Choice trace for each state
   vector[DECISIONS] p; // individual policy (that gets updated)
-  real psoc; // social policy used for updating
+  vector[DECISIONS] psoc; // social policy used for updating
 
   
   real idalphaQ; // individual-level asocial learning rate (overwritten so same variable for both positive and negative rpes)
@@ -116,18 +116,16 @@ model{
         idsigmaDBDR = inv_logit(logit_sigmaDBDR + idoffset[id[observation], 6]);
         
         // Compute social value of choice
-	if(obsrew[observation] == 100){ // if obsrew == na, i.e. if nobody else at patch
-		psoc = obsdec[observation, decision[observation-1]];
-	}else{
-		psoc = (1 - idsigmaDBDR) * obsdec[observation, decision[observation-1]] + idsigmaDBDR * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
-	}
-        
+	      if(obsrew[observation] == 100){ // if obsrew == na, i.e. if nobody else at patch
+		      psoc = to_vector(obsdec[observation, ]);
+	      }else{
+		      psoc[decision[observation-1]] = (1 - idsigmaDBDR) * obsdec[observation, decision[observation-1]] + idsigmaDBDR * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
+          psoc[3 - decision[observation-1]] = 1 - psoc[decision[observation-1]];
+	      } 
         
         // Update chosen option
-        p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBDR * (psoc - p[decision[observation-1]]);
+        p = p + idalphaDBDR * (psoc - p);
         
-        // Adjust other option
-        p[3 - decision[observation-1]] = 1 - p[decision[observation-1]];
       }
 
       // Sample decision
@@ -206,7 +204,7 @@ generated quantities{
   vector[DECISIONS] Q; // Value of each state
   vector[DECISIONS] C; // Choice trace for each state
   vector[DECISIONS] p; // policy
-  real psoc; // Social policy (used to update)
+  vector[DECISIONS] psoc; // Social policy (used to update)
 
   // Loop over observations
   for (observation in 1:OBSERVATIONS){
@@ -219,22 +217,21 @@ generated quantities{
 
       // Compute choice probabilities
       p = softmax(idbetaQ[id[observation]] * Q + idbetaC[id[observation]] * C);
-      
+
       // Decision biasing
       if(time[observation] != 0){ // No social info at first time step
-        
-        
-	if(obsrew[observation] == 100){ // if obsrew == na, i.e. if nobody else at patch
-		psoc = obsdec[observation, decision[observation-1]];
-	}else{
-		psoc = (1 - idsigmaDBDR[id[observation]]) * obsdec[observation, decision[observation-1]] + idsigmaDBDR[id[observation]] * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
-	}
 
-        // Update chosen option
-        p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBDR[id[observation]] * (psoc - p[decision[observation-1]]);
-        
-        // Adjust other option
-        p[3 - decision[observation-1]] = 1 - p[decision[observation-1]];
+        // Compute social value of choice
+	      if(obsrew[observation] == 100){ // if obsrew == na, i.e. if nobody else at patch
+		      psoc = to_vector(obsdec[observation, ]);
+	      }else{
+		      psoc[decision[observation-1]] = (1 - idsigmaDBDR[id[observation]]) * obsdec[observation, decision[observation-1]] + idsigmaDBDR[id[observation]] * obsrew[observation]; // obsdec and obsrew computed outside of stan so that obsdec[observation] / obsrew[observation] refers to timestep observation-1
+	        psoc[3 - decision[observation-1]] = 1 - psoc[decision[observation-1]];
+	      }
+
+        // Update
+        p = p + idalphaDBDR[id[observation]] * (psoc - p);
+
       }
 
 

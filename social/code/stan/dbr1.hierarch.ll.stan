@@ -79,7 +79,7 @@ model{
   vector[DECISIONS] Q; // Value of each state
   vector[DECISIONS] C; // Choice trace for each state
   vector[DECISIONS] p; // individual policy (that gets updated)
-  real psoc; // social policy used for updating
+  vector[DECISIONS] psoc; // social policy used for updating
 
   
   real idalphaQ; // individual-level asocial learning rate (overwritten so same variable for both positive and negative rpes)
@@ -110,20 +110,18 @@ model{
         // Construct id specific social learning weight.
         idalphaDBR = inv_logit(logit_alphaDBR + idoffset[id[observation], 5]);
 
-        // Update individual policy using social policy
-        // obsrew[observation] as computed in Rmd represents observed rewards for timestep observation - 1  
-        // decision[observation-1] represents decition made at timestep observation - 1
-        // Thus, asocial choice probability for decision[observation-1] is updated with social
-        // choice probability based on obsrew[observation]
-        psoc = obsrew[observation];
-        // Update chosen option if someone else at patch of who to observe rewards
-	if(psoc != 100){
-		p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBR * (psoc - p[decision[observation-1]]);
-        	// Adjust other option
-        	p[3 - decision[observation-1]] = 1 - p[decision[observation-1]];
-	}
+        // Update individual policy using social policy (only if someone else was at patch)
+        if(obsrew[observation] != 100){
+          // obsrew[observation] as computed in Rmd represents observed rewards for timestep observation - 1  
+          // decision[observation-1] represents decition made at timestep observation - 1
+          // Thus, asocial choice probability for decision[observation-1] is updated with social
+          // choice probability based on obsrew[observation]
+          psoc[decision[observation-1]] = obsrew[observation];
+          psoc[3 - decision[observation-1]] = 1 - obsrew[observation];
         
-      }
+		      p = p + idalphaDBR * (psoc - p);
+        	
+        }
 
       // Sample decision
       decision[observation] ~ categorical(p);
@@ -143,7 +141,9 @@ model{
       C = [0, 0]';
       C[decision[observation]] = 1;
       
+    }
   }
+
 }
 
 generated quantities{
@@ -195,7 +195,7 @@ generated quantities{
   vector[DECISIONS] Q; // Value of each state
   vector[DECISIONS] C; // Choice trace for each state
   vector[DECISIONS] p; // policy
-  real psoc; // social policy used for updating
+  vector[DECISIONS] psoc; // social policy used for updating
 
 
   // Loop over observations
@@ -213,19 +213,15 @@ generated quantities{
       // Decision biasing
       if(time[observation] != 0){ // No social info at first time step
 
-        // Update individual policy using social policy
-        psoc = obsrew[observation];
+      	if(obsrew[observation] != 100){
 
-	if(psoc != 100){
-		// Update chosen option
-        	p[decision[observation-1]] = p[decision[observation-1]] + idalphaDBR[id[observation]] * (psoc - p[decision[observation-1]]);
-        	// Adjust other option
-        	p[3 - decision[observation-1]] = 1 - p[decision[observation-1]];
-	}
+        psoc[decision[observation-1]] = obsrew[observation];
+        psoc[3 - decision[observation-1]] = 1 - obsrew[observation];
 
+		    // Update chosen option
+        p = p + idalphaDBR[id[observation]] * (psoc - p);
 
-
-        
+	      }
       }
 
       // Compute log likelyhood of data given policy
