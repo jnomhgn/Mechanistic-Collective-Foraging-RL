@@ -48,7 +48,7 @@ exp.pars = list(
   sessions = 18,
   trials = 12,
   nplayers = 5, # number of players per session
-  durations.vec = c(75, 90, 105)  # The simulation functions sample trial lengths from this vector (equally) 
+  durations.vec = c(75)  # The simulation functions sample trial lengths from this vector (equally) 
                                   # and randomly assigns them to the different environments
 )
 # Add unique ids for players (rows are sessions)
@@ -231,20 +231,12 @@ facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
     
 # Individual Accuracy
 plot.data = results$rew.acc %>%
-  # Summarise sampling distribution
-  group_by(model, alphaS, ratio, max) %>%
-  reframe(ind.acc.mean= mean(acc.mean),
-          ind.acc.lower = quantile(acc.mean, probs = .025),
-          ind.acc.upper = quantile(acc.mean, probs = .975))
-
-plot.data = results$rew.acc %>%
-      group_by(sim, model, ratio, max) %>%
-      mutate(acc.delta = acc.mean - acc.mean[which(alphaS == 0)]) %>%
-      # Summarise sampling distribution
-      group_by(model, alphaS, ratio, max) %>%
-      reframe(acc.delta.mean= mean(acc.delta),
-              acc.delta.lower = quantile(acc.delta, probs = .025),
-              acc.delta.upper = quantile(acc.delta, probs = .975))
+    group_by(model, alphaS, ratio, max) %>%
+    reframe(acc.mean = mean(acc.mean)) %>%
+    filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
+    group_by(ratio, max) %>%
+    mutate(acc.delta = acc.mean - acc.mean[which(model == "arl.fixed")])
+write.csv(plot.data, file = paste("social", "results", "expectations", "expec_accdiff_lisa.csv", sep = "/"))
 
 # Decision-based DB vs. VS
 p = plot.data %>% filter(model %in% c("dbn1.fixed", "vsn1.fixed")) %>%
@@ -256,7 +248,7 @@ p = plot.data %>% filter(model %in% c("dbn1.fixed", "vsn1.fixed")) %>%
                          name="Model", labels=c("DBn", "VSn")) +
       geom_hline(yintercept = 0, lty=2)+
       geom_hline(yintercept = 0.05, lty=2)+
-      geom_pointrange(aes(y=acc.delta.mean, ymin=acc.delta.lower, ymax=acc.delta.upper), shape=21, size=1, lwd=1) +
+      geom_point(aes(y=acc.delta), shape=21, size=1) +
       theme_linedraw(base_size = 11) +
       theme(text = element_text(size=rel(5)),
             strip.text.x = element_text(size=rel(7)),
@@ -285,7 +277,7 @@ p = plot.data %>% filter(model %in% c("dbr1.fixed", "vsr1.fixed")) %>%
                          name="Model", labels=c("DBr", "VSr")) +
       geom_hline(yintercept = 0, lty=2)+
       geom_hline(yintercept = 0.05, lty=2)+
-      geom_pointrange(aes(y=acc.delta.mean, ymin=acc.delta.lower, ymax=acc.delta.upper), shape=21, size=1, lwd=1) +
+      geom_point(aes(y=acc.delta), shape=21, size=1) +
       theme_linedraw(base_size = 11) +
       theme(text = element_text(size=rel(5)),
             strip.text.x = element_text(size=rel(7)),
