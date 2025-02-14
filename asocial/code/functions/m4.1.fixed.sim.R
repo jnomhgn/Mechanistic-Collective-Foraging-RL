@@ -1,5 +1,5 @@
 # Function to simulate synthetic data
-m4.1.fixed.sim <- function(sim.parameters){
+m4.1.fixed.sim <- function(sim.parameters, postpredict =FALSE){
   
   with(data = sim.parameters, expr = {
     
@@ -48,7 +48,17 @@ m4.1.fixed.sim <- function(sim.parameters){
             p = softmax(betaQ * Q[player, ] + betaC * C[player, ])
             
             # Decide
-            decision = sample(c(1, 2), size = 1, prob = p)
+            if(postpredict == T){
+              if(time == 0){
+                decision = decfreq.init[which(decfreq.init$id == id[session, player] & decfreq.init$max.fac == max.fac[trial] & decfreq.init$ratio.fac == ratio.fac[trial]), "decision"]
+              }else{
+                decision = sample(c(1, 2), size = 1, prob = p)
+              }
+            }else{
+              decision = sample(c(1, 2), size = 1, prob = p)
+            }
+            
+            
 
             
             # Sample reward
