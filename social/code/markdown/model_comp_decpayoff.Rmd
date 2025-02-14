@@ -124,7 +124,7 @@ refresh = 100
 
 # Model comparison with all (non-adaptive) models
 ```{r, run-modelcomp_decpay_full_nonadaptive, echo=TRUE, eval=TRUE}
-if(!exists(paste("social/results/modelcomp_decpayoff/full_nonadaptive", "modelcomp_decpayoff_full_nonadaptive.Rdata", sep = "/"))){
+if(!file.exists(paste("social/results/modelcomp_decpayoff/full_nonadaptive", "modelcomp_decpayoff_full_nonadaptive.Rdata", sep = "/"))){
   
   # Get models
   models = getmodels(hierarch = T)
