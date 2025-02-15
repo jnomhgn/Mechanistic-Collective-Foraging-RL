@@ -206,7 +206,7 @@ print(comparison.named)
 decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision)
 
 # Number of times experiments were simulated from each model
-nsim=25
+nsim=100
 
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
