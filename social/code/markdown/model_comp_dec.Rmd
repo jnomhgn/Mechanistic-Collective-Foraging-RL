@@ -25,11 +25,11 @@ library(bayesplot)
 library(randtoolbox)
 
 # Source functions
+# Source functions
 setwd("~/Users/MarienhagenJonathan/rlforaging")
-
-source("social/code/functions/softmax.R")
-source("social/code/functions/diagnostics.plot.R")
-source("social/code/functions/getmodels.R")
+function.list = paste0("social/code/functions/", list.files("social/code/functions"))
+function.list = function.list[sapply(function.list, function(x) !grepl("2", x))]
+sapply(function.list, source, .GlobalEnv)
 
 
 
@@ -225,6 +225,113 @@ if(!file.exists(paste("social/results/modelcomp_dec/full_nonadaptive", "modelcom
 
 print(comparison[, ])
 print(comparison.named)
+
+
+
+
+```
+
+## Posterior predictions
+```{r, postpred-modelcomp_dec_full_nonadaptive, echo=TRUE}
+
+# Get initial distribution of players from data
+decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision)
+
+# Number of times experiments were simulated from each model
+nsim=100
+
+# Experimental parameters (identical for all simulations)
+exp.pars = list(
+  sessions = 18,
+  trials = 12,
+  nplayers = 5, # number of players per session
+  durations.vec = c(75)  # The simulation functions sample trial lengths from this vector (equally) 
+                                  # and randomly assigns them to the different environments
+)
+# Add unique ids for players (rows are sessions)
+exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
+
+# Environmental parameters (identical for all simulations)
+max = round(c(.5, .7, .9), digits = 2)
+ratio = round(c(.5, .65, .8, .95), digits = 2)
+env.pars = expand.grid(max=max, ratio=ratio)
+env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
+
+# Set the winning model / the best, simplest model
+winner = unname(winner)
+
+# Load fit
+fit = readRDS(paste("social/results/modelcomp_dec/full_nonadaptive", paste(winner, "fit", "rds", sep = "."), sep = "/"))
+
+# Get and index winning model in fixed effects model lsit (used for simulation)
+winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
+models = getmodels(hierarch = F)
+winnerindx = grep(pattern = winner, models$name)
+models = lapply(models, function(x) x[winnerindx])
+
+# Extract draws
+draws = tidy_draws(fit)
+rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[[1]])] 
+rl.pars = apply(rl.pars, 2, mean)
+rl.pars = append(rl.pars, models$fixed.pars[[winnerindx]])
+  
+# Prep simulation
+f = get(models$sim[[1]])
+sim.pars = c(exp.pars, env.pars, rl.pars, list(decfreq.init))
+
+# Simulate
+results = list()
+for(sim in 1:nsim){
+  print(paste("Simulation", sim, "of", nsim))
+  sim.data = f(sim.parameters = sim.pars, postpredict = T) %>% mutate(sim=sim, decision = decision - 1)
+  results[[sim]] = sim.data
+  
+}
+results = bind_rows(results)
+
+# Summarise simulated data
+plot.data = results %>%
+  group_by(sim, time, ratio, max) %>% 
+  reframe(acc = mean(decision))  %>%
+  group_by(time, ratio, max) %>%
+  reframe(mu =mean(acc), se = sd(acc) / sqrt(nsim)) %>%
+  mutate(lower = mu - se, upper = mu + se)
+
+write.csv(plot.data, file = paste("social", "results", "modelcomp", "postpredict_nocatches.csv", sep = "/"))
+
+# Plot posterior means + hdis 
+ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
+names(ratio.labs) = sort(unique(plot.data$ratio))
+
+max.labs = paste("Max Catch", sort(unique(plot.data$max)))
+names(max.labs) = sort(unique(plot.data$max))
+
+facet.labeller = labeller(ratio.fac = ratio.labs, max.fac = max.labs)
+
+plot.data %>% 
+  ggplot(aes(x=time, y=mu, ymin=lower, ymax=upper, col=as.factor(max), fill=as.factor(max))) +
+  scale_color_viridis(name="Max Catch", discrete = T) +
+  scale_fill_viridis(name="Max Catch", discrete = T)+
+  ylim(0, 1) +
+  geom_ribbon(alpha=.5) +
+  geom_line() +
+  geom_hline(yintercept = .5, lty=2) +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(7)), 
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  labs(x="Time", y="Mean Accuracy \n", 
+       col="Probability Maximum") +
+  facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
+
 
 
 
