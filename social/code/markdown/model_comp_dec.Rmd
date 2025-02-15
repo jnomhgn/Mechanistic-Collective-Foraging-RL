@@ -36,11 +36,13 @@ source("social/code/functions/getmodels.R")
 ```
 ```{r, dir-modcomp, include=FALSE}
 if(!dir.exists("social/results")){dir.create("social/results")}
-if(!dir.exists("social/results/modelcomp_dec_full_nonadaptive")){dir.create("social/results/modelcomp_dec_full_nonadaptive")}
-if(!dir.exists("social/results/modelcomp_dec_full_nonadaptive/diagnostics")){dir.create("social/results/modelcomp_dec_full_nonadaptive/diagnostics")}
+if(!dir.exists("social/results/modelcomp_dec")){dir.create("social/results/modelcomp_dec")}
 
-if(!dir.exists("social/results/modelcomp_dec_full_adaptive")){dir.create("social/results/modelcomp_dec_full_adaptive")}
-if(!dir.exists("social/results/modelcomp_dec_full_adaptive/diagnostics")){dir.create("social/results/modelcomp_dec_full_adaptive/diagnostics")}
+if(!dir.exists("social/results/modelcomp_dec/full_nonadaptive")){dir.create("social/results/modelcomp_dec/full_nonadaptive")}
+if(!dir.exists("social/results/modelcomp_dec/full_nonadaptive/diagnostics")){dir.create("social/results/modelcomp_dec/full_nonadaptive/diagnostics")}
+
+if(!dir.exists("social/results/modelcomp_dec/full_adaptive")){dir.create("social/results/modelcomp_dec/full_adaptive")}
+if(!dir.exists("social/results/modelcomp_dec/full_adaptive/diagnostics")){dir.create("social/results/modelcomp_dec/full_adaptive/diagnostics")}
 
 ```
 
@@ -109,7 +111,7 @@ refresh = 100
 
 # Model comparison including only non-adaptive versions of the models
 ```{r, run-modelcomp_dec_full_nonadaptive, echo=TRUE, eval=TRUE}
-if(!exists(paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec_full_nonadaptive.Rdata", sep = "/"))){
+if(!file.exists(paste("social/results/modelcomp_dec/full_nonadaptive", "modelcomp_dec_full_nonadaptive.Rdata", sep = "/"))){
   
   # Get models
   models = getmodels(hierarch = T)
@@ -132,7 +134,7 @@ if(!exists(paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec
   
   
     # Write log to text file fot when knitting
-    log.file = paste(paste("social/results/modelcomp_dec_full_nonadaptive",
+    log.file = paste(paste("social/results/modelcomp_dec/full_nonadaptive",
                                     "log.txt", sep = "/"))
     if(!file.exists(log.file)){file.create(log.file)}
     write(prgrss, log.file, append = TRUE, ncolumns = 1)
@@ -142,17 +144,17 @@ if(!exists(paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec
     fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
                    chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
     sink()
-    saveRDS(fit, paste("social/results/modelcomp_dec_full_nonadaptive", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
+    saveRDS(fit, paste("social/results/modelcomp_dec/full_nonadaptive", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
 
     # Plot some diagnostics for population means
     diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
     ggexport(plotlist = diag.list, width = 1920, height = 1080,
-                   filename = paste("social/results/modelcomp_dec_full_nonadaptive/diagnostics",
+                   filename = paste("social/results/modelcomp_dec/full_nonadaptive/diagnostics",
                                     paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
 
     # Save diagnostics for all parameters
     fit.summary = summary(fit)$summary
-    write.csv(fit.summary, file = paste("social/results/modelcomp_dec_full_nonadaptive/diagnostics",
+    write.csv(fit.summary, file = paste("social/results/modelcomp_dec/full_nonadaptive/diagnostics",
                                     paste(models$name[[mfit]], "diagnostics", "csv",  sep = "."), sep = "/"))
     
     # Plot posterior
@@ -161,7 +163,7 @@ if(!exists(paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec
     pbeta= mcmc_areas(draws, pars = names(models$free.pars.pop[[mfit]])[!grepl("alpha", names(models$free.pars.pop[[mfit]]))])
     p = ggarrange(palpha, pbeta, ncol = 2)
     ggexport(p, width = 2550, height = 1440,
-             filename = paste("social/results/modelcomp_dec_full_nonadaptive", paste(models$name[[mfit]], "draws", "jpeg", sep = "."), sep = "/"))
+             filename = paste("social/results/modelcomp_dec/full_nonadaptive", paste(models$name[[mfit]], "draws", "jpeg", sep = "."), sep = "/"))
   
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
@@ -181,7 +183,7 @@ if(!exists(paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec
     remove(ll)
 
     # Save diagnostics
-    jpeg(paste("social/results/modelcomp_dec_full_nonadaptive", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"))
+    jpeg(paste("social/results/modelcomp_dec/full_nonadaptive", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"))
     plot(get(loo.model))
     dev.off()
 
@@ -209,16 +211,15 @@ if(!exists(paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec
   
   
   # Save Variables
-  save(results, comparison, comparison.named, winner, file = paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec_full_nonadaptive.Rdata", sep = "/"))
-  
+  save(results, comparison, comparison.named, winner, file = paste("social/results/modelcomp_dec/full_nonadaptive", "modelcomp_dec_full_nonadaptive.Rdata", sep = "/"))
   # Save and print comparison
-  write.csv(x = comparison, file = paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec_full_nonadaptive.csv", sep = "/"))
-  write.csv(x = comparison.named, file = paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec_full_nonadaptive_named.csv", sep = "/"))
+  write.csv(x = comparison, file = paste("social/results/modelcomp_dec/full_nonadaptive", "modelcomp_dec_full_nonadaptive.csv", sep = "/"))
+  write.csv(x = comparison.named, file = paste("social/results/modelcomp_dec/full_nonadaptive", "modelcomp_dec_full_nonadaptive_named.csv", sep = "/"))
   
 }else{
   
   # Read comparison
-  load(file = paste("social/results/modelcomp_dec_full_nonadaptive", "modelcomp_dec_full_nonadaptive.Rdata", sep = "/"))
+  load(file = paste("social/results/modelcomp_dec/full_nonadaptive", "modelcomp_dec_full_nonadaptive.Rdata", sep = "/"))
   
 }
 
@@ -232,7 +233,7 @@ print(comparison.named)
 
 # Model comparison including both non-adaptive and adaptive versions of the models
 ```{r, run-modelcomp_dec_full_adaptive, echo=TRUE, eval=TRUE}
-if(!exists(paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_full_adaptive.Rdata", sep = "/"))){
+if(!file.exists(paste("social/results/modelcomp_dec/full_adaptive", "modelcomp_dec_full_adaptive.Rdata", sep = "/"))){
   
   # Get models
   models = getmodels(hierarch = T)
@@ -255,7 +256,7 @@ if(!exists(paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_fu
   
   
     # Write log to text file fot when knitting
-    log.file = paste(paste("social/results/modelcomp_dec_full_adaptive",
+    log.file = paste(paste("social/results/modelcomp_dec/full_adaptive",
                                     "log.txt", sep = "/"))
     if(!file.exists(log.file)){file.create(log.file)}
     write(prgrss, log.file, append = TRUE, ncolumns = 1)
@@ -265,17 +266,17 @@ if(!exists(paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_fu
     fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
                    chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
     sink()
-    saveRDS(fit, paste("social/results/modelcomp_dec_full_adaptive", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
+    saveRDS(fit, paste("social/results/modelcomp_dec/full_adaptive", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
 
     # Plot some diagnostics for population means
     diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
     ggexport(plotlist = diag.list, width = 1920, height = 1080,
-                   filename = paste("social/results/modelcomp_dec_full_adaptive/diagnostics",
+                   filename = paste("social/results/modelcomp_dec/full_adaptive/diagnostics",
                                     paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
 
     # Save diagnostics for all parameters
     fit.summary = summary(fit)$summary
-    write.csv(fit.summary, file = paste("social/results/modelcomp_dec_full_adaptive/diagnostics",
+    write.csv(fit.summary, file = paste("social/results/modelcomp_dec/full_adaptive/diagnostics",
                                     paste(models$name[[mfit]], "diagnostics", "csv",  sep = "."), sep = "/"))
     
     # Plot posterior
@@ -284,7 +285,7 @@ if(!exists(paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_fu
     pbeta= mcmc_areas(draws, pars = names(models$free.pars.pop[[mfit]])[!grepl("alpha", names(models$free.pars.pop[[mfit]]))])
     p = ggarrange(palpha, pbeta, ncol = 2)
     ggexport(p, width = 2550, height = 1440,
-             filename = paste("social/results/modelcomp_dec_full_adaptive", paste(models$name[[mfit]], "draws", "jpeg", sep = "."), sep = "/"))
+             filename = paste("social/results/modelcomp_dec/full_adaptive", paste(models$name[[mfit]], "draws", "jpeg", sep = "."), sep = "/"))
   
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
@@ -304,7 +305,7 @@ if(!exists(paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_fu
     remove(ll)
 
     # Save diagnostics
-    jpeg(paste("social/results/modelcomp_dec_full_adaptive", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"))
+    jpeg(paste("social/results/modelcomp_dec/full_adaptive", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"))
     plot(get(loo.model))
     dev.off()
 
@@ -332,16 +333,16 @@ if(!exists(paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_fu
   
   
   # Save Variables
-  save(results, comparison, comparison.named, winner, file = paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_full_adaptive.Rdata", sep = "/"))
+  save(results, comparison, comparison.named, winner, file = paste("social/results/modelcomp_dec/full_adaptive", "modelcomp_dec_full_adaptive.Rdata", sep = "/"))
   
   # Save and print comparison
-  write.csv(x = comparison, file = paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_full_adaptive.csv", sep = "/"))
-  write.csv(x = comparison.named, file = paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_full_adaptive_named.csv", sep = "/"))
+  write.csv(x = comparison, file = paste("social/results/modelcomp_dec/full_adaptive", "modelcomp_dec_full_adaptive.csv", sep = "/"))
+  write.csv(x = comparison.named, file = paste("social/results/modelcomp_dec/full_adaptive", "modelcomp_dec_full_adaptive_named.csv", sep = "/"))
   
 }else{
   
   # Read comparison
-  load(file = paste("social/results/modelcomp_dec_full_adaptive", "modelcomp_dec_full_adaptive.Rdata", sep = "/"))
+  load(file = paste("social/results/modelcomp_dec/full_adaptive", "modelcomp_dec_full_adaptive.Rdata", sep = "/"))
   
 }
 
