@@ -297,7 +297,7 @@ plot.data = results %>%
   reframe(mu =mean(acc), se = sd(acc) / sqrt(nsim)) %>%
   mutate(lower = mu - se, upper = mu + se)
 
-write.csv(plot.data, file = paste("social", "results", "modelcomp", "postpredict_nocatches.csv", sep = "/"))
+write.csv(plot.data, file = paste("social", "results", "modelcomp_dec", "full_nonadaptive", "postpredict_nocatches.csv", sep = "/"))
 
 # Plot posterior means + hdis 
 ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
