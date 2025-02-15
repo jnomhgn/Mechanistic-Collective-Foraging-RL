@@ -244,7 +244,7 @@ rl.pars = append(rl.pars, models$fixed.pars[[winnerindx]])
   
 # Prep simulation
 f = get(models$sim[[winnerindx]])
-sim.pars = c(exp.pars, env.pars, rl.pars)
+sim.pars = c(exp.pars, env.pars, rl.pars, list(decfreq.init))
 
 # Simulate
 results = list()

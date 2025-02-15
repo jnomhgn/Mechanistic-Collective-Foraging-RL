@@ -51,6 +51,7 @@ m4.1.fixed.sim <- function(sim.parameters, postpredict =FALSE){
             if(postpredict == T){
               if(time == 0){
                 decision = decfreq.init[which(decfreq.init$id == id[session, player] & decfreq.init$max.fac == max.fac[trial] & decfreq.init$ratio.fac == ratio.fac[trial]), "decision"]
+                decision = unname(unlist(decision))
               }else{
                 decision = sample(c(1, 2), size = 1, prob = p)
               }
