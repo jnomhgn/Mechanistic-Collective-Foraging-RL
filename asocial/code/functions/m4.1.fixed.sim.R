@@ -1,5 +1,5 @@
 # Function to simulate synthetic data
-m4.1.fixed.sim <- function(sim.parameters, postpredict =FALSE){
+m4.1.fixed.sim <- function(sim.parameters, postpredict =FALSE, duration.actual = F){
   
   with(data = sim.parameters, expr = {
     
@@ -7,19 +7,32 @@ m4.1.fixed.sim <- function(sim.parameters, postpredict =FALSE){
     sim.data <- list()
     
     # Create levels to index resource abundance offsets with
-    max.fac = ifelse(max == .5, 1, 
-                     ifelse(max == .7, 2, 3))
-    ratio.fac = ifelse(ratio == .5, 1,
-                       ifelse(ratio == .65, 2,
-                              ifelse(ratio == .8, 3,
-                                     4)))
+    if(duration.actual == F){
+      max.fac = ifelse(max == .5, 1, 
+                       ifelse(max == .7, 2, 3))
+      ratio.fac = ifelse(ratio == .5, 1,
+                         ifelse(ratio == .65, 2,
+                                ifelse(ratio == .8, 3,
+                                       4)))
+    }
+    
     
     # Loop over sessions
-    for(session in 1:sessions){
+    for(isession in 1:sessions){
       
-      # Permute duration for each session (so that counterbalanced across trials)
-      durations = sample(rep(durations.vec, each=trials/length(durations.vec)),
-                         size=trials, replace = FALSE)
+      if(duration.actual == F){
+        # Permute duration for each session (so that counterbalanced across trials)
+        durations = sample(rep(durations.vec, each=trials/length(durations.vec)),
+                           size=trials, replace = FALSE)
+      }else{
+        env.pars = decfreq.init %>% ungroup() %>% filter(session == isession) %>% distinct(max, max.fac, ratio, ratio.fac, duration)
+        max = as.numeric(env.pars$max)
+        max.fac = env.pars$max.fac
+        ratio=as.numeric(env.pars$ratio)
+        ratio.fac=env.pars$ratio.fac
+        durations = env.pars$duration
+      }
+      
       
       # Loop over trials
       for(trial in 1:trials){
@@ -50,7 +63,7 @@ m4.1.fixed.sim <- function(sim.parameters, postpredict =FALSE){
             # Decide
             if(postpredict == T){
               if(time == 0){
-                decision = decfreq.init[which(decfreq.init$id == id[session, player] & decfreq.init$max.fac == max.fac[trial] & decfreq.init$ratio.fac == ratio.fac[trial]), "decision"]
+                decision = decfreq.init[which(decfreq.init$id == id[isession, player] & decfreq.init$max.fac == max.fac[trial] & decfreq.init$ratio.fac == ratio.fac[trial]), "decision"]
                 decision = unname(unlist(decision))
               }else{
                 decision = sample(c(1, 2), size = 1, prob = p)
@@ -94,7 +107,7 @@ m4.1.fixed.sim <- function(sim.parameters, postpredict =FALSE){
         trial.data = lapply(1:length(trial.data), function(x)
           trial.data[[x]] %>%
             as.data.frame() %>%
-            `colnames<-`(id[session, ]) %>%
+            `colnames<-`(id[isession, ]) %>%
             mutate(time = 0:durations[trial]) %>%
             pivot_longer(-time, names_to = "player", values_to = names(trial.data)[x],
                          names_transform = list(player=as.numeric)) 
@@ -103,7 +116,7 @@ m4.1.fixed.sim <- function(sim.parameters, postpredict =FALSE){
         trial.data = bind_cols(trial.data, .name_repair = "minimal") 
         trial.data = trial.data[!duplicated(names(trial.data))] 
         trial.data = trial.data %>% 
-          cbind(session, trial, max=max[trial], max.fac=max.fac[trial],
+          cbind(session=isession,trial= trial, max=max[trial], max.fac=max.fac[trial],
                 ratio=ratio[trial], ratio.fac=ratio.fac[trial],
                 duration=durations[trial],
                 nplayers=nplayers)

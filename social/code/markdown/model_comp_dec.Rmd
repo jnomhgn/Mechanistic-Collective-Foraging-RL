@@ -374,6 +374,105 @@ ggexport(p, width=1920, height=1080,
        filename = paste("social", "results", "modelcomp_dec","full_nonadaptive","postpredict_nocatches.jpeg", sep="/"))
 
 
+# Posterior predictions for accuracy
+
+# Get initial distribution of players from data and actual duration - environment combination
+decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, session, max, max.fac, ratio, ratio.fac, decision, duration)
+
+# Number of times experiments were simulated from each model
+nsim=100
+
+# Experimental parameters (identical for all simulations)
+exp.pars = list(
+  sessions = 18,
+  trials = 12,
+  nplayers = 5 # number of players per session
+)
+# Add unique ids for players (rows are sessions)
+exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
+
+# Set the winning model / the best, simplest model
+winner = unname(winner)
+
+# Load fit
+fit = readRDS(paste("social/results/modelcomp_dec/full_nonadaptive", paste(winner, "fit", "rds", sep = "."), sep = "/"))
+
+# Get and index winning model in fixed effects model lsit (used for simulation)
+winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
+models = getmodels(hierarch = F)
+winnerindx = grep(pattern = winner, models$name)
+models = lapply(models, function(x) x[winnerindx])
+
+# Extract draws
+draws = tidy_draws(fit)
+rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[[1]])] 
+rl.pars = apply(rl.pars, 2, mean)
+rl.pars = append(rl.pars, models$fixed.pars[[1]])
+  
+# Prep simulation
+f = get(models$sim[[1]])
+sim.pars = c(exp.pars, rl.pars, decfreq.init= list(decfreq.init))
+
+# Simulate
+results = list()
+for(sim in 1:nsim){
+  print(paste("Simulation", sim, "of", nsim))
+  sim.data = f(sim.parameters = sim.pars, postpredict = T, duration.actual = T) %>% mutate(sim=sim, decision = decision - 1)
+  results[[sim]] = sim.data
+  
+}
+results = bind_rows(results)
+
+# Summarise simulated data for accuracy over time
+plot.data.nocatch = results %>%
+  group_by(sim, ratio, max) %>% 
+  reframe(acc = mean(decision))  %>%
+  group_by(ratio, max) %>%
+  reframe(mu =mean(acc)) %>%
+  mutate(social.fac=2, social="nocatches") %>%
+  relocate(c(social.fac, social))
+
+plot.data.alone = read.csv(file = paste("asocial", "results", "modelcomp", "postpredict_acc_alone.csv", sep = "/"))
+
+plot.data = bind_rows(plot.data.alone, plot.data.nocatch)
+
+write.csv(plot.data, file = paste("social", "results", "modelcomp_dec", "full_nonadaptive", "postpredict_acc_nocatch.csv", sep="/"), row.names = F)
+
+# Plot posterior means + hdis 
+ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
+names(ratio.labs) = sort(unique(plot.data$ratio))
+
+max.labs = paste("Max Catch", sort(unique(plot.data$max)))
+names(max.labs) = sort(unique(plot.data$max))
+
+facet.labeller = labeller(ratio.fac = ratio.labs, max.fac = max.labs)
+
+p = plot.data %>% 
+  ggplot(aes(x=social, y=mu, col=as.factor(max), fill=as.factor(max))) +
+  scale_color_viridis(name="Max Catch", discrete = T) +
+  scale_fill_viridis(name="Max Catch", discrete = T)+
+  ylim(0, 1) +
+  geom_point(size=7) +
+  geom_hline(yintercept = .5, lty=2) +
+  theme_linedraw(base_size = 11) +
+  theme(text = element_text(size=rel(5)),
+        strip.text.x = element_text(size=rel(7)),
+        strip.text.y = element_text(size=rel(7)), 
+        axis.text.x = element_text(size=rel(7)),
+        axis.title.x = element_text(size=rel(7)),
+        axis.text.y = element_text(size=rel(7)),
+        axis.title.y = element_text(size=rel(7)),
+        legend.text = element_text(size=rel(7)), 
+        legend.title = element_text(size=rel(7)),
+        plot.title = element_text(hjust = 0.5, size = rel(8)),
+        plot.margin = margin(1,1,1,1, "cm")) +
+  labs(x="Time", y="Mean Accuracy \n", 
+       col="Probability Maximum") +
+  facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
+p
+ggexport(p, width=1920, height=1080, 
+       filename = paste("social", "results", "modelcomp_dec", "full_nonadaptive", "postpredict_acc_nocatches.jpeg", sep="/"))
+
 
 
 
