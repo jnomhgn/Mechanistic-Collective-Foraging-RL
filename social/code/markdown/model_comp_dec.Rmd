@@ -347,7 +347,7 @@ names(max.labs) = sort(unique(plot.data$max))
 
 facet.labeller = labeller(ratio.fac = ratio.labs, max.fac = max.labs)
 
-plot.data %>% 
+p = plot.data %>% 
   ggplot(aes(x=time, y=mu, ymin=lower, ymax=upper, col=as.factor(max), fill=as.factor(max))) +
   scale_color_viridis(name="Max Catch", discrete = T) +
   scale_fill_viridis(name="Max Catch", discrete = T)+
@@ -370,6 +370,8 @@ plot.data %>%
   labs(x="Time", y="Mean Accuracy \n", 
        col="Probability Maximum") +
   facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
+ggexport(p, width=1920, height=1080,
+       filename = paste("social", "results", "modelcomp_dec","full_nonadaptive","postpredict_nocatches.jpeg", sep="/"))
 
 
 
