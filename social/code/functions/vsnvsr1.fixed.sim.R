@@ -1,5 +1,5 @@
 # Function to simulate synthetic data
-vsnvsr1.fixed.sim <- function(sim.parameters){
+vsnvsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE){
   
   with(data = sim.parameters, expr = {
     
@@ -87,7 +87,16 @@ vsnvsr1.fixed.sim <- function(sim.parameters){
             
             
             # Decide
-            decision = sample(c(1, 2), size = 1, prob = p)
+            if(postpredict == T){
+              if(time == 0){
+                decision = decfreq.init[which(decfreq.init$id == id[session, player] & decfreq.init$max.fac == max.fac[trial] & decfreq.init$ratio.fac == ratio.fac[trial]), "decision"]
+                decision = unname(unlist(decision))
+              }else{
+                decision = sample(c(1, 2), size = 1, prob = p)
+              }
+            }else{
+              decision = sample(c(1, 2), size = 1, prob = p)
+            }
             dec.freq[player] = decision
             
             
