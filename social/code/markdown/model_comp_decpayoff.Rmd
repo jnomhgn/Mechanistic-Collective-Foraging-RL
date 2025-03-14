@@ -40,6 +40,7 @@ if(!dir.exists("social/results/modelcomp_decpayoff")){dir.create("social/results
 
 if(!dir.exists("social/results/modelcomp_decpayoff/full_nonadaptive")){dir.create("social/results/modelcomp_decpayoff/full_nonadaptive")}
 if(!dir.exists("social/results/modelcomp_decpayoff/full_nonadaptive/diagnostics")){dir.create("social/results/modelcomp_decpayoff/full_nonadaptive/diagnostics")}
+if(!dir.exists("social/results/modelcomp_decpayoff/full_nonadaptive/diagnostics/detailed")){dir.create("social/results/modelcomp_decpayoff/full_nonadaptive/diagnostics/detailed")}
 
 # if(!dir.exists("social/results/modelcomp_decpayoff_sub")){dir.create("social/results/modelcomp_decpayoff_sub")}
 # if(!dir.exists("social/results/modelcomp_decpayoff_sub/diagnostics")){dir.create("social/results/modelcomp_decpayoff_sub/diagnostics")}
@@ -116,7 +117,7 @@ stan.data.d = with(d, list(
 # MCMC 
 chains = 4
 cores = 4
-iter = 3000
+iter = 4000
 warmup = 2000
 refresh = 100
 ```
@@ -140,18 +141,17 @@ if(!file.exists(paste("social/results/modelcomp_decpayoff/full_nonadaptive", "mo
   # Results list
   results = list()
   
+  # Create log file
+  log.file = paste(paste("social/results/modelcomp_decpayoff/full_nonadaptive",                                  "log.txt", sep = "/"))
+  if(!file.exists(log.file)){file.create(log.file)}
+  
   # Loop over models
   for(mfit in 1:length(models$stan.loglik)){
     
     # Print info about current simulation / fitting to html
     # Print info about current simulation to html
     prgrss = paste("\n Currently fitting model", models$stan.loglik[[mfit]], "\n")
-  
-  
-    # Write log to text file fot when knitting
-    log.file = paste(paste("social/results/modelcomp_decpayoff/full_nonadaptive",
-                                    "log.txt", sep = "/"))
-    if(!file.exists(log.file)){file.create(log.file)}
+    write("", log.file, append = TRUE, ncolumns = 1)
     write(prgrss, log.file, append = TRUE, ncolumns = 1)
 
     # Fit model
@@ -166,11 +166,46 @@ if(!file.exists(paste("social/results/modelcomp_decpayoff/full_nonadaptive", "mo
     ggexport(plotlist = diag.list, width = 1920, height = 1080,
                    filename = paste("social/results/modelcomp_decpayoff/full_nonadaptive/diagnostics",
                                     paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
-
+    
+    # Plot detailed traceplots
+    if(!dir.exists(
+      paste("social/results/modelcomp_decpayoff/full_nonadaptive/diagnostics/detailed",models$name[[mfit]] , sep = "/"))){
+      dir.create(paste("social/results/modelcomp_decpayoff/full_nonadaptive/diagnostics/detailed",models$name[[mfit]] , sep = "/"))
+      }
+    draws = tidy_draws(fit)
+    par.names = names(draws)
+    par.names = par.names[which(! names(draws) %in% c(".chain", ".iteration",".draw", "lp__",
+                                                      "accept_stat__", "stepsize__",    "treedepth__",  "n_leapfrog__",
+                                                      "divergent__",   "energy__"))]
+    par.names = par.names[!grepl("log_lik", par.names)] 
+    for (param in par.names) {
+      tplot <- traceplot(fit, pars = param) + ggtitle(paste("Trace plot for", param))
+      ggsave(paste("social/results/modelcomp_decpayoff/full_nonadaptive/diagnostics/detailed",models$name[[mfit]],  paste0("traceplot_", param, ".png"), sep = "/"), tplot)
+    }
+    
     # Save diagnostics for all parameters
     fit.summary = summary(fit)$summary
     write.csv(fit.summary, file = paste("social/results/modelcomp_decpayoff/full_nonadaptive/diagnostics",
                                     paste(models$name[[mfit]], "diagnostics", "csv",  sep = "."), sep = "/"))
+    
+    # Print core diagnostics to log.txt
+    # Extract effective sample size (ESS) and R-hat values
+    ess <- fit.summary[, "n_eff"]
+    rhat <- fit.summary[, "Rhat"]
+    
+    # Compute the required values
+    num_low_ess <- sum(ess < 150, na.rm = TRUE)
+    num_high_rhat <- sum(rhat > 1.01, na.rm = TRUE)
+    min_ess <- min(ess, na.rm = TRUE)
+    max_rhat <- max(rhat, na.rm = TRUE)
+    
+    # Prepare log message
+    log_message <- sprintf(
+      "Number of parameters with ESS < 150: %d\nNumber of parameters with Rhat > 1.01: %d\nLowest ESS: %.2f\nLargest Rhat: %.3f\n",
+      num_low_ess, num_high_rhat, min_ess, max_rhat
+    )
+    write("", log.file, append = TRUE, ncolumns = 1)
+    write(log_message, log.file, append = TRUE, ncolumns = 1)
     
     # Plot posterior
     draws = tidy_draws(fit) %>% select(names(models$free.pars.pop[[mfit]]))
@@ -208,7 +243,7 @@ if(!file.exists(paste("social/results/modelcomp_decpayoff/full_nonadaptive", "mo
 
 
     # Save to results
-    results[[mfit]] = get(loo.model)
+    results[[models$name[[mfit]]]] = get(loo.model)
     rm(list = loo.model)
     
   }
@@ -217,20 +252,16 @@ if(!file.exists(paste("social/results/modelcomp_decpayoff/full_nonadaptive", "mo
   comparison = loo_compare(results)
   
   # Add model name
-  comparison.rank = rownames(comparison) %>% parse_number()
-  comparison.named = as.data.frame(comparison)
-  comparison.named$modelname = sapply(comparison.rank, function(x) models$name[[x]])
-  
+  comparison = as.data.frame(comparison)
+
   # Note winning model (to reload for parameter recovery)
-  winner = comparison.named %>% filter(row_number() == 1 & elpd_diff == 0) %>% select(modelname) %>% unlist()
-  
+  winner = comparison %>% filter(row_number() == 1 & elpd_diff == 0) %>% rownames() %>% unlist()
   
   # Save Variables
-  save(results, comparison, comparison.named, winner, file = paste("social/results/modelcomp_decpayoff/full_nonadaptive", "modelcomp_decpayoff_full_nonadaptive.Rdata", sep = "/"))
+  save(results, comparison, winner, file = paste("social/results/modelcomp_decpayoff/full_nonadaptive", "modelcomp_decpayoff_full_nonadaptive.Rdata", sep = "/"))
   
   # Save and print comparison
   write.csv(x = comparison, file = paste("social/results/modelcomp_decpayoff/full_nonadaptive", "modelcomp_decpayoff_full_nonadaptive.csv", sep = "/"))
-  write.csv(x = comparison.named, file = paste("social/results/modelcomp_decpayoff/full_nonadaptive", "modelcomp_decpayoff_full_nonadaptive_named.csv", sep = "/"))
   
 }else{
   
@@ -240,7 +271,6 @@ if(!file.exists(paste("social/results/modelcomp_decpayoff/full_nonadaptive", "mo
 }
 
 print(comparison[, ])
-print(comparison.named)
 
 ```
 

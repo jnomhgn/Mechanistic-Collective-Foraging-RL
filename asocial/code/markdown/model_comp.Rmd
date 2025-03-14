@@ -40,6 +40,7 @@ sapply(function.list, source, .GlobalEnv)
 if(!dir.exists("asocial/results")){dir.create("asocial/results")}
 if(!dir.exists("asocial/results/modelcomp")){dir.create("asocial/results/modelcomp")}
 if(!dir.exists("asocial/results/modelcomp/diagnostics")){dir.create("asocial/results/modelcomp/diagnostics")}
+if(!dir.exists("asocial/results/modelcomp/diagnostics/detailed")){dir.create("asocial/results/modelcomp/diagnostics/detailed")}
 ```
 
 ## Experimental data
@@ -83,8 +84,8 @@ Models were fitted with the following settings
 # MCMC 
 chains = 4
 cores = 4
-iter = 2000
-warmup = 1000
+iter = 4000
+warmup = 2000
 refresh = 100
 ```
 
@@ -105,17 +106,16 @@ if(!file.exists("asocial/results/modelcomp/modelcomp.Rdata")){
   # Results list
   results = list()
   
+  # Create log file
+  log.file = paste(paste("asocial/results/modelcomp", "log.txt", sep = "/"))
+  if(!file.exists(log.file)){file.create(log.file)}
+  
   # Loop over models
   for(mfit in 1:length(models$stan.loglik)){
     
-    # Print info about current simulation / fitting to html
-    # Print info about current simulation to html
+    # Print progress to log.txt 
     prgrss = paste("Currently fitting model", models$name[[mfit]])
-  
-  
-    # Write log to text file fot when knitting
-    log.file = paste(paste("asocial/results/modelcomp", "log.txt", sep = "/"))
-    if(!file.exists(log.file)){file.create(log.file)}
+    write("", log.file, append = TRUE, ncolumns = 1)
     write(prgrss, log.file, append = TRUE, ncolumns = 1)
   
     # Fit model
@@ -129,11 +129,47 @@ if(!file.exists("asocial/results/modelcomp/modelcomp.Rdata")){
                    filename = paste("asocial/results/modelcomp/diagnostics",
                                     paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
     
+    # Plot detailed traceplots
+    if(!dir.exists(
+      paste("asocial/results/modelcomp/diagnostics/detailed",models$name[[mfit]] , sep = "/"))){
+      dir.create(paste("asocial/results/modelcomp/diagnostics/detailed",models$name[[mfit]] , sep = "/"))
+      }
+    draws = tidy_draws(fit)
+    par.names = names(draws)
+    par.names = par.names[which(! names(draws) %in% c(".chain", ".iteration",".draw", "lp__",
+                                                      "accept_stat__", "stepsize__",    "treedepth__",  "n_leapfrog__",
+                                                      "divergent__",   "energy__"))]
+    par.names = par.names[!grepl("log_lik", par.names)] 
+    for (param in par.names) {
+      tplot <- traceplot(fit, pars = param) + ggtitle(paste("Trace plot for", param))
+      ggsave(paste("asocial/results/modelcomp/diagnostics/detailed",models$name[[mfit]],  paste0("traceplot_", param, ".png"), sep = "/"), tplot)
+    }
+
+    
+    
     # Save diagnostics for all parameters 
     fit.summary = summary(fit)$summary
     write.csv(fit.summary, file = paste("asocial/results/modelcomp/diagnostics",
                                     paste(models$name[[mfit]], "diagnostics", "csv",  sep = "."), sep = "/"))
     
+    # Print core diagnostics to log.txt
+    # Extract effective sample size (ESS) and R-hat values
+    ess <- fit.summary[, "n_eff"]
+    rhat <- fit.summary[, "Rhat"]
+    
+    # Compute the required values
+    num_low_ess <- sum(ess < 150, na.rm = TRUE)
+    num_high_rhat <- sum(rhat > 1.01, na.rm = TRUE)
+    min_ess <- min(ess, na.rm = TRUE)
+    max_rhat <- max(rhat, na.rm = TRUE)
+    
+    # Prepare log message
+    log_message <- sprintf(
+      "Number of parameters with ESS < 150: %d\nNumber of parameters with Rhat > 1.01: %d\nLowest ESS: %.2f\nLargest Rhat: %.3f\n",
+      num_low_ess, num_high_rhat, min_ess, max_rhat
+    )
+    write("", log.file, append = TRUE, ncolumns = 1)
+    write(log_message, log.file, append = TRUE, ncolumns = 1)
   
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
@@ -157,13 +193,14 @@ if(!file.exists("asocial/results/modelcomp/modelcomp.Rdata")){
     plot(get(loo.model))
     dev.off()
 
+    # Print model comp info to log.txt
     sink(log.file, append = T)
     print(get(loo.model))
     sink()
   
   
     # Save to results
-    results[[mfit]] = get(loo.model)
+    results[[models$name[[mfit]]]] = get(loo.model)
     rm(list = loo.model)
     
   }
@@ -172,21 +209,18 @@ if(!file.exists("asocial/results/modelcomp/modelcomp.Rdata")){
   comparison = loo_compare(results)
   
   # Add model name
-  comparison.rank = rownames(comparison) %>% parse_number()
-  comparison.named = as.data.frame(comparison)
-  comparison.named$modelname = sapply(comparison.rank, function(x) models$name[[x]])
-  
+  comparison = as.data.frame(comparison)
+
   # Note winning model (to reload for parameter recovery)
-  winner = comparison.named %>% filter(row_number() == 1 & elpd_diff == 0) %>% select(modelname) %>% unlist()
+  winner = comparison %>% filter(row_number() == 1 & elpd_diff == 0) %>% rownames() %>% unlist()
   
   
   # Save Variables
-  save(list=c("results", "comparison", "comparison.named", "winner"), file = paste("asocial/results/modelcomp", "modelcomp.Rdata", sep = "/"))
+  save(list=c("results", "comparison", "winner"), file = paste("asocial/results/modelcomp", "modelcomp.Rdata", sep = "/"))
   
   # Save and print comparison
   write.csv(x = comparison, file = paste("asocial/results/modelcomp", "modelcomp.csv", sep = "/"))
-  write.csv(x = comparison.named, file = paste("asocial/results/modelcomp", "modelcompnamed.csv", sep = "/"))
-  
+
 }else{
   
   # Read comparison
@@ -195,7 +229,6 @@ if(!file.exists("asocial/results/modelcomp/modelcomp.Rdata")){
 }
 
 print(comparison[, ])
-print(comparison.named)
 ```
 
 ## Posterior predictions
@@ -227,11 +260,11 @@ env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 
 # Set the winning model / the best, simplest model
 winner = "m4.1"
-winnerindx = which(models$name == winner)
 
 # Index model in list
 models = getmodels(hierarch = F)
 models = lapply(models, function(x) x[which(models$name %in% winner)])
+winnerindx = which(models$name == winner)
 
 # Load fit
 fit = readRDS(paste("asocial/results/modelcomp", paste(winner, "fit", "rds", sep = "."), sep = "/"))
@@ -256,7 +289,7 @@ for(sim in 1:nsim){
 }
 results = bind_rows(results)
 
-# Summarise simulated data
+# Summarise simulated data for accuracy over time
 plot.data = results %>%
   group_by(sim, time, ratio, max) %>% 
   reframe(acc = mean(decision))  %>%
@@ -300,7 +333,24 @@ plot.data %>%
   facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
 
 
-
+# # Simulate for individual accuracy
+# 
+# # Experimental parameters (identical for all simulations)
+# exp.pars = list(
+#   sessions = 18,
+#   trials = 12,
+#   nplayers = 5, # number of players per session
+#   durations.vec = c(75, 90, 105)  # The simulation functions sample trial lengths from this vector (equally) 
+#                                   # and randomly assigns them to the different environments
+# )
+# # Add unique ids for players (rows are sessions)
+# exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
+# test = results %>%
+#   group_by(sim, session, trial, player, ratio.fac, max.fac, duration) %>%
+#   reframe(acc = sum(decision) ) %>%
+#   mutate(acc = acc / (duration + 1)) %>%
+#   group_by(ratio.fac, max.fac) %>%
+#   reframe(acc = mean(acc))
 
 
 ```
