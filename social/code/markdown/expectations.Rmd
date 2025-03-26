@@ -228,27 +228,34 @@ ratio.labs = paste("Yield Ratio", sort(unique(results$rew.acc$ratio)))
 names(ratio.labs) = sort(unique(results$rew.acc$ratio))
 
 facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
-    
-# Individual Accuracy
+  
 plot.data = results$rew.acc %>%
-    group_by(model, alphaS, ratio, max) %>%
-    reframe(acc.mean = mean(acc.mean)) %>%
-    filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
-    group_by(ratio, max) %>%
-    mutate(acc.delta = acc.mean - acc.mean[which(model == "arl.fixed")])
-write.csv(plot.data, file = paste("social", "results", "expectations", "expec_accdiff_lisa.csv", sep = "/"))
+      group_by(sim, ratio, max) %>%
+      mutate(delta = acc.mean - acc.mean[which(model == "arl.fixed")]) %>%
+      # Summarise sampling distribution
+      group_by(model, alphaS, ratio, max) %>%
+      reframe(acc.delta= mean(delta),
+              lower = quantile(delta, probs = .05),
+              upper = quantile(delta, probs = .95))
+
+
+
+write.csv(plot.data, file = paste("social", "results", "expectations", "expec_accdiff.csv", sep = "/"))
 
 # Decision-based DB vs. VS
 p = plot.data %>% filter(model %in% c("dbn1.fixed", "vsn1.fixed")) %>%
-      ggplot(aes(x=alphaS, fill=as.factor(model))) + 
+      ggplot(aes(x=alphaS, fill=as.factor(model), col=as.factor(model))) + 
       labs(y="Individual Accuracy \n") +
       scale_y_continuous(breaks=seq(-0.5, 1, by=.1))+
       scale_x_continuous(name=bquote(paste("\n ", alpha[DBn], " / ", alpha[VSn])), breaks = seq(0, 1, by=.1))+
       scale_fill_viridis(discrete = T, begin = .1, end = .8, 
                          name="Model", labels=c("DBn", "VSn")) +
+      scale_color_viridis(discrete = T, begin = .1, end = .8, 
+                         name="Model", labels=c("DBn", "VSn")) +
       geom_hline(yintercept = 0, lty=2)+
       geom_hline(yintercept = 0.05, lty=2)+
-      geom_point(aes(y=acc.delta), shape=21, size=1) +
+      geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.5)+
+      geom_line(aes(y=acc.delta), lwd=2) +
       theme_linedraw(base_size = 11) +
       theme(text = element_text(size=rel(5)),
             strip.text.x = element_text(size=rel(7)),
@@ -269,15 +276,18 @@ ggexport(p, width = 2800, height = 1440,
 
 # Reward-based DB vs. VS
 p = plot.data %>% filter(model %in% c("dbr1.fixed", "vsr1.fixed")) %>%
-      ggplot(aes(x=alphaS, fill=as.factor(model))) + 
+      ggplot(aes(x=alphaS, fill=as.factor(model), col=as.factor(model))) + 
       labs(y="Individual Accuracy \n") +
       scale_y_continuous(breaks=seq(-0.5, 1, by=.1))+
       scale_x_continuous(name=bquote(paste("\n ", alpha[DBr], " / ", alpha[VSr])), breaks = seq(0, 1, by=.1))+
       scale_fill_viridis(discrete = T, begin = .1, end = .8, 
                          name="Model", labels=c("DBr", "VSr")) +
+      scale_color_viridis(discrete = T, begin = .1, end = .8, 
+                         name="Model", labels=c("DBr", "VSr")) +
       geom_hline(yintercept = 0, lty=2)+
       geom_hline(yintercept = 0.05, lty=2)+
-      geom_point(aes(y=acc.delta), shape=21, size=1) +
+      geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.5)+
+      geom_line(aes(y=acc.delta), lwd=2) +
       theme_linedraw(base_size = 11) +
       theme(text = element_text(size=rel(5)),
             strip.text.x = element_text(size=rel(7)),
