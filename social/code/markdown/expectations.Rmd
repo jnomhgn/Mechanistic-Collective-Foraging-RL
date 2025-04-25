@@ -232,14 +232,31 @@ names(ratio.labs) = sort(unique(results$rew.acc$ratio))
 
 facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
   
+# plot.data = results$rew.acc %>%
+#       group_by(sim, ratio, max) %>%
+#       mutate(delta = acc.mean - acc.mean[which(model == "arl.fixed")]) %>%
+#       # Summarise sampling distribution
+#       group_by(model, alphaS, ratio, max) %>%
+#       reframe(acc.delta= mean(delta),
+#               lower = quantile(delta, probs = .05),
+#               upper = quantile(delta, probs = .95))
 plot.data = results$rew.acc %>%
-      group_by(sim, ratio, max) %>%
-      mutate(delta = acc.mean - acc.mean[which(model == "arl.fixed")]) %>%
-      # Summarise sampling distribution
-      group_by(model, alphaS, ratio, max) %>%
-      reframe(acc.delta= mean(delta),
-              lower = quantile(delta, probs = .05),
-              upper = quantile(delta, probs = .95))
+  group_by(model, alphaS, ratio, max) %>% # Group by model, social learning weight, ratio, and max
+  reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
+  ungroup() %>%
+  group_by(alphaS, ratio, max) %>% # group by social learning weight, ratio, and max
+  #mutate(acc.mean.vec.arl = acc.mean.vec[which(model == "arl.fixed")]) %>% # Put Vector of nsim accuracies for arl in separate column
+  mutate(
+    acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
+  ) %>%
+  rowwise() %>%
+  mutate(
+    pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
+    delta = mean(pairwise),
+    lower = quantile(pairwise, probs = 0.05),
+    upper = quantile(pairwise, probs = 0.95)
+  ) %>%
+  select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise))
 
 
 
@@ -597,15 +614,31 @@ names(ratio.labs) = sort(unique(results$rew.acc$ratio))
 
 facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
   
+# plot.data = results$rew.acc %>%
+#       group_by(sim, ratio, max) %>%
+#       mutate(delta = acc.mean - acc.mean[which(model == "arl.fixed")]) %>%
+#       # Summarise sampling distribution
+#       group_by(model, alphaS, ratio, max) %>%
+#       reframe(acc.delta= mean(delta),
+#               lower = quantile(delta, probs = .05),
+#               upper = quantile(delta, probs = .95))
 plot.data = results$rew.acc %>%
-      group_by(sim, ratio, max) %>%
-      mutate(delta = acc.mean - acc.mean[which(model == "arl.fixed")]) %>%
-      # Summarise sampling distribution
-      group_by(model, alphaS, ratio, max) %>%
-      reframe(acc.delta= mean(delta),
-              lower = quantile(delta, probs = .05),
-              upper = quantile(delta, probs = .95))
-
+  group_by(model, alphaS, ratio, max) %>% # Group by model, social learning weight, ratio, and max
+  reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
+  ungroup() %>%
+  group_by(alphaS, ratio, max) %>% # group by social learning weight, ratio, and max
+  #mutate(acc.mean.vec.arl = acc.mean.vec[which(model == "arl.fixed")]) %>% # Put Vector of nsim accuracies for arl in separate column
+  mutate(
+    acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
+  ) %>%
+  rowwise() %>%
+  mutate(
+    pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
+    delta = mean(pairwise),
+    lower = quantile(pairwise, probs = 0.05),
+    upper = quantile(pairwise, probs = 0.95)
+  ) %>%
+  select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise))
 
 
 write.csv(plot.data, file = paste("social", "results", "expectations", "expec_accdiff_catches.csv", sep = "/"))
