@@ -23,7 +23,7 @@ library(ggdist)
 
 library(brms)
 library(rstan)
-library(cmdstanr)
+#library(cmdstanr)
 library(tidybayes)
 library(bayesplot)
 library(randtoolbox)
@@ -105,19 +105,28 @@ names(max.labs) = sort(unique(d$max.fac))
 
 facet.labeller = labeller(ratio.fac = ratio.labs, max.fac = max.labs)
 
-acc.draws = tidy_draws(acc) %>% dplyr::select(contains(c("b"))) %>%
+acc.draws = tidy_draws(acc)
+write.csv(acc.draws, row.names = F, file = "social/results/behav/acc_draws_wide.csv")
+
+acc.draws = acc.draws %>% dplyr::select(contains(c("b"))) %>%
   #mutate(b_cond1.1.1 = 0) %>%
-  mutate(sample = row_number()) %>%
+  mutate(draw = row_number()) %>%
   #pivot_longer(contains("b_cond"), names_to = "cond", values_to = "condoffset") %>%
   #mutate(post = b_Intercept + condoffset) %>%
-  pivot_longer(-sample, names_to = "cond", values_to = "cond_intercept") %>%
+  pivot_longer(-draw, names_to = "cond", values_to = "cond_intercept") %>%
   #mutate(post = inv_logit_scaled(post)) %>%
-  mutate(cond_intercept = inv_logit_scaled(cond_intercept)) %>%
+  #mutate(cond_intercept = inv_logit_scaled(cond_intercept)) %>%
   mutate(cond = gsub("b_cond", "", cond)) %>%
-  separate(cond, into = c("max.fac", "ratio.fac", "social.fac")) %>%
+  separate(cond, into = c("max.fac", "ratio.fac", "social.fac"))
+write.csv(acc.draws, row.names = F, file = "social/results/behav/acc_draws_long.csv")
+
+
+acc.draws = acc.draws %>% 
+  mutate(cond_intercept = inv_logit_scaled(cond_intercept)) %>%
   group_by(max.fac, ratio.fac, social.fac) %>%
   mean_hdi(cond_intercept, .width = .9) %>%
   mutate(max.fac = factor(max.fac, levels=1:3))
+
 
 d.plot = d %>%
   group_by(session, trial, id, duration, max.fac, ratio.fac, social.fac) %>%
