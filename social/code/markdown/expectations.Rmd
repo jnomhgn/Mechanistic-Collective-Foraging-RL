@@ -240,25 +240,23 @@ facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
 #       reframe(acc.delta= mean(delta),
 #               lower = quantile(delta, probs = .05),
 #               upper = quantile(delta, probs = .95))
-plot.data = results$rew.acc %>%
+plot.data = results$rew.acc %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
   group_by(model, alphaS, ratio, max) %>% # Group by model, social learning weight, ratio, and max
   reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
   ungroup() %>%
-  group_by(alphaS, ratio, max) %>% # group by social learning weight, ratio, and max
-  #mutate(acc.mean.vec.arl = acc.mean.vec[which(model == "arl.fixed")]) %>% # Put Vector of nsim accuracies for arl in separate column
+  group_by(ratio, max) %>%
   mutate(
     acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
   ) %>%
+  ungroup() %>%
   rowwise() %>%
   mutate(
     pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
-    delta = mean(pairwise),
+    acc.delta = mean(pairwise),
     lower = quantile(pairwise, probs = 0.05),
     upper = quantile(pairwise, probs = 0.95)
   ) %>%
   select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise))
-
-
 
 write.csv(plot.data, file = paste("social", "results", "expectations", "expec_accdiff_nocatches.csv", sep = "/"))
 
@@ -295,12 +293,21 @@ ggexport(p, width = 2800, height = 1440,
          filename = "social/results/expectations/acc_dbn_vsn.jpeg")
 
 # Individual Accuracy over time
-plot.data = results$acc.time %>%
-  group_by(model, alphaS, ratio, max, time) %>%
-  reframe(acc.mean = mean(frac.corr)) %>%
-  filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
+plot.data = results$acc.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+  group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
+  reframe(acc.mean.vec = list(frac.corr[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
+  ungroup() %>%
   group_by(ratio, max, time) %>%
-  mutate(acc.delta = acc.mean - acc.mean[which(model == "arl.fixed")])
+  mutate(
+    acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
+  ) %>%
+  ungroup() %>%
+  rowwise() %>%
+  mutate(
+    pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
+    acc.delta = mean(pairwise)
+  ) %>%
+  select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise))
 
 # plot.data = results$acc.time %>%
 #   group_by(model, alphaS, ratio, max, time) %>%
@@ -377,12 +384,29 @@ ggexport(p, width = 2800, height = 1440,
 #   group_by(model, ratio, max, time) %>%
 #   mutate(delta.mean = switch.frac.mean - switch.frac.mean[which(alphaS == 0)])
 
-plot.data = results$switches.time %>%
-  group_by(model, alphaS, ratio, max, time) %>%
-  reframe(switch.mean = mean(switch.frac)) %>%
-  filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
+plot.data = results$switches.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+  group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
+  reframe(switch.mean.vec = list(switch.frac[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
+  ungroup() %>%
   group_by(ratio, max, time) %>%
-  mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
+  mutate(
+    switch.mean.vec.arl = list(switch.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
+  ) %>%
+  ungroup() %>%
+  rowwise() %>%
+  mutate(
+    pairwise = list(as.vector(outer(switch.mean.vec, switch.mean.vec.arl, "-"))), # Compute pairwise differences
+    switch.delta = mean(pairwise)
+  ) %>%
+  select(-c(switch.mean.vec, switch.mean.vec.arl, pairwise))
+
+
+# plot.data = results$switches.time %>%
+#   group_by(model, alphaS, ratio, max, time) %>%
+#   reframe(switch.mean = mean(switch.frac)) %>%
+#   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
+#   group_by(ratio, max, time) %>%
+#   mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
 
 write.csv(plot.data, file = paste("social", "results", "expectations", "expec_switchtimediff_nocatches.csv", sep = "/"))
     
@@ -622,19 +646,19 @@ facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
 #       reframe(acc.delta= mean(delta),
 #               lower = quantile(delta, probs = .05),
 #               upper = quantile(delta, probs = .95))
-plot.data = results$rew.acc %>%
+plot.data = results$rew.acc %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
   group_by(model, alphaS, ratio, max) %>% # Group by model, social learning weight, ratio, and max
   reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
   ungroup() %>%
-  group_by(alphaS, ratio, max) %>% # group by social learning weight, ratio, and max
-  #mutate(acc.mean.vec.arl = acc.mean.vec[which(model == "arl.fixed")]) %>% # Put Vector of nsim accuracies for arl in separate column
+  group_by(ratio, max) %>%
   mutate(
     acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
   ) %>%
+  ungroup() %>%
   rowwise() %>%
   mutate(
     pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
-    delta = mean(pairwise),
+    acc.delta = mean(pairwise),
     lower = quantile(pairwise, probs = 0.05),
     upper = quantile(pairwise, probs = 0.95)
   ) %>%
@@ -676,18 +700,28 @@ ggexport(p, width = 2800, height = 1440,
          filename = "social/results/expectations/acc_dbr_vsr.jpeg")
 
 # Individual Accuracy over time
-plot.data = results$acc.time %>%
-  group_by(model, alphaS, ratio, max, time) %>%
-  reframe(acc.mean = mean(frac.corr)) %>%
-  filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
-  group_by(ratio, max, time) %>%
-  mutate(acc.delta = acc.mean - acc.mean[which(model == "arl.fixed")])
-
 # plot.data = results$acc.time %>%
 #   group_by(model, alphaS, ratio, max, time) %>%
-#   reframe(frac.corr.mean = mean(frac.corr)) %>%
-#   group_by(model, ratio, max, time) %>%
-#   mutate(delta.mean = frac.corr.mean - frac.corr.mean[which(alphaS == 0)])
+#   reframe(acc.mean = mean(frac.corr)) %>%
+#   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
+#   group_by(ratio, max, time) %>%
+#   mutate(acc.delta = acc.mean - acc.mean[which(model == "arl.fixed")])
+plot.data = results$acc.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+  group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
+  reframe(acc.mean.vec = list(frac.corr[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
+  ungroup() %>%
+  group_by(ratio, max, time) %>%
+  mutate(
+    acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
+  ) %>%
+  ungroup() %>%
+  rowwise() %>%
+  mutate(
+    pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
+    acc.delta = mean(pairwise)
+  ) %>%
+  select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise))
+
 
 write.csv(plot.data, file = paste("social", "results", "expectations", "expec_acctimediff_catches.csv", sep = "/"))
     
@@ -755,16 +789,26 @@ ggexport(p, width = 2800, height = 1440,
 # Switch-rate over time
 # plot.data = results$switches.time %>%
 #   group_by(model, alphaS, ratio, max, time) %>%
-#   reframe(switch.frac.mean = mean(switch.frac)) %>%
-#   group_by(model, ratio, max, time) %>%
-#   mutate(delta.mean = switch.frac.mean - switch.frac.mean[which(alphaS == 0)])
-
-plot.data = results$switches.time %>%
-  group_by(model, alphaS, ratio, max, time) %>%
-  reframe(switch.mean = mean(switch.frac)) %>%
-  filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
+#   reframe(switch.mean = mean(switch.frac)) %>%
+#   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
+#   group_by(ratio, max, time) %>%
+#   mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
+plot.data = results$switches.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+  group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
+  reframe(switch.mean.vec = list(switch.frac[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
+  ungroup() %>%
   group_by(ratio, max, time) %>%
-  mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
+  mutate(
+    switch.mean.vec.arl = list(switch.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
+  ) %>%
+  ungroup() %>%
+  rowwise() %>%
+  mutate(
+    pairwise = list(as.vector(outer(switch.mean.vec, switch.mean.vec.arl, "-"))), # Compute pairwise differences
+    switch.delta = mean(pairwise)
+  ) %>%
+  select(-c(switch.mean.vec, switch.mean.vec.arl, pairwise))
+
 
 write.csv(plot.data, file = paste("social", "results", "expectations", "expec_switchtimediff_catches.csv", sep = "/"))
     
@@ -820,7 +864,41 @@ p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
 ggexport(p, width = 2800, height = 1440, 
          filename = "social/results/expectations/switchtime_dbr_vsr.jpeg")
 
-    
+```
+
+## Merge Data
+```{r, merge-data, echo=TRUE}
+
+# Accuracy
+expec_accdiff_nocatches = read.csv(paste("social", "results", "expectations","expec_accdiff_nocatches.csv", sep = "/" )) %>%
+  filter(model != "arl.fixed") %>% select(-c(X))
+expec_accdiff_catches =  read.csv(paste("social", "results", "expectations","expec_accdiff_catches.csv", sep = "/" ))%>%
+  filter(model != "arl.fixed") %>% select(-c(X))
+
+expec_accdiff = rbind(expec_accdiff_nocatches, expec_accdiff_catches) 
+write.csv(expec_accdiff, row.names = F,
+          file = paste("social", "results", "expectations","expec_accdiff.csv", sep = "/" ))
+
+# Accuracy over time
+expec_acctimediff_nocatches = read.csv(paste("social", "results", "expectations","expec_acctimediff_nocatches.csv", sep = "/" )) %>%
+  filter(model != "arl.fixed") %>% select(-c(X))
+expec_acctimediff_catches =  read.csv(paste("social", "results", "expectations","expec_acctimediff_catches.csv", sep = "/" ))%>%
+  filter(model != "arl.fixed") %>% select(-c(X))
+
+expec_acctimediff = rbind(expec_acctimediff_nocatches, expec_acctimediff_catches) 
+write.csv(expec_acctimediff, row.names = F,
+          file = paste("social", "results", "expectations","expec_acctimediff.csv", sep = "/" ))
+
+# Switch rate over time
+# Accuracy over time
+expec_switchtimediff_nocatches = read.csv(paste("social", "results", "expectations","expec_switchtimediff_nocatches.csv", sep = "/" )) %>%
+  filter(model != "arl.fixed") %>% select(-c(X))
+expec_switchtimediff_catches =  read.csv(paste("social", "results", "expectations","expec_switchtimediff_catches.csv", sep = "/" ))%>%
+  filter(model != "arl.fixed") %>% select(-c(X))
+
+expec_switchtimediff = rbind(expec_switchtimediff_nocatches, expec_switchtimediff_catches) 
+write.csv(expec_switchtimediff, row.names = F,
+          file = paste("social", "results", "expectations","expec_switchtimediff.csv", sep = "/" ))
 ```
 
 <!-- ## Models with 2 social learning parameter but only db or vs (dbndbr, vsnvsr) -->
