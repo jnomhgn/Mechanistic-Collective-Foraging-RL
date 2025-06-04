@@ -5,9 +5,14 @@
 
 data/
 
-asocial/results/
+behavioral/results
 
-social/results/
+rl/alone/results/
+rl/nocatches/results/
+rl/catches/results/
+
+asocial/results
+social/results
 
 *.rds
 *png
