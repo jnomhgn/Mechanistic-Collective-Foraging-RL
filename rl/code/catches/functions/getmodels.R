@@ -36,32 +36,32 @@ getmodels <- function(hierarch=FALSE){
       
       # Without gq for loglik
       stan = list(
-        "social/code/stan/arl.fixed.stan",
-        "social/code/stan/dbn1.fixed.stan",
-        "social/code/stan/dbn2.fixed.stan",
-        "social/code/stan/vsn1.fixed.stan",
-        "social/code/stan/vsn2.fixed.stan",
-        "social/code/stan/dbr1.fixed.stan",
-        "social/code/stan/vsr1.fixed.stan",
-        "social/code/stan/dbnvsr1.fixed.stan",
-        "social/code/stan/vsndbr1.fixed.stan",
-        "social/code/stan/vsnvsr1.fixed.stan",
-        "social/code/stan/dbndbr1.fixed.stan"
+        "rl/code/catches/stan/arl.fixed.stan",
+        "rl/code/catches/stan/dbn1.fixed.stan",
+        "rl/code/catches/stan/dbn2.fixed.stan",
+        "rl/code/catches/stan/vsn1.fixed.stan",
+        "rl/code/catches/stan/vsn2.fixed.stan",
+        "rl/code/catches/stan/dbr1.fixed.stan",
+        "rl/code/catches/stan/vsr1.fixed.stan",
+        "rl/code/catches/stan/dbnvsr1.fixed.stan",
+        "rl/code/catches/stan/vsndbr1.fixed.stan",
+        "rl/code/catches/stan/vsnvsr1.fixed.stan",
+        "rl/code/catches/stan/dbndbr1.fixed.stan"
         
       ),
       # With gq for loglik
       stan.loglik = list(
-        "social/code/stan/arl.fixed.ll.stan",
-        "social/code/stan/dbn1.fixed.ll.stan",
-        "social/code/stan/dbn2.fixed.ll.stan",
-        "social/code/stan/vsn1.fixed.ll.stan",
-        "social/code/stan/vsn2.fixed.ll.stan",
-        "social/code/stan/dbr1.fixed.ll.stan",
-        "social/code/stan/vsr1.fixed.ll.stan",
-        "social/code/stan/dbnvsr1.fixed.ll.stan",
-        "social/code/stan/vsndbr1.fixed.ll.stan",
-        "social/code/stan/vsnvsr1.fixed.ll.stan",
-        "social/code/stan/dbndbr1.fixed.ll.stan"
+        "rl/code/catches/stan/arl.fixed.ll.stan",
+        "rl/code/catches/stan/dbn1.fixed.ll.stan",
+        "rl/code/catches/stan/dbn2.fixed.ll.stan",
+        "rl/code/catches/stan/vsn1.fixed.ll.stan",
+        "rl/code/catches/stan/vsn2.fixed.ll.stan",
+        "rl/code/catches/stan/dbr1.fixed.ll.stan",
+        "rl/code/catches/stan/vsr1.fixed.ll.stan",
+        "rl/code/catches/stan/dbnvsr1.fixed.ll.stan",
+        "rl/code/catches/stan/vsndbr1.fixed.ll.stan",
+        "rl/code/catches/stan/vsnvsr1.fixed.ll.stan",
+        "rl/code/catches/stan/dbndbr1.fixed.ll.stan"
       ),
       
       # Fixed parameters
@@ -408,33 +408,33 @@ getmodels <- function(hierarch=FALSE){
       
       # Without gq for loglik
       stan = list(
-        "social/code/stan/arl.hierarch.stan",
-        "social/code/stan/dbn1.hierarch.stan",
-        "social/code/stan/dbn2.hierarch.stan",
-        "social/code/stan/vsn1.hierarch.stan",
-        "social/code/stan/vsn2.hierarch.stan",
-        "social/code/stan/dbr1.hierarch.stan",
-        "social/code/stan/vsr1.hierarch.stan",
-        "social/code/stan/dbnvsr1.hierarch.stan",
-        "social/code/stan/vsndbr1.hierarch.stan",
-        "social/code/stan/vsnvsr1.hierarch.stan",
-        "social/code/stan/dbndbr1.hierarch.stan"
+        "rl/code/catches/stan/arl.hierarch.stan",
+        "rl/code/catches/stan/dbn1.hierarch.stan",
+        "rl/code/catches/stan/dbn2.hierarch.stan",
+        "rl/code/catches/stan/vsn1.hierarch.stan",
+        "rl/code/catches/stan/vsn2.hierarch.stan",
+        "rl/code/catches/stan/dbr1.hierarch.stan",
+        "rl/code/catches/stan/vsr1.hierarch.stan",
+        "rl/code/catches/stan/dbnvsr1.hierarch.stan",
+        "rl/code/catches/stan/vsndbr1.hierarch.stan",
+        "rl/code/catches/stan/vsnvsr1.hierarch.stan",
+        "rl/code/catches/stan/dbndbr1.hierarch.stan"
         
         
       ),
       # With gq for loglik
       stan.loglik = list(
-        "social/code/stan/arl.hierarch.ll.stan",
-        "social/code/stan/dbn1.hierarch.ll.stan",
-        "social/code/stan/dbn2.hierarch.ll.stan",
-        "social/code/stan/vsn1.hierarch.ll.stan",
-        "social/code/stan/vsn2.hierarch.ll.stan",
-        "social/code/stan/dbr1.hierarch.ll.stan",
-        "social/code/stan/vsr1.hierarch.ll.stan",
-        "social/code/stan/dbnvsr1.hierarch.ll.stan",
-        "social/code/stan/vsndbr1.hierarch.ll.stan",
-        "social/code/stan/vsnvsr1.hierarch.ll.stan",
-        "social/code/stan/dbndbr1.hierarch.ll.stan"
+        "rl/code/catches/stan/arl.hierarch.ll.stan",
+        "rl/code/catches/stan/dbn1.hierarch.ll.stan",
+        "rl/code/catches/stan/dbn2.hierarch.ll.stan",
+        "rl/code/catches/stan/vsn1.hierarch.ll.stan",
+        "rl/code/catches/stan/vsn2.hierarch.ll.stan",
+        "rl/code/catches/stan/dbr1.hierarch.ll.stan",
+        "rl/code/catches/stan/vsr1.hierarch.ll.stan",
+        "rl/code/catches/stan/dbnvsr1.hierarch.ll.stan",
+        "rl/code/catches/stan/vsndbr1.hierarch.ll.stan",
+        "rl/code/catches/stan/vsnvsr1.hierarch.ll.stan",
+        "rl/code/catches/stan/dbndbr1.hierarch.ll.stan"
       ),
       
       # Fixed parameters
