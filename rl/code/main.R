@@ -58,5 +58,12 @@ rm(list = ls())
 source("rl/code/catches/analyses/parrecov.R")
 rm(list = ls())
 
+#### Create figures ####
 
+# Set path to virtual environment
+use_condaenv("/path/to/anaconda/venvironment")
 
+# Plot figures
+source_python("rl/code/figures/RLFit.py")
+source_python("rl/code/figures/RLSimu.py")
+source_python("rl/code/figures/RLsimuSupp.py")
