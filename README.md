@@ -9,6 +9,9 @@ This repository contains the full data and scripts to reproduce all analyses and
 ## Behavioral Analyses
 "behavioral.R" runs the Bayesian logistic regression predicting players’ probability to forage at the better lake while accounting for individual- and group-level heterogeneity.
 
+## Bayesian Foragers
+"BayesianForager.R" runs the simulations for the optional Bayesian foragers and calls the "Bayesian.py" script which creates the plot.
+
 ## Reinforcement Learning
 "main.R" sources the analyses conducted for each social-information condition.
 
