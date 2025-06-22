@@ -304,6 +304,7 @@ plot.data = results %>%
   mutate(lower = mu - se, upper = mu + se)
 
 write.csv(plot.data, file = paste(resultsdir, "nonadaptive", "postpredict_acctime.csv", sep = "/"))
+write.csv(plot.data, file = paste("rl/results/figures", "postpredict_catches.csv", sep = "/"))
 
 # Plot posterior means + hdis 
 ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
