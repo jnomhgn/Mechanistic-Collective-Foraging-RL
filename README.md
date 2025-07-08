@@ -115,4 +115,13 @@ This repository contains the full data and scripts to reproduce all analyses and
 - "getmodels.R" is sourced during analysis and provides information with regards to the parameters contained in each model as well as the paths to the corresponding simulation functions and stan model code.
 
 
+### Figures
+
+- "RLfit.py": plots the fits of the RL models of Figs 3, 5 and 7 (alone, no catches, and catches conditions)
+
+- "RLsimu.py": plots the differences of mean accuracy as a function of social weights of Figs 4 and 6 
+
+- "RLsimuSupp.py": plots the differences of accuracy and switch rate as a function of time for the supplementary figures
+
+
 ## Drift-Diffusion Models
