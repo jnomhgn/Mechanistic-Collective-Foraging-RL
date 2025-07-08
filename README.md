@@ -128,3 +128,30 @@ This repository contains the full data and scripts to reproduce all analyses and
 
 
 ## Drift-Diffusion Models
+
+### In all folders
+- NumSimu.py : simulates the DDM equations
+
+### Fig1_and_2
+- Fig1.py : generates the DDM plot of Fig 1 (c)
+- Fig2.py : generates Fig 2
+
+### data_analysis
+- ExpAccuracy.py : extracts accuracy as a function of time from the empirical data (alone, no catches, and catches conditions)
+- PlotExpFig.py : plots empirical accuracy as a function of time (alone, no catches, and catches conditions)
+
+### alone
+- FitSoloparam.py : infers the parameters to fit the empirical data 
+- PlotFit1.py : plots the simulated accuracy with the inferred parameters as a fonction of time of Fig 3
+
+### nocatches
+- Fit2param.py : infers the parameters to fit the empirical data 
+- PlotFit2.py : plots the simulated accuracy with the inferred parameters as a fonction of time of Fig 5
+- SimuSocial2.py : simulates the DDM for different social weights values
+- DDMsimu_plot.py : plots the differences of mean accuracy as a function of social weights of Fig 4, and the differences of accuracy and switch rate as a function of time of the supplementary figures
+
+### catches
+- Fit3param.py : infers the parameters to fit the empirical data 
+- PlotFit3.py : plots the simulated accuracy with the inferred parameters as a fonction of time of Fig 7
+- SimuSocial3.py : simulates the DDM for different social weights values
+- DDMsimu_plot.py : plots the differences of mean accuracy as a function of social weights of Fig 6, and the differences of accuracy and switch rate as a function of time of the supplementary figures
