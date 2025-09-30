@@ -197,7 +197,7 @@ dat %>%
   filter(events.per.time > 1)
 
 # Remove the glitch where there were three events per time step
-dat = dat[-which(dat$session == 16 & dat$trial == 7 & dat$player == 1 & dat$time.rounded == 64 & dat$catch == 0), ] 
+dat = dat[-which(dat$session == 5 & dat$trial == 7 & dat$player == 1 & dat$time.rounded == 64 & dat$catch == 0), ] 
 
 
 # Create Discrete Time Time-Series 
@@ -228,62 +228,3 @@ dat.discrete = dat.discrete %>%
 
 # Save discrete timeseries
 write.csv(dat.discrete, file = paste(resultsdir, 'data_discrete_1s.csv', sep = "/"))
-
-#### Get participant data ####
-
-files <- list.files(path = "data", pattern = "session")
-
-# All demographics
-dems.total = list()
-
-# Loop over files
-for(file in files){
-  
-  # Get session
-  session = as.numeric(str_match(file, "(?<=session).*"))
-  
-  # Read in demographics
-  dems = read.csv(paste("data", file, "dems.csv", sep="/"), sep = ";") %>% select(-X)
-  
-  dems = dems %>% 
-    pivot_longer(everything(), names_to = "var", values_to = "val", values_transform = as.character) %>%
-    separate(var, into = c("discard", "player", "var")) %>%
-    select(-discard) %>%
-    pivot_wider(names_from = var, values_from = val) %>%
-    mutate(age = as.numeric(age)) %>%
-    cbind(session = session)
-  
-  dems.total = append(dems.total, list(dems))
-  
-}
-
-dems.total = bind_rows(dems.total)
-
-# Save
-write.csv(x = dems.total, file = paste(resultsdir, "demographics.csv", sep = "/" ))
-
-# Min age
-min(dems.total$age)
-
-# Max age
-max(dems.total$age)
-
-# Sample mean
-mean(dems.total$age)
-
-# Sample sd
-sqrt(sum((dems.total$age - mean(dems.total$age))^2) / nrow(dems.total))
-
-# Gender distribution
-dems.total %>%
-  mutate(gender = ifelse(gender %in% c("m", "M", "männlich", "Männlich", "mänlich", "mänllich"), "m", gender)) %>%
-  mutate(gender = ifelse(gender %in% c("W", "w", "weiblich", "Weiblich"), "w", gender)) %>%
-  mutate(gender = ifelse(gender %in% c("nicht binär"), "n", gender)) %>%
-  group_by(gender) %>% count()
-
-# Pay
-d = read.csv(paste(resultsdir, "data_long.csv", sep = "/")) %>% 
-  group_by(session, player) %>% filter(score == max(score)) %>% distinct(score)
-
-mean(d$score) * 0.01
-sqrt(sum((d$score - mean(d$score))^2) / length(d$score)) * 0.01
