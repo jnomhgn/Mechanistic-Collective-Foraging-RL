@@ -1,10 +1,10 @@
 
 #Optimal Asocial foraging: Bayesian Inference simulations
-
 library(reticulate)
+use_condaenv("test") # Make sure to change
 
 # Create results directories
-setwd("/mnt/home/marienhagen/Users/MarienhagenJonathan/rlforaging") # Make sure to change
+getwd()
 if(!dir.exists("bayesianforager/results")){dir.create("bayesianforager/results")}
 resultsdir = "bayesianforager/results"
 
@@ -163,7 +163,3 @@ mean_accuracies <- np$array(mean_accuracies)
 np$save(file.path(resultsdir, "mean_accuracies") , mean_accuracies)
 accuracies_time <- np$array(accuracies_time)
 np$save(file.path(resultsdir, "accuracies_time") , accuracies_time)
-
-# Create plots
-use_condaenv("/path/to/anaconda/venvironment") # Make sure to change
-source_python("bayesianforager/code/Bayesian.py")

@@ -5,11 +5,10 @@
 
 
 behavioral/results
-rl/results
 bayesianforager/results
+rl/results
+figures/results
 
-asocial/results
-social/results
 
 **/__pycache__
 /ddm/**/*.csv

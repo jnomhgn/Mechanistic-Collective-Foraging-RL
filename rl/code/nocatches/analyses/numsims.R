@@ -224,7 +224,7 @@ plot.data = results$rew.acc %>% filter(model != "arl.fixed" | alphaS == 0) %>% #
   ) %>%
   select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise))
 
-write.csv(plot.data, file = paste(resultsdir, "numsims_accdiff.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "accdiff.csv", sep = "/"))
 
 # Decision-based DB vs. VS
 p = plot.data %>% filter(model %in% c("dbn1.fixed", "vsn1.fixed")) %>%
@@ -256,7 +256,7 @@ p = plot.data %>% filter(model %in% c("dbn1.fixed", "vsn1.fixed")) %>%
 p
 #plot.list =  append(plot.list, list(p))
 ggexport(p, width = 2800, height = 1440,
-         filename = paste(resultsdir, "acc_dbn_vsn.jpeg", sep = "/"))
+         filename = paste(resultsdir, "accdiff.jpeg", sep = "/"))
 
 # Individual Accuracy over time
 plot.data = results$acc.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
@@ -281,7 +281,7 @@ plot.data = results$acc.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% 
 #   group_by(model, ratio, max, time) %>%
 #   mutate(delta.mean = frac.corr.mean - frac.corr.mean[which(alphaS == 0)])
 
-write.csv(plot.data, file = paste(resultsdir, "numsims_acctimediff.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "acctimediff.csv", sep = "/"))
 
 # Decision-based DB vs. VS
 p1=plot.data %>% filter(model == "dbn1.fixed") %>%
@@ -341,7 +341,7 @@ p2
 p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
               labels = c("a", "b"), font.label = list(size=rel(30)))
 ggexport(p, width = 2800, height = 1440,
-         filename = paste(resultsdir, "acctime_dbn_vsn.jpeg", sep = "/"))
+         filename = paste(resultsdir, "acctimediff.jpeg", sep = "/"))
 
 # Switch-rate over time
 # plot.data = results$switches.time %>%
@@ -374,7 +374,7 @@ plot.data = results$switches.time %>% filter(model != "arl.fixed" | alphaS == 0)
 #   group_by(ratio, max, time) %>%
 #   mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
 
-write.csv(plot.data, file = paste(resultsdir, "numsims_switchtimediff.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "switchtimediff.csv", sep = "/"))
 
 # Decision-based DB vs. VS
 p1 = plot.data %>% filter(model == "dbn1.fixed") %>%
@@ -426,5 +426,5 @@ p2
 p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
               labels = c("a", "b"), font.label = list(size=rel(30)))
 ggexport(p, width = 2800, height = 1440,
-         filename = paste(resultsdir, "switchtime_dbn_vsn.jpeg", sep = "/"))
+         filename = paste(resultsdir, "switchtimediff.jpeg", sep = "/"))
 

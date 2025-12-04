@@ -258,7 +258,7 @@ plot.data = results %>%
   mutate(lower = mu - se, upper = mu + se)
 
 write.csv(plot.data, file = paste("rl/results/alone/modelcomp", "postpredict_acctime.csv", sep = "/"))
-write.csv(plot.data, file = paste("rl/results/figures", "postpredict_alone.csv", sep = "/"))
+write.csv(plot.data, file = paste("rl/results/alone/modelcomp", "postpredict_alone.csv", sep = "/"))
 
 # Plot posterior means + hdis
 ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))

@@ -1,5 +1,4 @@
 #### Setup #### 
-setwd("/mnt/home/marienhagen/Users/MarienhagenJonathan/rlforaging")
 datadir = "data/raw"
 resultsdir = "data/processed"
 
@@ -104,15 +103,15 @@ dat = dat %>%
 # Determine patch residence times. When entering a new lake, compute difference
 # in time to when entering the previous lake, and associate it with previous
 # lake
-# prt = dat %>%
-#   group_by(session, trial, player) %>% arrange(time) %>%
-#   mutate(switch.time = ifelse(time == 0 | time == max(time), time, 
-#                               ifelse(lead(entry == 1), lead(time), NA))) %>%
-#   drop_na(switch.time) %>%
-#   mutate(prt = switch.time - lag(switch.time)) %>%
-#   select(-switch.time)
-# 
-# dat = merge(dat, prt, by = intersect(names(dat), names(prt)), all = T)
+prt = dat %>%
+  group_by(session, trial, player) %>% arrange(time) %>%
+  mutate(switch.time = ifelse(time == 0 | time == max(time), time, 
+                              ifelse(lead(entry == 1), lead(time), NA))) %>%
+  drop_na(switch.time) %>%
+  mutate(prt = switch.time - lag(switch.time)) %>%
+  select(-switch.time)
+
+dat = merge(dat, prt, by = intersect(names(dat), names(prt)), all = T)
 
 # Save
 write.csv(dat, file = paste(resultsdir, 'data_long.csv', sep = "/"))
