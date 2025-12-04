@@ -10,7 +10,6 @@ if(!dir.exists("rl/results/figures")){dir.create("rl/results/figures")}
 if(!dir.exists("rl/results/catches")){dir.create("rl/results/catches")}
 if(!dir.exists("rl/results/catches/numsims")){dir.create("rl/results/catches/numsims")}
 resultsdir = "rl/results/catches/numsims"
-figdir = "rl/results/figures"
 
 #### Prepare simulations ####
 
@@ -227,14 +226,14 @@ plot.data.c = results$rew.acc %>% filter(model != "arl.fixed" | alphaS == 0) %>%
   ) %>%
   select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise)) %>%
   filter(model != "arl.fixed")
-write.csv(plot.data.c, file = paste(resultsdir, "numsims_accdiff.csv", sep = "/"))
+write.csv(plot.data.c, file = paste(resultsdir, "accdiff.csv", sep = "/"))
 
 
 # Merge data
-plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "numsims_accdiff.csv")) %>%
+plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "accdiff.csv")) %>%
   filter(model != "arl.fixed") %>% select(-c(X))
 plot.data = rbind(plot.data.nc, plot.data.c)
-write.csv(plot.data, file = paste(figdir, "numsims_accdiff.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "accdiff.csv", sep = "/"))
 
 
 # Reward-based DB vs. VS
@@ -267,7 +266,7 @@ p = plot.data.c %>% filter(model %in% c("dbr1.fixed", "vsr1.fixed")) %>%
 p
 #plot.list =  append(plot.list, list(p))
 ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "acc_dbr_vsr.jpeg", sep = "/"))
+         filename = paste(resultsdir, "accdiff.jpeg", sep = "/"))
 
 # Individual Accuracy over time
 # plot.data = results$acc.time %>%
@@ -294,14 +293,14 @@ plot.data.c = results$acc.time %>% filter(model != "arl.fixed" | alphaS == 0) %>
   filter(model != "arl.fixed")
 
 
-write.csv(plot.data.c, file = paste(resultsdir, "numsims_acctimediff.csv", sep = "/"))
+write.csv(plot.data.c, file = paste(resultsdir, "acctimediff.csv", sep = "/"))
 
 
 # Merge data
-plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "numsims_acctimediff.csv")) %>%
+plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "acctimediff.csv")) %>%
   filter(model != "arl.fixed") %>% select(-c(X))
 plot.data = rbind(plot.data.nc, plot.data.c)
-write.csv(plot.data, file = paste(figdir, "numsims_acctimediff.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "acctimediff.csv", sep = "/"))
 
 # Reward-based DB vs. VS
 p1=plot.data.c %>% filter(model == "dbr1.fixed") %>%
@@ -362,7 +361,7 @@ p2
 p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
               labels = c("a", "b"), font.label = list(size=rel(30)))
 ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "acctime_dbr_vsr.jpeg", sep = "/"))
+         filename = paste(resultsdir, "acctimediff.jpeg", sep = "/"))
 
 # Switch-rate over time
 # plot.data = results$switches.time %>%
@@ -389,13 +388,13 @@ plot.data.c = results$switches.time %>% filter(model != "arl.fixed" | alphaS == 
   filter(model != "arl.fixed")
 
 
-write.csv(plot.data.c, file = paste(resultsdir, "numsims_switchtimediff.csv", sep = "/"))
+write.csv(plot.data.c, file = paste(resultsdir, "switchtimediff.csv", sep = "/"))
 
 # Merge data
-plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "numsims_switchtimediff.csv")) %>%
+plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "switchtimediff.csv")) %>%
   filter(model != "arl.fixed") %>% select(-c(X))
 plot.data = rbind(plot.data.nc, plot.data.c)
-write.csv(plot.data, file = paste(figdir, "numsims_switchtimediff.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "switchtimediff.csv", sep = "/"))
 
 # Reward-based DB vs. VS
 p1 = plot.data.c %>% filter(model == "dbr1.fixed") %>%
@@ -447,4 +446,4 @@ p2
 p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
               labels = c("a", "b"), font.label = list(size=rel(30)))
 ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "switchtime_dbr_vsr.jpeg", sep = "/"))
+         filename = paste(resultsdir, "switchtimediff.jpeg", sep = "/"))

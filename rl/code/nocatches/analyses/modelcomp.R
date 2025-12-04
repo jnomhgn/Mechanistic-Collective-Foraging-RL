@@ -192,7 +192,7 @@ if(!file.exists(paste(resultsdir, "nonadaptive", "modelcomp.Rdata", sep = "/")))
     
     # Save diagnostics
     jpeg(paste(resultsdir, "nonadaptive", "diagnostics", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"))
-    plot(get(loo.model))
+    plot(get(loo.model))    
     dev.off()
     
     sink(log.file, append = T)
@@ -297,7 +297,6 @@ plot.data = results %>%
   mutate(lower = mu - se, upper = mu + se)
 
 write.csv(plot.data, file = paste(resultsdir, "nonadaptive", "postpredict_acctime.csv", sep = "/"))
-write.csv(plot.data, file = paste("rl/results/figures", "postpredict_nocatches.csv", sep = "/"))
 
 # Plot posterior means + hdis 
 ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
@@ -397,7 +396,7 @@ plot.data.alone = read.csv(file = paste(resultsdir, "../..", "alone", "modelcomp
 
 plot.data = bind_rows(plot.data.alone, plot.data.nocatch)
 
-write.csv(plot.data.nocatch, file = paste(resultsdir, "nonadaptive", "postpredict_acc.csv", sep="/"), row.names = F)
+write.csv(plot.data, file = paste(resultsdir, "nonadaptive", "postpredict_acc.csv", sep="/"), row.names = F)
 
 # Plot posterior means + hdis 
 ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
