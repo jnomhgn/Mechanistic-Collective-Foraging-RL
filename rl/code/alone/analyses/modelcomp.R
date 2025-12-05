@@ -79,8 +79,10 @@ if(!file.exists("rl/results/alone/modelcomp/modelcomp.Rdata")){
     write(prgrss, log.file, append = TRUE, ncolumns = 1)
 
     # Fit model
+    sink(log.file, append = T)
     fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
                    chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+    sink()
     saveRDS(fit, paste("rl/results/alone/modelcomp", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
 
     # Plot some diagnostics for population means
