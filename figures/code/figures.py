@@ -98,7 +98,7 @@ legend_labels = []
 for map_idx, map_val in enumerate(co_map):
     color = co[map_idx]
     # Create a patch handle using fill (invisible, just for legend)
-    patch = ax[0, 0].fill(np.NaN, np.NaN, color, alpha=0.1)[0]
+    patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.1)[0]
     # Create a line handle using plot (invisible, just for legend)
     line = ax[0, 0].plot([], [], color=color)[0]
     legend_handles.append((patch, line))
@@ -145,7 +145,7 @@ legend_labels = []
 for M, max_val in enumerate(Lm):
     color = co[M]
     # Create a patch handle using fill (invisible, just for legend)
-    patch = ax[0, 0].fill(np.NaN, np.NaN, color, alpha=0.1)[0]
+    patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.1)[0]
     # Create a line handle using plot (invisible, just for legend)
     line = ax[0, 0].plot([], [], color=color)[0]
     legend_handles.append((patch, line))
@@ -458,7 +458,7 @@ fig.savefig(os.path.join(resultsdir, 'Fig5.pdf'),bbox_inches='tight')
 # for M, max_val in enumerate(Lm):
 #     color = co[M]
 #     # Create a patch handle using fill (invisible, just for legend)
-#     patch = ax[0, 0].fill(np.NaN, np.NaN, color, alpha=0.1)[0]
+#     patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.1)[0]
 #     # Create a line handle using plot (invisible, just for legend)
 #     line = ax[0, 0].plot([], [], color=color)[0]
 #     legend_handles.append((patch, line))

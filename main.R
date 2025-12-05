@@ -25,7 +25,7 @@ library(randtoolbox)
 
 # Python integration setup
 library(reticulate)
-use_condaenv("MCF-RLM")
+use_virtualenv(virtualenv = file.path(getwd(), "venv"), required = TRUE)
 
 # Add seed for reproducibility
 set.seed(42)
