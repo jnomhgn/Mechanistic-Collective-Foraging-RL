@@ -82,6 +82,59 @@ if(!file.exists(paste(resultsdir, "numsims.rds", sep = "/"))){
     switches = list(), switches.time = list()
   )
 
+  # Simulation function
+  sim_fun = function(sim, sim.pars, rl.pars, f, models, mod, parcomb) {
+
+    print(paste("Model:", models$name[[mod]], " Parcomb:", parcomb, " Sim:", sim))
+
+    # Simulate data
+    sim.data = f(sim.parameters = sim.pars)
+
+    # Add sim parameters
+    sim.data = sim.data %>%
+      mutate(decision = decision - 1) %>%
+      cbind(model=models$name[[mod]], parcomb=parcomb) %>%
+      bind_cols(rl.pars[parcomb, ]) %>%
+      mutate(alphaS = ifelse("alphaDBD" %in% colnames(rl.pars), alphaDBD, alphaDBR)) %>%
+      mutate(sim = sim) %>%
+      relocate(model, parcomb, sim)
+
+    # Compute mean individual accuracy and rewards
+    rew.acc = sim.data %>%
+      # Compute individual accuracy and rewards on each trial
+      group_by(sim, model, alphaS, session, trial, player, duration, ratio, max) %>% # for each individual trial
+      reframe(acc = sum(decision),
+              rew = sum(reward)) %>%
+      mutate(acc = acc / (duration + 1)) %>%
+      mutate(rew = rew / (duration + 1)) %>%
+      # Compute average individual accuracy
+      group_by(sim, model, alphaS, ratio, max) %>%
+      reframe(acc.mean = mean(acc), rew.mean = mean(rew))
+
+    # Compute mean individual accuracy ~ time
+    acc.time = sim.data %>%
+      # Compute average individual accuracy at each time step
+      group_by(sim, model, alphaS, time, ratio, max) %>%
+      reframe(frac.corr = mean(decision))
+
+    # Compute mean switch rate
+    switches = sim.data %>%
+      group_by(model, alphaS, sim, session, trial, player, duration, ratio, max) %>%
+      mutate(switches = ifelse(lag(decision) != decision, 1, 0)) %>%
+      reframe(switches = sum(switches, na.rm=T) / duration) %>%
+      group_by(model, alphaS, sim, ratio, max) %>%
+      reframe(switches.mean = mean(switches))
+
+    # Compute mean switches ~ time
+    switches.time = sim.data %>%
+      group_by(model, alphaS, sim, session, trial, player, duration, ratio, max) %>%
+      mutate(switch = ifelse(lag(decision) != decision, 1, 0)) %>%
+      group_by(model, alphaS, sim, time, ratio, max) %>%
+      reframe(switch.frac = sum(switch, na.rm = T) / max(player))
+
+    list(rew.acc=rew.acc, acc.time=acc.time, switches=switches, switches.time=switches.time)
+  }
+
   for(mod in 1:length(models$name)){
 
     # Get function
@@ -93,85 +146,26 @@ if(!file.exists(paste(resultsdir, "numsims.rds", sep = "/"))){
 
       sim.pars = c(exp.pars, env.pars, rl.pars[parcomb, ])
 
+      # Simulate in parallel
+      plan(multisession, workers = parallel::detectCores()-1)
+      sim_results = future.apply::future_lapply(
+        1:nsim,
+        sim_fun,
+        sim.pars=sim.pars,
+        rl.pars=rl.pars,
+        f=f,
+        models=models,
+        mod=mod,
+        parcomb=parcomb
+      )
 
-      # Loop over number of simulations
-      for(sim in 1:nsim){
-
-        if(exists("end.time")){
-          print(paste("This took:", (end.time - start.time), "seconds" ))
-        }
-        start.time = Sys.time()
-
-        prgrss = paste("Simulating from model", models$name[[mod]],
-                       ". Parameter combination", parcomb,
-                       ", simulation ", sim)
-        print(prgrss)
-
-        # Simulate data
-        sim.data = f(sim.parameters = sim.pars)
-
-        # Add sim parameters
-        sim.data = sim.data %>%
-          mutate(decision = decision - 1) %>%
-          cbind(model=models$name[[mod]], parcomb=parcomb) %>%
-          bind_cols(rl.pars[parcomb, ]) %>%
-          mutate(alphaS = ifelse("alphaDBD" %in% colnames(rl.pars), alphaDBD, alphaDBR)) %>%
-          mutate(sim = sim) %>%
-          relocate(model, parcomb, sim)
-
-        # Compute mean individual accuracy and rewards
-        rew.acc = sim.data %>%
-          # Compute individual accuracy and rewards on each trial
-          group_by(sim, model, alphaS, session, trial, player, duration, ratio, max) %>% # for each individual trial
-          reframe(acc = sum(decision),
-                  rew = sum(reward)) %>%
-          mutate(acc = acc / (duration + 1)) %>%
-          mutate(rew = rew / (duration + 1)) %>%
-          # Compute average individual accuracy
-          group_by(sim, model, alphaS, ratio, max) %>%
-          reframe(acc.mean = mean(acc), rew.mean = mean(rew))
-
-        # Save
-        results$rew.acc = append(results$rew.acc, list(rew.acc))
-
-        # Compute mean individual accuracy ~ time
-        acc.time = sim.data %>%
-          # Compute average individual accuracy at each time step
-          group_by(sim, model, alphaS, time, ratio, max) %>%
-          reframe(frac.corr = mean(decision))
-
-        # Save
-        results$acc.time = append(results$acc.time, list(acc.time))
-
-        # Compute mean switch rate
-        switches = sim.data %>%
-          group_by(model, alphaS, sim, session, trial, player, duration, ratio, max) %>%
-          mutate(switches = ifelse(lag(decision) != decision, 1, 0)) %>%
-          reframe(switches = sum(switches, na.rm=T) / duration) %>%
-          group_by(model, alphaS, sim, ratio, max) %>%
-          reframe(switches.mean = mean(switches))
-
-        # Save
-        results$switches = append(results$switches, list(switches))
-
-        # Compute mean switches ~ time
-        switches.time = sim.data %>%
-          group_by(model, alphaS, sim, session, trial, player, duration, ratio, max) %>%
-          mutate(switch = ifelse(lag(decision) != decision, 1, 0)) %>%
-          group_by(model, alphaS, sim, time, ratio, max) %>%
-          reframe(switch.frac = sum(switch, na.rm = T) / max(player))
-
-        # Save
-        results$switches.time = append(results$switches.time, list(switches.time))
-
-        # End time
-        end.time = Sys.time()
-
-      }
-
+      # Extract results
+      results$rew.acc = append(results$rew.acc, lapply(sim_results, `[[`, "rew.acc"))
+      results$acc.time = append(results$acc.time, lapply(sim_results, `[[`, "acc.time"))
+      results$switches = append(results$switches, lapply(sim_results, `[[`, "switches"))
+      results$switches.time = append(results$switches.time, lapply(sim_results, `[[`, "switches.time"))
     }
   }
-
   results = lapply(results, function(x) bind_rows(x))
   saveRDS(results, file =
             paste(resultsdir, "numsims.rds", sep = "/"))
