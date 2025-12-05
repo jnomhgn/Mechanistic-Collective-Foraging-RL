@@ -22,6 +22,7 @@ library(loo)
 library(tidybayes)
 library(bayesplot)
 library(randtoolbox)
+library(parallel)
 
 # Python integration setup
 library(reticulate)
