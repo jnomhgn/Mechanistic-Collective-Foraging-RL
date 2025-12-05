@@ -1,7 +1,6 @@
 
 #Optimal Asocial foraging: Bayesian Inference simulations
 library(reticulate)
-use_condaenv("test") # Make sure to change
 
 # Create results directories
 getwd()
