@@ -308,11 +308,11 @@ Lc = [2] #1,2,3
 Lm = [0.5,0.7,0.9]
 Lr = [0.5,0.65,0.8,0.95]
 
-fig, ax = plt.subplots(nrows=2, ncols=4, figsize=(15, 9), sharey=True) #, gridspec_kw={'wspace':0.0, 'hspace':0.0})
+fig, ax = plt.subplots(nrows=3, ncols=4, figsize=(15, 9), sharey=True) #, gridspec_kw={'wspace':0.0, 'hspace':0.0})
 
 
-# Loop over ['Exp', 'ARL']
-for i, method in enumerate(['Exp', 'ARL']):
+# Loop over ['Exp', 'ARL', 'SRL]
+for i, method in enumerate(['Exp', 'ARL', 'SRL']):
 
         if method == 'Exp':
                 All = np.zeros((3,len(Lm),len(Lr),18*5))
@@ -396,6 +396,42 @@ for i, method in enumerate(['Exp', 'ARL']):
                                 
                                 ax[i, R].tick_params(bottom=True,labelbottom=True) 
 
+        elif method == 'SRL':
+        
+                Mean = np.zeros((3,len(Lm),len(Lr)))
+                lt1s = np.arange(1,76,1)
+
+                df = pandas.read_csv('rl/results/nocatches/modelcomp/adaptive/postpredict_acctime.csv')
+                for M in range(len(Lm)):
+                        for R in range(len(Lr)):
+                                Max = Lm[M]; Ratio = Lr[R]
+                                indr = np.where(df['ratio']==Ratio)
+                                indm = np.where(df['max']==Max)
+                                idx = np.intersect1d(indm,indr)
+
+                                LQ = df['mu'][idx].to_numpy()[0:-1]
+
+                                S = df['se'][idx].to_numpy()[0:-1]
+                                if R == 3:
+                                        ax[i, R].plot(np.array(lt1s),LQ,color=co[M],label=r'Max catch '+str(Max))
+                                        ax[i, R].fill_between(lt1s,LQ-S/np.sqrt(18),LQ+S, alpha=0.1, color=co[M],label=r'Max catch '+str(Max))            
+                                        
+                                else:
+                                        ax[i, R].plot(np.array(lt1s),LQ,color=co[M])
+                                        ax[i, R].fill_between(lt1s,LQ-S/np.sqrt(18),LQ+S, alpha=0.1, color=co[M])              
+                                        
+                                
+                                ax[i, R].axhline(0.5,linestyle='--',color='gray')
+                                ax[i, R].set_ylim(0.3,1.1)
+                                ax[i, R].set_xlim(-1,77)
+                                ax[i, R].set_xticks([0,20,40,60])
+                                ax[i, R].set_yticks([0.5,0.75,1])
+                                if R>0:
+                                        ax[i, R].tick_params(left = False)
+                                
+                                ax[i, R].tick_params(bottom=True,labelbottom=True) 
+
+
 
 
         #         # Get handles and labels for legend
@@ -417,7 +453,7 @@ fig.legend(
 )
 
 # After plotting, before plt.tight_layout()
-row_labels = ["Exp", "ARL"]  
+row_labels = ["Exp", "ARL", "SRL"]  
 for i, label in enumerate(row_labels):
     # y-coordinates: 0.5, 0.5 - (i/3), but you may need to tweak for perfect alignment
     fig.text(1, 0.83 - i*0.33, label, va='center', ha='left', fontsize=23)
