@@ -439,6 +439,7 @@ getmodels <- function(hierarch=FALSE){
         "rl/code/catches/stan/vsndbr1.hierarch.stan",
         NA,
         "rl/code/catches/stan/vsnvsr1.hierarch.stan",
+        NA,
         "rl/code/catches/stan/dbndbr1.hierarch.stan"
         
         
@@ -459,6 +460,7 @@ getmodels <- function(hierarch=FALSE){
         "rl/code/catches/stan/vsndbr1.hierarch.ll.stan",
         "rl/code/catches/stan/vsndbr2.hierarch.ll.stan",
         "rl/code/catches/stan/vsnvsr1.hierarch.ll.stan",
+        "rl/code/catches/stan/vsnvsr2.hierarch.ll.stan",
         "rl/code/catches/stan/dbndbr1.hierarch.ll.stan"
       ),
       
@@ -530,6 +532,11 @@ getmodels <- function(hierarch=FALSE){
           "C.init" = 0
         ),
         # vsnvsr1
+        list(
+          "Q.init" = .5,
+          "C.init" = 0
+        ),
+        # vsnvsr2
         list(
           "Q.init" = .5,
           "C.init" = 0
@@ -765,6 +772,29 @@ getmodels <- function(hierarch=FALSE){
           "betaC" = c(-4, 4),
           "alphaVSDR" = c(0, 1),    # Social learning rate VS
           "sigmaVSDR" = c(0, 1)    # relative influence of r/d
+        ),
+
+        #  vsnvsr2
+        list(
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
+          "betaQ" = c(0, 10),
+          "betaC" = c(-4, 4),
+
+          "sigmaVSDR" = c(0, 1),    # relative influence of r/d
+
+          "alphaVSDR[1,1]" = c(0, 1), # Social learning rate VS
+          "alphaVSDR[2,1]" = c(0, 1),
+          "alphaVSDR[3,1]" = c(0, 1),
+          "alphaVSDR[1,2]" = c(0, 1),
+          "alphaVSDR[2,2]" = c(0, 1),
+          "alphaVSDR[3,2]" = c(0, 1),
+          "alphaVSDR[1,3]" = c(0, 1),
+          "alphaVSDR[2,3]" = c(0, 1),
+          "alphaVSDR[3,3]" = c(0, 1),
+          "alphaVSDR[1,4]" = c(0, 1),
+          "alphaVSDR[2,4]" = c(0, 1),
+          "alphaVSDR[3,4]" = c(0, 1)
         ),
         
         #  dbndbr1
@@ -1012,6 +1042,31 @@ getmodels <- function(hierarch=FALSE){
           "betaC",
           "alphaVSDR",    # Social learning rate VS
           "sigmaVSDR"   # relative influence of r/d
+        ),
+
+        # vsnvsr2
+        list(
+          "alphaQN" ,
+          "alphaQP",
+          "betaQ",
+          "betaC",
+          "sigmaVSDR",   # relative influence of r/d
+
+
+          "alphaVSDR" = list( # Social learning rate VS
+            "alphaVSDR[1,1]",
+            "alphaVSDR[2,1]",
+            "alphaVSDR[3,1]",
+            "alphaVSDR[1,2]",
+            "alphaVSDR[2,2]",
+            "alphaVSDR[3,2]",
+            "alphaVSDR[1,3]",
+            "alphaVSDR[2,3]",
+            "alphaVSDR[3,3]",
+            "alphaVSDR[1,4]",
+            "alphaVSDR[2,4]",
+            "alphaVSDR[3,4]"
+          )
         ),
         
         #  dbndbr1
