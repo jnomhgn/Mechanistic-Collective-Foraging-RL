@@ -435,6 +435,7 @@ getmodels <- function(hierarch=FALSE){
         "rl/code/catches/stan/vsr1.hierarch.stan",
         NA, 
         "rl/code/catches/stan/dbnvsr1.hierarch.stan",
+        NA, 
         "rl/code/catches/stan/vsndbr1.hierarch.stan",
         "rl/code/catches/stan/vsnvsr1.hierarch.stan",
         "rl/code/catches/stan/dbndbr1.hierarch.stan"
@@ -453,6 +454,7 @@ getmodels <- function(hierarch=FALSE){
         "rl/code/catches/stan/vsr1.hierarch.ll.stan",
         "rl/code/catches/stan/vsr2.hierarch.ll.stan",
         "rl/code/catches/stan/dbnvsr1.hierarch.ll.stan",
+        "rl/code/catches/stan/dbnvsr2.hierarch.ll.stan",
         "rl/code/catches/stan/vsndbr1.hierarch.ll.stan",
         "rl/code/catches/stan/vsnvsr1.hierarch.ll.stan",
         "rl/code/catches/stan/dbndbr1.hierarch.ll.stan"
@@ -506,6 +508,11 @@ getmodels <- function(hierarch=FALSE){
           "C.init" = 0
         ),
         # dbnvsr1
+        list(
+          "Q.init" = .5,
+          "C.init" = 0
+        ),
+        # dbnvsr2
         list(
           "Q.init" = .5,
           "C.init" = 0
@@ -661,6 +668,41 @@ getmodels <- function(hierarch=FALSE){
           "betaC" = c(-4, 4),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
           "alphaDBD" = c(0, 1)    # Social learning rate DB
+          
+        ),
+
+        #  dbnvsr2
+        list(
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
+          "betaQ" = c(0, 10),
+          "betaC" = c(-4, 4),
+
+          "alphaVSR[1,1]" = c(0, 1),
+          "alphaVSR[2,1]" = c(0, 1),
+          "alphaVSR[3,1]" = c(0, 1),
+          "alphaVSR[1,2]" = c(0, 1),
+          "alphaVSR[2,2]" = c(0, 1),
+          "alphaVSR[3,2]" = c(0, 1),
+          "alphaVSR[1,3]" = c(0, 1),
+          "alphaVSR[2,3]" = c(0, 1),
+          "alphaVSR[3,3]" = c(0, 1),
+          "alphaVSR[1,4]" = c(0, 1),
+          "alphaVSR[2,4]" = c(0, 1),
+          "alphaVSR[3,4]" = c(0, 1),
+
+          "alphaDBD[1,1]" = c(0, 1),
+          "alphaDBD[2,1]" = c(0, 1),
+          "alphaDBD[3,1]" = c(0, 1),
+          "alphaDBD[1,2]" = c(0, 1),
+          "alphaDBD[2,2]" = c(0, 1),
+          "alphaDBD[3,2]" = c(0, 1),
+          "alphaDBD[1,3]" = c(0, 1),
+          "alphaDBD[2,3]" = c(0, 1),
+          "alphaDBD[3,3]" = c(0, 1),
+          "alphaDBD[1,4]" = c(0, 1),
+          "alphaDBD[2,4]" = c(0, 1),
+          "alphaDBD[3,4]" = c(0, 1)
           
         ),
         
@@ -835,6 +877,42 @@ getmodels <- function(hierarch=FALSE){
           "betaC",
           "alphaVSR",    # Social learning rate VS
           "alphaDBD"    # Social learning rate DB
+        ),
+        
+        # dbnvsr2
+        list(
+          "alphaQN",
+          "alphaQP",
+          "betaQ",
+          "betaC",
+          "alphaVSR" = list(
+            "alphaVSR[1,1]",
+            "alphaVSR[2,1]",
+            "alphaVSR[3,1]",
+            "alphaVSR[1,2]",
+            "alphaVSR[2,2]",
+            "alphaVSR[3,2]",
+            "alphaVSR[1,3]",
+            "alphaVSR[2,3]",
+            "alphaVSR[3,3]",
+            "alphaVSR[1,4]",
+            "alphaVSR[2,4]",
+            "alphaVSR[3,4]"
+          ),
+          "alphaDBD" = list(
+            "alphaDBD[1,1]",
+            "alphaDBD[2,1]",
+            "alphaDBD[3,1]",
+            "alphaDBD[1,2]",
+            "alphaDBD[2,2]",
+            "alphaDBD[3,2]",
+            "alphaDBD[1,3]",
+            "alphaDBD[2,3]",
+            "alphaDBD[3,3]",
+            "alphaDBD[1,4]",
+            "alphaDBD[2,4]",
+            "alphaDBD[3,4]"
+          )
         ),
         
         # vsndbr1
