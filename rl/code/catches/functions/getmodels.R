@@ -440,7 +440,8 @@ getmodels <- function(hierarch=FALSE){
         NA,
         "rl/code/catches/stan/vsnvsr1.hierarch.stan",
         NA,
-        "rl/code/catches/stan/dbndbr1.hierarch.stan"
+        "rl/code/catches/stan/dbndbr1.hierarch.stan",
+        NA
         
         
       ),
@@ -461,7 +462,8 @@ getmodels <- function(hierarch=FALSE){
         "rl/code/catches/stan/vsndbr2.hierarch.ll.stan",
         "rl/code/catches/stan/vsnvsr1.hierarch.ll.stan",
         "rl/code/catches/stan/vsnvsr2.hierarch.ll.stan",
-        "rl/code/catches/stan/dbndbr1.hierarch.ll.stan"
+        "rl/code/catches/stan/dbndbr1.hierarch.ll.stan",
+        "rl/code/catches/stan/dbndbr2.hierarch.ll.stan"
       ),
       
       # Fixed parameters
@@ -542,6 +544,11 @@ getmodels <- function(hierarch=FALSE){
           "C.init" = 0
         ),
         # dbndbr1
+        list(
+          "Q.init" = .5,
+          "C.init" = 0
+        ),
+        # dbndbr2
         list(
           "Q.init" = .5,
           "C.init" = 0
@@ -805,6 +812,29 @@ getmodels <- function(hierarch=FALSE){
           "betaC" = c(-4, 4),
           "alphaDBDR" = c(0, 1),    # Social learning rate DB
           "sigmaDBDR" = c(0, 1)    # relative influence of r/d
+        ),
+
+       #  dbndbr2
+        list(
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
+          "betaQ" = c(0, 10),
+          "betaC" = c(-4, 4),
+
+          "sigmaDBDR" = c(0, 1),    # relative influence of r/d
+
+          "alphaDBDR[1,1]" = c(0, 1), # Social learning rate VS
+          "alphaDBDR[2,1]" = c(0, 1),
+          "alphaDBDR[3,1]" = c(0, 1),
+          "alphaDBDR[1,2]" = c(0, 1),
+          "alphaDBDR[2,2]" = c(0, 1),
+          "alphaDBDR[3,2]" = c(0, 1),
+          "alphaDBDR[1,3]" = c(0, 1),
+          "alphaDBDR[2,3]" = c(0, 1),
+          "alphaDBDR[3,3]" = c(0, 1),
+          "alphaDBDR[1,4]" = c(0, 1),
+          "alphaDBDR[2,4]" = c(0, 1),
+          "alphaDBDR[3,4]" = c(0, 1)
         )
         
         
@@ -1077,6 +1107,31 @@ getmodels <- function(hierarch=FALSE){
           "betaC",
           "alphaDBDR",    # Social learning rate DB
           "sigmaDBDR"   # relative influence of r/d
+        ),
+
+        # dbndbr2
+        list(
+          "alphaQN" ,
+          "alphaQP",
+          "betaQ",
+          "betaC",
+          "sigmaDBDR",   # relative influence of r/d
+
+
+          "alphaDBDR" = list( # Social learning rate VS
+            "alphaDBDR[1,1]",
+            "alphaDBDR[2,1]",
+            "alphaDBDR[3,1]",
+            "alphaDBDR[1,2]",
+            "alphaDBDR[2,2]",
+            "alphaDBDR[3,2]",
+            "alphaDBDR[1,3]",
+            "alphaDBDR[2,3]",
+            "alphaDBDR[3,3]",
+            "alphaDBDR[1,4]",
+            "alphaDBDR[2,4]",
+            "alphaDBDR[3,4]"
+          )
         )
       )
     )
