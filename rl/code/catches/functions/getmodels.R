@@ -390,15 +390,32 @@ getmodels <- function(hierarch=FALSE){
         "vsn1.hierarch",
         "vsn2.hierarch",
         "dbr1.hierarch", 
+        "dbr2.hierarch",
         "vsr1.hierarch",
+        "vsr2.hierarch",
         "dbnvsr1.hierarch",
+        "dbnvsr2.hierarch",
         "vsndbr1.hierarch",
+        "vsndbr2.hierarch",
         "vsnvsr1.hierarch",
-        "dbndbr1.hierarch"
+        "vsnvsr2.hierarch",
+        "dbndbr1.hierarch",
+        "dbndbr2.hierarch"
       ),
       
       sim = list(
         NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        NA, 
         NA,
         NA,
         NA,
@@ -414,6 +431,7 @@ getmodels <- function(hierarch=FALSE){
         "rl/code/catches/stan/vsn1.hierarch.stan",
         "rl/code/catches/stan/vsn2.hierarch.stan",
         "rl/code/catches/stan/dbr1.hierarch.stan",
+        NA,
         "rl/code/catches/stan/vsr1.hierarch.stan",
         "rl/code/catches/stan/dbnvsr1.hierarch.stan",
         "rl/code/catches/stan/vsndbr1.hierarch.stan",
@@ -430,6 +448,7 @@ getmodels <- function(hierarch=FALSE){
         "rl/code/catches/stan/vsn1.hierarch.ll.stan",
         "rl/code/catches/stan/vsn2.hierarch.ll.stan",
         "rl/code/catches/stan/dbr1.hierarch.ll.stan",
+        "rl/code/catches/stan/dbr2.hierarch.ll.stan", 
         "rl/code/catches/stan/vsr1.hierarch.ll.stan",
         "rl/code/catches/stan/dbnvsr1.hierarch.ll.stan",
         "rl/code/catches/stan/vsndbr1.hierarch.ll.stan",
@@ -465,6 +484,11 @@ getmodels <- function(hierarch=FALSE){
           "C.init" = 0
         ),
         # dbr1
+        list(
+          "Q.init" = .5,
+          "C.init" = 0
+        ),
+        # dbr2
         list(
           "Q.init" = .5,
           "C.init" = 0
@@ -569,6 +593,27 @@ getmodels <- function(hierarch=FALSE){
           "betaQ" = c(0, 10),
           "betaC" = c(-4, 4),
           "alphaDBR" = c(0, 1)    # Social learning rate DB
+        ),
+
+        # dbr2
+        list(
+          "alphaQN" = c(0, 1),
+          "alphaQP" = c(0, 1),
+          "betaQ" = c(0, 10),
+          "betaC" = c(-4, 4),
+          
+          "alphaDBR[1,1]" = c(0, 1),
+          "alphaDBR[2,1]" = c(0, 1),
+          "alphaDBR[3,1]" = c(0, 1),
+          "alphaDBR[1,2]" = c(0, 1),
+          "alphaDBR[2,2]" = c(0, 1),
+          "alphaDBR[3,2]" = c(0, 1),
+          "alphaDBR[1,3]" = c(0, 1),
+          "alphaDBR[2,3]" = c(0, 1),
+          "alphaDBR[3,3]" = c(0, 1),
+          "alphaDBR[1,4]" = c(0, 1),
+          "alphaDBR[2,4]" = c(0, 1),
+          "alphaDBR[3,4]" = c(0, 1)
         ),
         
         #  vsr1
@@ -699,6 +744,29 @@ getmodels <- function(hierarch=FALSE){
           "betaC" = c(-4, 4),
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
+
+        # dbr2
+        list(
+          "alphaQN",
+          "alphaQP",
+          "betaQ",
+          "betaC",
+          "alphaDBR" = list(
+            "alphaDBR[1,1]",
+            "alphaDBR[2,1]",
+            "alphaDBR[3,1]",
+            "alphaDBR[1,2]",
+            "alphaDBR[2,2]",
+            "alphaDBR[3,2]",
+            "alphaDBR[1,3]",
+            "alphaDBR[2,3]",
+            "alphaDBR[3,3]",
+            "alphaDBR[1,4]",
+            "alphaDBR[2,4]",
+            "alphaDBR[3,4]"
+          )
+        ),
+
         
         # vsr1
         list(
@@ -826,6 +894,28 @@ getmodels <- function(hierarch=FALSE){
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
+        # dbn2
+        list(
+          "alphaQN",
+          "alphaQP",
+          "betaQ",
+          "betaC",
+          "alphaDBR" = list(
+            "alphaDBR[1,1]",
+            "alphaDBR[2,1]",
+            "alphaDBR[3,1]",
+            "alphaDBR[1,2]",
+            "alphaDBR[2,2]",
+            "alphaDBR[3,2]",
+            "alphaDBR[1,3]",
+            "alphaDBR[2,3]",
+            "alphaDBR[3,3]",
+            "alphaDBR[1,4]",
+            "alphaDBR[2,4]",
+            "alphaDBR[3,4]"
+          )
+        ),
+
         # vsr1
         list(
           "alphaQN" = c(0, 1),
