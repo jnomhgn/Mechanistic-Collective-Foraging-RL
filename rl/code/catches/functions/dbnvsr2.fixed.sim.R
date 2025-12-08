@@ -1,5 +1,5 @@
 # Function to simulate synthetic data
-vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual = FALSE){
+dbnvsr2.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual = FALSE){
   
   with(data = sim.parameters, expr = {
     
@@ -52,6 +52,9 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
         # Initialize array of social values
         Q.soc = array(NA, dim = c(nplayers))
         
+        # Initialize matrix of social choice probabilities
+        p.soc = matrix(NA, nrow = nplayers, ncol = 2 )
+        
         # Track distribution of decisions
         dec.freq = array(NA, dim = c(nplayers))
         
@@ -68,6 +71,9 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
             obs.dec = sapply(1:2, function(x) dec.freq == x)
             obs.dec = t(sapply(1:nplayers, function(x) colSums(obs.dec[-x, ])))
             
+            # Divide by number of players excluding individual
+            p.soc = obs.dec / (nplayers-1)
+            
             # Number of other group members at same patch obtaining rewards
             obs.rew = sapply(1:nplayers, function(x) sum(rew.freq[dec.freq == dec.freq[x]]) - rew.freq[x])
             
@@ -76,10 +82,11 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
             
             # Value shaping: Update individual Q-values for upcoming trial using this social info
             for(x in 1:nplayers){
+              
               # Only if there was another player at patch
               if(!is.na(Q.soc[x])){
-                Q[x, dec.freq[x]] = Q[x, dec.freq[x]] + alphaVSR * (Q.soc[x] - Q[x, dec.freq[x]])
-                #Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]] # The sum of the Q-Values need not be 1 (e.g. c(.5, .41)). Thus, this piece of code might change values even if alphaVSR = 0.
+                Q[x, dec.freq[x]] = Q[x, dec.freq[x]] + alphaVSR[[max.fac[trial], ratio.fac[trial]]] * (Q.soc[x] - Q[x, dec.freq[x]])
+                # Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]] # The sum of the Q-Values need not be 1 (e.g. c(.5, .41)). Thus, this piece of code might change values even if alphaVSR = 0.
               }
               
             }
@@ -91,9 +98,14 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
             # Derive choice probability
             p = softmax(betaQ * Q[player, ] + betaC * C[player, ])
             
-  
+            # Bias decision using social information
+            if(time != 0){
+              p = p + alphaDBD[[max.fac[trial], ratio.fac[trial]]] * (p.soc[player, ] - p)
+            }
+            
+            
             # Decide
-           if(postpredict == T){
+            if(postpredict == T){
               if(time == 0){
                 decision = decfreq.init[which(decfreq.init$id == id[isession, player] & decfreq.init$max.fac == max.fac[trial] & decfreq.init$ratio.fac == ratio.fac[trial]), "decision"]
                 decision = unname(unlist(decision))

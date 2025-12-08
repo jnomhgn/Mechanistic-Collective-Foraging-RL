@@ -1,5 +1,5 @@
 # Function to simulate synthetic data
-vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual = FALSE){
+vsr2.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual = FALSE){
   
   with(data = sim.parameters, expr = {
     
@@ -78,7 +78,7 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
             for(x in 1:nplayers){
               # Only if there was another player at patch
               if(!is.na(Q.soc[x])){
-                Q[x, dec.freq[x]] = Q[x, dec.freq[x]] + alphaVSR * (Q.soc[x] - Q[x, dec.freq[x]])
+                Q[x, dec.freq[x]] = Q[x, dec.freq[x]] + alphaVSR[[max.fac[trial], ratio.fac[trial]]] * (Q.soc[x] - Q[x, dec.freq[x]])
                 #Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]] # The sum of the Q-Values need not be 1 (e.g. c(.5, .41)). Thus, this piece of code might change values even if alphaVSR = 0.
               }
               

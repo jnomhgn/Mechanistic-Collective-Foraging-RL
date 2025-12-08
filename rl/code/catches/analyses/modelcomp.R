@@ -2,15 +2,13 @@
 
 # Source functions
 function.list = paste0("rl/code/catches/functions/", list.files("rl/code/catches/functions"))
-function.list = function.list[sapply(function.list, function(x) !grepl("2", x))]
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
 if(!dir.exists("rl/results/catches")){dir.create("rl/results/catches")}
 if(!dir.exists("rl/results/catches/modelcomp")){dir.create("rl/results/catches/modelcomp")}
-if(!dir.exists("rl/results/catches/modelcomp/nonadaptive")){dir.create("rl/results/catches/modelcomp/nonadaptive")}
-if(!dir.exists("rl/results/catches/modelcomp/nonadaptive/diagnostics")){dir.create("rl/results/catches/modelcomp/nonadaptive/diagnostics")}
-if(!dir.exists("rl/results/catches/modelcomp/nonadaptive/diagnostics/detailed")){dir.create("rl/results/catches/modelcomp/nonadaptive/diagnostics/detailed")}
+if(!dir.exists("rl/results/catches/modelcomp/diagnostics")){dir.create("rl/results/catches/modelcomp/diagnostics")}
+if(!dir.exists("rl/results/catches/modelcomp/diagnostics/detailed")){dir.create("rl/results/catches/modelcomp/diagnostics/detailed")}
 
 resultsdir = "rl/results/catches/modelcomp"
 
@@ -87,31 +85,25 @@ warmup = 2000
 refresh = 100
 
 #### Run model comparison ####
-if(!file.exists(paste(resultsdir, "nonadaptive", "modelcomp.Rdata", sep = "/"))){
+if(!file.exists(paste(resultsdir, "modelcomp.Rdata", sep = "/"))){
   
   # Get models
   models = getmodels(hierarch = T)
   
-  # Exclude adaptive models in case still in list
-  models= lapply(models, function(x) x[which(!grepl(pattern = "2", x = models$name))])
-  
-  
   # Compile models to avoid recompiling 
   models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
-  
   
   # Results list
   results = list()
   
   # Create log file
-  log.file = paste(resultsdir, "nonadaptive", "log.txt", sep = "/")
+  log.file = paste(resultsdir, "log.txt", sep = "/")
   if(!file.exists(log.file)){file.create(log.file)}
   
   # Loop over models
   for(mfit in 1:length(models$stan.loglik)){
     
-    # Print info about current simulation / fitting to html
-    # Print info about current simulation to html
+    # Print info about current simulation / fitting
     prgrss = paste("\n Currently fitting model", models$stan.loglik[[mfit]], "\n")
     write("", log.file, append = TRUE, ncolumns = 1)
     write(prgrss, log.file, append = TRUE, ncolumns = 1)
@@ -121,18 +113,18 @@ if(!file.exists(paste(resultsdir, "nonadaptive", "modelcomp.Rdata", sep = "/")))
     fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
                    chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
     sink()
-    saveRDS(fit, paste(resultsdir, "nonadaptive", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
+    saveRDS(fit, paste(resultsdir, paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
     
     # Plot some diagnostics for population means
     diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
     ggexport(plotlist = diag.list, width = 1920, height = 1080,
-             filename = paste(resultsdir, "nonadaptive/diagnostics",
+             filename = paste(resultsdir, "diagnostics",
                               paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
     
     # Plot detailed traceplots
     if(!dir.exists(
-      paste(resultsdir, "nonadaptive/diagnostics/detailed",models$name[[mfit]] , sep = "/"))){
-      dir.create(paste(resultsdir, "nonadaptive/diagnostics/detailed",models$name[[mfit]] , sep = "/"))
+      paste(resultsdir, "diagnostics/detailed",models$name[[mfit]] , sep = "/"))){
+      dir.create(paste(resultsdir, "diagnostics/detailed",models$name[[mfit]] , sep = "/"))
     }
     draws = tidy_draws(fit)
     par.names = names(draws)
@@ -142,12 +134,12 @@ if(!file.exists(paste(resultsdir, "nonadaptive", "modelcomp.Rdata", sep = "/")))
     par.names = par.names[!grepl("log_lik", par.names)] 
     for (param in par.names) {
       tplot <- traceplot(fit, pars = param) + ggtitle(paste("Trace plot for", param))
-      ggsave(paste(resultsdir, "nonadaptive/diagnostics/detailed",models$name[[mfit]],  paste0("traceplot_", param, ".png"), sep = "/"), tplot)
+      ggsave(paste(resultsdir, "diagnostics/detailed",models$name[[mfit]],  paste0("traceplot_", param, ".png"), sep = "/"), tplot)
     }
     
     # Save diagnostics for all parameters
     fit.summary = summary(fit)$summary
-    write.csv(fit.summary, file = paste(resultsdir, "nonadaptive/diagnostics",
+    write.csv(fit.summary, file = paste(resultsdir, "diagnostics",
                                         paste(models$name[[mfit]], "diagnostics", "csv",  sep = "."), sep = "/"))
     
     # Print core diagnostics to log.txt
@@ -175,7 +167,7 @@ if(!file.exists(paste(resultsdir, "nonadaptive", "modelcomp.Rdata", sep = "/")))
     pbeta= mcmc_areas(draws, pars = names(models$free.pars.pop[[mfit]])[!grepl("alpha", names(models$free.pars.pop[[mfit]]))])
     p = ggarrange(palpha, pbeta, ncol = 2)
     ggexport(p, width = 2550, height = 1440,
-             filename = paste(resultsdir, "nonadaptive", paste(models$name[[mfit]], "draws", "jpeg", sep = "."), sep = "/"))
+             filename = paste(resultsdir, "diagnostics", paste(models$name[[mfit]], "draws", "jpeg", sep = "."), sep = "/"))
     
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
@@ -195,7 +187,7 @@ if(!file.exists(paste(resultsdir, "nonadaptive", "modelcomp.Rdata", sep = "/")))
     remove(ll)
     
     # Save diagnostics
-    jpeg(paste(resultsdir, "nonadaptive", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"))
+    jpeg(paste(resultsdir, "diagnostics", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"))
     plot(get(loo.model))
     dev.off()
     
@@ -220,15 +212,15 @@ if(!file.exists(paste(resultsdir, "nonadaptive", "modelcomp.Rdata", sep = "/")))
   winner = comparison %>% filter(row_number() == 1 & elpd_diff == 0) %>% rownames() %>% unlist()
   
   # Save Variables
-  save(results, comparison, winner, file = paste(resultsdir, "nonadaptive", "modelcomp.Rdata", sep = "/"))
+  save(results, comparison, winner, file = paste(resultsdir, "modelcomp.Rdata", sep = "/"))
   
   # Save and print comparison
-  write.csv(x = comparison, file = paste(resultsdir, "nonadaptive", "modelcomp.csv", sep = "/"))
+  write.csv(x = comparison, file = paste(resultsdir, "modelcomp.csv", sep = "/"))
   
 }else{
   
   # Read comparison
-  load(file = paste(resultsdir, "nonadaptive", "modelcomp.Rdata", sep = "/"))
+  load(file = paste(resultsdir, "modelcomp.Rdata", sep = "/"))
   
 }
 
@@ -238,10 +230,12 @@ print(comparison[, ])
 #### Posterior predictions ####
 
 # Get initial distribution of players from data
-decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision)
+decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision, duration)
 
 # Number of times experiments were simulated from each model
 nsim=100
+
+# Simulations for accuracy over time
 
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
@@ -264,34 +258,63 @@ env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 winner = unname(winner)
 
 # Load fit
-fit = readRDS(paste(resultsdir, "nonadaptive", paste(winner, "fit", "rds", sep = "."), sep = "/"))
+fit = readRDS(paste(resultsdir, paste(winner, "fit", "rds", sep = "."), sep = "/"))
 
-# Get and index winning model in fixed effects model lsit (used for simulation)
+# Get index of winning model in fixed effects model lsit (used for simulation)
 winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
 models = getmodels(hierarch = F)
-winnerindx = grep(pattern = winner, models$name)
-models = lapply(models, function(x) x[winnerindx])
+winnerindx = grep(paste0("^", winner, "\\.fixed$"), unlist(models$name))
 
 # Extract draws
 draws = tidy_draws(fit)
-rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[[1]])] 
+rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[winnerindx][[1]])] 
 rl.pars = apply(rl.pars, 2, mean)
-rl.pars = append(rl.pars, models$fixed.pars[[1]])
+rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
+
+# Extract columns with environment-specific social learning weights and put in matrix.
+# If adaptive model
+if(grepl(pattern = "2", winner)){
+
+  # Extract columns into matrix with corresponding indices
+  par.names <- grep("^alpha[^\\[]*\\[", names(rl.pars), value = TRUE)
+
+  # Get number of different parameters that vary by environment
+  par.num = length(par.names) / 12
+
+  # Loop through parameters that vary by environment
+  for (p in 1:par.num) {
+    par.names.subset = par.names[((p - 1) * 12 + 1):(p * 12)]
+    par.indx <- do.call(rbind, regmatches(par.names.subset, gregexpr("\\d+", par.names.subset)))
+    par.mat <- matrix(NA, nrow = max(as.integer(par.indx[,1])), ncol = max(as.integer(par.indx[,2])))
+
+    for (i in seq_along(par.names.subset)) {
+      row <- as.integer(par.indx[i, 1])
+      col <- as.integer(par.indx[i, 2])
+      par.mat[row, col] <- rl.pars[par.names.subset[i]][[1]]
+    }
+
+    # Remove alphaVSD entries from rl.pars and rename matrix
+    rl.pars = rl.pars[!names(rl.pars) %in% par.names.subset]
+    par.name = unique(sub("\\[.*$", "", par.names.subset))
+
+    # Add matrix to rlpars
+    rl.pars[par.name] = list(par.mat)
+  }
+}
 
 # Remove fit (to save memory)
 remove(fit)
 
 # Prep simulation
-f = get(models$sim[[1]])
+f = get(models$sim[[winnerindx]])
 sim.pars = c(exp.pars, env.pars, rl.pars, decfreq.init = list(decfreq.init))
 
 # Simulate
 results = list()
 for(sim in 1:nsim){
   print(paste("Simulation", sim, "of", nsim))
-  sim.data = f(sim.parameters = sim.pars, postpredict = T) %>% mutate(sim=sim, decision = decision - 1)
+  sim.data = f(sim.parameters = sim.pars, postpredict = T, duration.actual = F) %>% mutate(sim=sim, decision = decision - 1)
   results[[sim]] = sim.data
-  
 }
 results = bind_rows(results)
 
@@ -303,7 +326,7 @@ plot.data = results %>%
   reframe(mu =mean(acc), se = sd(acc) / sqrt(nsim)) %>%
   mutate(lower = mu - se, upper = mu + se)
 
-write.csv(plot.data, file = paste(resultsdir, "nonadaptive", "postpredict_acctime.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "postpredict_acctime.csv", sep = "/"))
 
 # Plot posterior means + hdis 
 ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
@@ -335,18 +358,12 @@ p = plot.data %>%
         plot.title = element_text(hjust = 0.5, size = rel(8)),
         plot.margin = margin(1,1,1,1, "cm")) +
   labs(x="Time", y="Mean Accuracy \n", 
-       col="Probability Maximum") +
+      col="Probability Maximum") +
   facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
 ggexport(p, width=1920, height=1080, 
-         filename = paste(resultsdir, "nonadaptive","postpredict_acctime.jpeg", sep = "/"))
+        filename = paste(resultsdir,"postpredict_acctime.jpeg", sep = "/"))
 
 # Posterior predictions for accuracy
-
-# Get initial distribution of players from data and actual duration - environment combination
-decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, session, max, max.fac, ratio, ratio.fac, decision, duration)
-
-# Number of times experiments were simulated from each model
-nsim=100
 
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
@@ -357,26 +374,7 @@ exp.pars = list(
 # Add unique ids for players (rows are sessions)
 exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
 
-# Set the winning model / the best, simplest model
-winner = paste(winner, "hierarch", sep = ".")
-
-# Load fit
-fit = readRDS(paste(resultsdir, "nonadaptive", paste(winner, "fit", "rds", sep = "."), sep = "/"))
-
-# Get and index winning model in fixed effects model lsit (used for simulation)
-winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
-models = getmodels(hierarch = F)
-winnerindx = grep(pattern = winner, models$name)
-models = lapply(models, function(x) x[winnerindx])
-
-# Extract draws
-draws = tidy_draws(fit)
-rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[[1]])] 
-rl.pars = apply(rl.pars, 2, mean)
-rl.pars = append(rl.pars, models$fixed.pars[[1]])
-
-# Prep simulation
-f = get(models$sim[[1]])
+# Update sim parameters
 sim.pars = c(exp.pars, rl.pars, decfreq.init= list(decfreq.init))
 
 # Simulate
@@ -389,7 +387,7 @@ for(sim in 1:nsim){
 }
 results = bind_rows(results)
 
-# Summarise simulated data for accuracy over time
+# Summarise simulated data for accuracy
 plot.data.catch = results %>%
   group_by(sim, ratio, max) %>% 
   reframe(acc = mean(decision))  %>%
@@ -402,7 +400,7 @@ plot.data.nocatch = read.csv(file = paste(resultsdir, "../..", "nocatches", "mod
 
 plot.data = bind_rows(plot.data.nocatch, plot.data.catch)
 
-write.csv(plot.data, file = paste(resultsdir, "nonadaptive", "postpredict_acc.csv", sep = "/"), row.names = F)
+write.csv(plot.data, file = paste(resultsdir, "postpredict_acc.csv", sep = "/"), row.names = F)
 
 # Plot posterior means + hdis 
 ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
@@ -433,12 +431,11 @@ p = plot.data %>%
         plot.title = element_text(hjust = 0.5, size = rel(8)),
         plot.margin = margin(1,1,1,1, "cm")) +
   labs(x="Time", y="Mean Accuracy \n", 
-       col="Probability Maximum") +
+      col="Probability Maximum") +
   facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
 p
 ggexport(p, width=1920, height=1080, 
-         filename = paste(resultsdir, "nonadaptive", "postpredict_acc.jpeg", sep="/"))
-
+        filename = paste(resultsdir, "postpredict_acc.jpeg", sep="/"))
 
   
   

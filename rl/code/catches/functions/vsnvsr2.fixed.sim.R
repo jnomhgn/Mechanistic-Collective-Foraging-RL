@@ -1,5 +1,5 @@
 # Function to simulate synthetic data
-vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual = FALSE){
+vsnvsr2.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual = F){
   
   with(data = sim.parameters, expr = {
     
@@ -31,6 +31,8 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
         ratio.fac=env.pars$ratio.fac
         durations = env.pars$duration
       }
+      
+      
       
       # Loop over trials
       for(trial in 1:trials){
@@ -68,21 +70,26 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
             obs.dec = sapply(1:2, function(x) dec.freq == x)
             obs.dec = t(sapply(1:nplayers, function(x) colSums(obs.dec[-x, ])))
             
+            # Select only for chosen option for convex combination
+            obs.dec = sapply(1:nplayers, function(x) obs.dec[x, dec.freq[x]])
+            
             # Number of other group members at same patch obtaining rewards
             obs.rew = sapply(1:nplayers, function(x) sum(rew.freq[dec.freq == dec.freq[x]]) - rew.freq[x])
             
-            # Normalize
-            Q.soc = sapply(1:nplayers, function(x) obs.rew[x] / obs.dec[x, dec.freq[x]])
+            # Normalize both
+            obs.rew = sapply(1:nplayers, function(x) obs.rew[x] / obs.dec[x])
+            obs.dec = obs.dec / (nplayers-1)
+            
+            # Convex combination
+            Q.soc = ifelse(is.na(obs.rew), obs.dec, 
+                           (1 - sigmaVSDR) * obs.dec + sigmaVSDR * obs.rew)
             
             # Value shaping: Update individual Q-values for upcoming trial using this social info
             for(x in 1:nplayers){
-              # Only if there was another player at patch
-              if(!is.na(Q.soc[x])){
-                Q[x, dec.freq[x]] = Q[x, dec.freq[x]] + alphaVSR * (Q.soc[x] - Q[x, dec.freq[x]])
-                #Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]] # The sum of the Q-Values need not be 1 (e.g. c(.5, .41)). Thus, this piece of code might change values even if alphaVSR = 0.
-              }
-              
+              Q[x, dec.freq[x]] = Q[x, dec.freq[x]] + alphaVSDR[[max.fac[trial], ratio.fac[trial]]] * (Q.soc[x] - Q[x, dec.freq[x]])
+              # Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]] # The sum of the Q-Values need not be 1 (e.g. c(.5, .41)). Thus, this piece of code might change values even if alphaVSR = 0.
             }
+            
           }
           
           # Loop over individuals
@@ -91,9 +98,9 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
             # Derive choice probability
             p = softmax(betaQ * Q[player, ] + betaC * C[player, ])
             
-  
+            
             # Decide
-           if(postpredict == T){
+            if(postpredict == T){
               if(time == 0){
                 decision = decfreq.init[which(decfreq.init$id == id[isession, player] & decfreq.init$max.fac == max.fac[trial] & decfreq.init$ratio.fac == ratio.fac[trial]), "decision"]
                 decision = unname(unlist(decision))
@@ -148,7 +155,7 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
         trial.data = bind_cols(trial.data, .name_repair = "minimal") 
         trial.data = trial.data[!duplicated(names(trial.data))] 
         trial.data = trial.data %>% 
-          cbind(session=isession, trial, max=max[trial], max.fac=max.fac[trial],
+          cbind(session = isession, trial=trial, max=max[trial], max.fac=max.fac[trial],
                 ratio=ratio[trial], ratio.fac=ratio.fac[trial],
                 duration=durations[trial],
                 nplayers=nplayers)

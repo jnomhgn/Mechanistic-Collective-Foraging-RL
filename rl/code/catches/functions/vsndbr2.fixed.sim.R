@@ -1,5 +1,5 @@
 # Function to simulate synthetic data
-vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual = FALSE){
+vsndbr2.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual = FALSE){
   
   with(data = sim.parameters, expr = {
     
@@ -7,7 +7,7 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
     sim.data <- list()
     
     # Create levels to index resource abundance offsets with
-    if(duration.actual == F){
+   if(duration.actual == F){
       max.fac = ifelse(max == .5, 1, 
                        ifelse(max == .7, 2, 3))
       ratio.fac = ifelse(ratio == .5, 1,
@@ -19,6 +19,7 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
     # Loop over sessions
     for(isession in 1:sessions){
       
+      # Permute duration for each session (so that counterbalanced across trials)
       if(duration.actual == F){
         # Permute duration for each session (so that counterbalanced across trials)
         durations = sample(rep(durations.vec, each=trials/length(durations.vec)),
@@ -49,8 +50,11 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
         # Initialize choice trace (only last trial in our case) to 0 (Katahira 2018)
         C = matrix(C.init, nrow = nplayers, ncol = 2 )
         
-        # Initialize array of social values
-        Q.soc = array(NA, dim = c(nplayers))
+        # Initialize matrix of social choice probabilities
+        p.soc = matrix(NA, nrow = nplayers, ncol = 2)
+        
+        # Initialize matrix of social values
+        Q.soc = matrix(NA, nrow = nplayers, ncol = 2 )
         
         # Track distribution of decisions
         dec.freq = array(NA, dim = c(nplayers))
@@ -68,21 +72,23 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
             obs.dec = sapply(1:2, function(x) dec.freq == x)
             obs.dec = t(sapply(1:nplayers, function(x) colSums(obs.dec[-x, ])))
             
+            # Divide by number of players excluding individual
+            Q.soc = obs.dec / (nplayers-1)
+            
             # Number of other group members at same patch obtaining rewards
             obs.rew = sapply(1:nplayers, function(x) sum(rew.freq[dec.freq == dec.freq[x]]) - rew.freq[x])
+            obs.rew = sapply(1:nplayers, function(x) obs.rew[x] / obs.dec[x, dec.freq[x]])
+            # Note, if obs.dec[x, dec.freq[x]] == 0, i.e. if no other player was 
+            # present at the same patch, p.soc will be NaN.
             
-            # Normalize
-            Q.soc = sapply(1:nplayers, function(x) obs.rew[x] / obs.dec[x, dec.freq[x]])
+            for(x in 1:nplayers){
+              p.soc[x, dec.freq[x]] = obs.rew[x]
+              p.soc[x, 3 - dec.freq[x]] = 1 - obs.rew[x]
+            }
             
             # Value shaping: Update individual Q-values for upcoming trial using this social info
-            for(x in 1:nplayers){
-              # Only if there was another player at patch
-              if(!is.na(Q.soc[x])){
-                Q[x, dec.freq[x]] = Q[x, dec.freq[x]] + alphaVSR * (Q.soc[x] - Q[x, dec.freq[x]])
-                #Q[x, 3 - dec.freq[x]] = 1 - Q[x, dec.freq[x]] # The sum of the Q-Values need not be 1 (e.g. c(.5, .41)). Thus, this piece of code might change values even if alphaVSR = 0.
-              }
-              
-            }
+            Q = t(sapply(1:nplayers, function(x) Q[x, ] + alphaVSD[[max.fac[trial], ratio.fac[trial]]] * ( Q.soc[x, ] - Q[x, ])))
+            
           }
           
           # Loop over individuals
@@ -91,9 +97,19 @@ vsr1.fixed.sim <- function(sim.parameters, postpredict = FALSE, duration.actual 
             # Derive choice probability
             p = softmax(betaQ * Q[player, ] + betaC * C[player, ])
             
-  
+            # Bias decision using social information
+            if(time != 0){
+              
+              # If p.soc[player] == NaN, no reward-based DB.
+              if(!any(is.na(p.soc[player, ]))){
+                p = p + alphaDBR[[max.fac[trial], ratio.fac[trial]]] * (p.soc[player, ] - p) 
+              }
+              
+            }
+            
+            
             # Decide
-           if(postpredict == T){
+            if(postpredict == T){
               if(time == 0){
                 decision = decfreq.init[which(decfreq.init$id == id[isession, player] & decfreq.init$max.fac == max.fac[trial] & decfreq.init$ratio.fac == ratio.fac[trial]), "decision"]
                 decision = unname(unlist(decision))
