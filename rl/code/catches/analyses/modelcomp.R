@@ -84,91 +84,105 @@ iter = 4000
 warmup = 2000
 refresh = 100
 
-#### Run model comparison ####
-if(!file.exists(paste(resultsdir, "modelcomp.Rdata", sep = "/"))){
+#### Functions For Model Comparison ####
+
+# Function that runs model comparison in parallel
+fitmodel <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh, log.file){
+
+  # Create log file
+  log.file = paste(resultsdir,
+              paste("log", models$name[[mfit]], "txt", sep="."),
+              sep = "/")
+  if(!file.exists(log.file)){file.create(log.file)}
+
+  # Print progress to log.txt
+  prgrss = paste("Currently fitting model", models$name[[mfit]])
+  write("", log.file, append = TRUE, ncolumns = 1)
+  write(prgrss, log.file, append = TRUE, ncolumns = 1)
+
+  # Fit model
+  sink(log.file, append = T)
+  fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
+                  chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+  sink()
+  saveRDS(fit, paste(resultsdir, paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
   
-  # Get models
-  models = getmodels(hierarch = T)
+  # Plot some diagnostics for population means
+  diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
+  ggexport(plotlist = diag.list, width = 1920, height = 1080,
+            filename = paste(resultsdir, "diagnostics",
+                            paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
   
-  # Compile models to avoid recompiling 
-  models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
+  # Plot detailed traceplots
+  if(!dir.exists(
+    paste(resultsdir, "diagnostics/detailed",models$name[[mfit]] , sep = "/"))){
+    dir.create(paste(resultsdir, "diagnostics/detailed",models$name[[mfit]] , sep = "/"))
+  }
+  draws = tidy_draws(fit)
+  par.names = names(draws)
+  par.names = par.names[which(! names(draws) %in% c(".chain", ".iteration",".draw", "lp__",
+                                                    "accept_stat__", "stepsize__",    "treedepth__",  "n_leapfrog__",
+                                                    "divergent__",   "energy__"))]
+  par.names = par.names[!grepl("log_lik", par.names)] 
+  for (param in par.names) {
+    tplot <- traceplot(fit, pars = param) + ggtitle(paste("Trace plot for", param))
+    ggsave(paste(resultsdir, "diagnostics/detailed",models$name[[mfit]],  paste0("traceplot_", param, ".png"), sep = "/"), tplot)
+  }
   
+  # Save diagnostics for all parameters
+  fit.summary = summary(fit)$summary
+  write.csv(fit.summary, file = paste(resultsdir, "diagnostics",
+                                      paste(models$name[[mfit]], "diagnostics", "csv",  sep = "."), sep = "/"))
+  
+  # Print core diagnostics to log.txt
+  # Extract effective sample size (ESS) and R-hat values
+  ess <- fit.summary[, "n_eff"]
+  rhat <- fit.summary[, "Rhat"]
+  
+  # Compute the required values
+  num_low_ess <- sum(ess < 150, na.rm = TRUE)
+  num_high_rhat <- sum(rhat > 1.01, na.rm = TRUE)
+  min_ess <- min(ess, na.rm = TRUE)
+  max_rhat <- max(rhat, na.rm = TRUE)
+  
+  # Prepare log message
+  log_message <- sprintf(
+    "Number of parameters with ESS < 150: %d\nNumber of parameters with Rhat > 1.01: %d\nLowest ESS: %.2f\nLargest Rhat: %.3f\n",
+    num_low_ess, num_high_rhat, min_ess, max_rhat
+  )
+  write("", log.file, append = TRUE, ncolumns = 1)
+  write(log_message, log.file, append = TRUE, ncolumns = 1)
+  
+  
+  # Plot posterior
+  draws = tidy_draws(fit) %>% select(names(models$free.pars.pop[[mfit]]))
+  palpha = mcmc_areas(draws, pars = names(models$free.pars.pop[[mfit]])[grepl("alpha", names(models$free.pars.pop[[mfit]]))])
+  pbeta= mcmc_areas(draws, pars = names(models$free.pars.pop[[mfit]])[!grepl("alpha", names(models$free.pars.pop[[mfit]]))])
+  p = ggarrange(palpha, pbeta, ncol = 2)
+  ggexport(p, width = 2550, height = 1440,
+            filename = paste(resultsdir, "diagnostics", paste(models$name[[mfit]], "draws", "jpeg", sep = "."), sep = "/"))
+  
+}
+
+
+# Function to compute PSIS-LOO for each model fit sequentially
+computeloo <-function(models, adaptivity, log.file){
+
   # Results list
   results = list()
-  
-  # Create log file
-  log.file = paste(resultsdir, "log.txt", sep = "/")
-  if(!file.exists(log.file)){file.create(log.file)}
-  
+
   # Loop over models
   for(mfit in 1:length(models$stan.loglik)){
-    
-    # Print info about current simulation / fitting
-    prgrss = paste("\n Currently fitting model", models$stan.loglik[[mfit]], "\n")
-    write("", log.file, append = TRUE, ncolumns = 1)
-    write(prgrss, log.file, append = TRUE, ncolumns = 1)
-    
-    # Fit model
-    sink(log.file, append = T)
-    fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
-                   chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
-    sink()
-    saveRDS(fit, paste(resultsdir, paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
-    
-    # Plot some diagnostics for population means
-    diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
-    ggexport(plotlist = diag.list, width = 1920, height = 1080,
-             filename = paste(resultsdir, "diagnostics",
-                              paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
-    
-    # Plot detailed traceplots
-    if(!dir.exists(
-      paste(resultsdir, "diagnostics/detailed",models$name[[mfit]] , sep = "/"))){
-      dir.create(paste(resultsdir, "diagnostics/detailed",models$name[[mfit]] , sep = "/"))
-    }
-    draws = tidy_draws(fit)
-    par.names = names(draws)
-    par.names = par.names[which(! names(draws) %in% c(".chain", ".iteration",".draw", "lp__",
-                                                      "accept_stat__", "stepsize__",    "treedepth__",  "n_leapfrog__",
-                                                      "divergent__",   "energy__"))]
-    par.names = par.names[!grepl("log_lik", par.names)] 
-    for (param in par.names) {
-      tplot <- traceplot(fit, pars = param) + ggtitle(paste("Trace plot for", param))
-      ggsave(paste(resultsdir, "diagnostics/detailed",models$name[[mfit]],  paste0("traceplot_", param, ".png"), sep = "/"), tplot)
-    }
-    
-    # Save diagnostics for all parameters
-    fit.summary = summary(fit)$summary
-    write.csv(fit.summary, file = paste(resultsdir, "diagnostics",
-                                        paste(models$name[[mfit]], "diagnostics", "csv",  sep = "."), sep = "/"))
-    
-    # Print core diagnostics to log.txt
-    # Extract effective sample size (ESS) and R-hat values
-    ess <- fit.summary[, "n_eff"]
-    rhat <- fit.summary[, "Rhat"]
-    
-    # Compute the required values
-    num_low_ess <- sum(ess < 150, na.rm = TRUE)
-    num_high_rhat <- sum(rhat > 1.01, na.rm = TRUE)
-    min_ess <- min(ess, na.rm = TRUE)
-    max_rhat <- max(rhat, na.rm = TRUE)
-    
-    # Prepare log message
-    log_message <- sprintf(
-      "Number of parameters with ESS < 150: %d\nNumber of parameters with Rhat > 1.01: %d\nLowest ESS: %.2f\nLargest Rhat: %.3f\n",
-      num_low_ess, num_high_rhat, min_ess, max_rhat
-    )
-    write("", log.file, append = TRUE, ncolumns = 1)
-    write(log_message, log.file, append = TRUE, ncolumns = 1)
-    
-    # Plot posterior
-    draws = tidy_draws(fit) %>% select(names(models$free.pars.pop[[mfit]]))
-    palpha = mcmc_areas(draws, pars = names(models$free.pars.pop[[mfit]])[grepl("alpha", names(models$free.pars.pop[[mfit]]))])
-    pbeta= mcmc_areas(draws, pars = names(models$free.pars.pop[[mfit]])[!grepl("alpha", names(models$free.pars.pop[[mfit]]))])
-    p = ggarrange(palpha, pbeta, ncol = 2)
-    ggexport(p, width = 2550, height = 1440,
-             filename = paste(resultsdir, "diagnostics", paste(models$name[[mfit]], "draws", "jpeg", sep = "."), sep = "/"))
-    
+
+    # Create log file for each model or append to it
+    log.file = paste(resultsdir,
+                paste("log", models$name[[mfit]], "txt", sep="."),
+                sep = "/")
+    if(!file.exists(log.file)){file.create(log.file)}
+
+    # Load model fit
+    fit = readRDS(paste(resultsdir, paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
+     
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
     ll = extract_log_lik(fit, parameter_name = "log_lik", merge_chains = FALSE)
@@ -188,7 +202,7 @@ if(!file.exists(paste(resultsdir, "modelcomp.Rdata", sep = "/"))){
     
     # Save diagnostics
     jpeg(paste(resultsdir, "diagnostics", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"))
-    plot(get(loo.model))
+    plot(get(loo.model))    
     dev.off()
     
     sink(log.file, append = T)
@@ -199,9 +213,10 @@ if(!file.exists(paste(resultsdir, "modelcomp.Rdata", sep = "/"))){
     # Save to results
     results[[models$name[[mfit]]]] = get(loo.model)
     rm(list = loo.model)
-    
+
+
   }
-  
+
   # Compare models
   comparison = loo_compare(results)
   
@@ -212,20 +227,52 @@ if(!file.exists(paste(resultsdir, "modelcomp.Rdata", sep = "/"))){
   winner = comparison %>% filter(row_number() == 1 & elpd_diff == 0) %>% rownames() %>% unlist()
   
   # Save Variables
-  save(results, comparison, winner, file = paste(resultsdir, "modelcomp.Rdata", sep = "/"))
-  
+  save(list = c("results", "comparison", "winner"), file = paste(resultsdir, "modelcomp.Rdata", sep = "/"))
+ 
   # Save and print comparison
   write.csv(x = comparison, file = paste(resultsdir, "modelcomp.csv", sep = "/"))
   
+  # Return comparison and winner individually
+  return(list(comparison = comparison, winner = winner))
+
+}
+
+
+
+#### Run model comparison ####
+
+# Get models
+models = getmodels(hierarch = T)
+
+# Compile models to avoid recompiling 
+models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
+
+# Results list
+results = list()
+
+# Run model comparison in parallel if results do not exist
+if(!file.exists(paste(resultsdir, "modelcomp.Rdata", sep = "/"))){
+
+  plan(multisession, workers = as.integer((parallel::detectCores() - 1) / 4))
+
+  # Fit models in parallel
+  future_lapply(1:length(models$stan.loglik), function(mfit) {
+    fitmodel(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh, log.file)
+  })
+
+  # Compute PSIS-LOO sequentially
+  results = computeloo(models, adaptivity, log.file)
+
+  # Extract results from list
+  list2env(results, globalenv())
+
 }else{
-  
-  # Read comparison
+
+  # Load results
   load(file = paste(resultsdir, "modelcomp.Rdata", sep = "/"))
-  
 }
 
 print(comparison[, ])
-
 
 #### Posterior predictions ####
 
