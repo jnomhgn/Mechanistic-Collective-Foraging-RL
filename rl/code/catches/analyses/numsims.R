@@ -2,7 +2,6 @@
 
 # Source functions
 function.list = paste0("rl/code/catches/functions/", list.files("rl/code/catches/functions"))
-function.list = function.list[sapply(function.list, function(x) !grepl("2", x))]
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
@@ -14,7 +13,7 @@ resultsdir = "rl/results/catches/numsims"
 #### Prepare simulations ####
 
 # Number of simulated experiments
-nsim = 100
+nsim = 2
 
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
@@ -33,48 +32,100 @@ ratio = round(c(.5, .65, .8, .95), digits = 2)
 env.pars = expand.grid(max=max, ratio=ratio)
 env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 
-# Get model list
-models = getmodels()
+#### Function for Simulation ####
 
-# Drop versions with adaptive social learning weights
-# models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] )
+# Simulation function
+sim_fun = function(sim, sim.pars, rl.pars, f, models, mod, parcomb) {
 
-# Select models with single social learning parameter (and arl model)
-models=lapply(models,function(x) x[models$name %in% c("arl.fixed","dbr1.fixed", "vsr1.fixed")] )
+  print(paste("Model:", models$name[[mod]], " Parcomb:", parcomb, " Sim:", sim))
 
-# Create rl pars
-rl.pars = list()
+  # Simulate data
+  sim.data = f(sim.parameters = sim.pars)
 
-# Load ARL model fit for the no catches condition
-fit = readRDS(paste(resultsdir, "../../nocatches/modelcomp/nonadaptive/arl.hierarch.fit.rds", sep = "/"))
+  # Add sim parameters
+  sim.data = sim.data %>%
+    mutate(decision = decision - 1) %>%
+    cbind(model=models$name[[mod]], parcomb=parcomb) %>%
+    bind_cols(rl.pars[parcomb, ]) %>%
+    # mutate(alphaS = ifelse("alphaDBD" %in% colnames(rl.pars), alphaDBD, alphaDBR)) %>%
+    mutate(sim = sim) %>%
+    relocate(model, parcomb, sim)
+
+  # Compute mean individual accuracy and rewards
+  rew.acc = sim.data %>%
+    # Compute individual accuracy and rewards on each trial
+    group_by(sim, model, alphaDBR, alphaVSR, alphaVSD, alphaVSDR, sigmaVSDR, session, trial, player, duration, ratio, max) %>% # for each individual trial
+    reframe(acc = sum(decision),
+            rew = sum(reward)) %>%
+    mutate(acc = acc / (duration + 1)) %>%
+    mutate(rew = rew / (duration + 1)) %>%
+    # Compute average individual accuracy
+    group_by(sim, model, alphaDBR, alphaVSR, alphaVSD, alphaVSDR, sigmaVSDR, ratio, max) %>%
+    reframe(acc.mean = mean(acc), rew.mean = mean(rew))
+
+  # Compute mean individual accuracy ~ time
+  acc.time = sim.data %>%
+    # Compute average individual accuracy at each time step
+    group_by(sim, model, alphaDBR, alphaVSR, alphaVSD, alphaVSDR, sigmaVSDR, time, ratio, max) %>%
+    reframe(frac.corr = mean(decision))
+
+  # Compute mean switch rate
+  switches = sim.data %>%
+    group_by(model, alphaDBR, alphaVSR, alphaVSD, alphaVSDR, sigmaVSDR, sim, session, trial, player, duration, ratio, max) %>%
+    mutate(switches = ifelse(lag(decision) != decision, 1, 0)) %>%
+    reframe(switches = sum(switches, na.rm=T) / duration) %>%
+    group_by(model, alphaDBR, alphaVSR, alphaVSD, alphaVSDR, sigmaVSDR, sim, ratio, max) %>%
+    reframe(switches.mean = mean(switches))
+
+  # Compute mean switches ~ time
+  switches.time = sim.data %>%
+    group_by(model, alphaDBR, alphaVSR, alphaVSD, alphaVSDR, sigmaVSDR, sim, session, trial, player, duration, ratio, max) %>%
+    mutate(switch = ifelse(lag(decision) != decision, 1, 0)) %>%
+    group_by(model, alphaDBR, alphaVSR, alphaVSD, alphaVSDR, sigmaVSDR, sim, time, ratio, max) %>%
+    reframe(switch.frac = sum(switch, na.rm = T) / max(player))
+
+  list(rew.acc=rew.acc, acc.time=acc.time, switches=switches, switches.time=switches.time)
+}
 
 
-# Get ARL parameter estimates
-draws = fit %>%
-  tidy_draws() %>%
-  select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]]))
-arl.pars.catches = apply(draws, 2, mean)
-
-# Remove fit
-remove(fit)
-
-# Set social learning weights for decision- and reward- based DB and VS 
-srl.pars = c("alphaDBR", "alphaVSR") 
-srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = 0.01)) %>%
-  `colnames<-`(srl.pars)
-
-# Merge
-rl.pars.catches = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>% 
-  cbind(t(arl.pars.catches)) %>% cbind(srl.pars)
-
-log.txt = paste(resultsdir, "log.txt", sep = "/")
-if(!file.exists(log.txt)){file.create(log.txt)}
-
-
-#### Run simulations ####
+#### Run simulations for v1 ####
 
 # Add caching
-if(!file.exists(paste(resultsdir, "numsims.rds", sep = "/"))){
+if(!file.exists(paste(resultsdir, "numsims_v1.rds", sep = "/"))){
+
+  # Get model list
+  models = getmodels()
+
+  # Select models with single social learning parameter (and arl model)
+  models=lapply(models,function(x) x[models$name %in% c("arl.fixed","dbr1.fixed", "vsr1.fixed")] )
+
+  # Create rl pars
+  rl.pars = list()
+
+  # Load ARL model fit for the no catches condition
+  fit = readRDS(paste(resultsdir, "../../nocatches/modelcomp/nonadaptive/arl.hierarch.fit.rds", sep = "/"))
+
+  # Get ARL parameter estimates
+  draws = fit %>%
+    tidy_draws() %>%
+    select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]]))
+  arl.pars.catches = apply(draws, 2, mean)
+
+  # Remove fit
+  remove(fit)
+
+  # Set social learning weights for decision- and reward- based DB and VS 
+  srl.pars = c("alphaDBR", "alphaVSR", "alphaVSD", "alphaVSDR", "sigmaVSDR") 
+  srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = 0.01)) %>%
+    `colnames<-`(srl.pars)
+  srl.pars[, c("alphaVSD", "alphaVSDR", "sigmaVSDR")] = NA
+
+  # Merge
+  rl.pars.catches = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>% 
+    cbind(t(arl.pars.catches)) %>% cbind(srl.pars)
+
+  log.txt = paste(resultsdir, "log_v1.txt", sep = "/")
+  if(!file.exists(log.txt)){file.create(log.txt)}
   
   sink(log.txt, append = T)
   
@@ -84,59 +135,6 @@ if(!file.exists(paste(resultsdir, "numsims.rds", sep = "/"))){
     acc.time = list(),
     switches = list(), switches.time = list()
   )
-
- # Simulation function
-  sim_fun = function(sim, sim.pars, rl.pars, f, models, mod, parcomb) {
-
-    print(paste("Model:", models$name[[mod]], " Parcomb:", parcomb, " Sim:", sim))
-
-    # Simulate data
-    sim.data = f(sim.parameters = sim.pars)
-
-    # Add sim parameters
-    sim.data = sim.data %>%
-      mutate(decision = decision - 1) %>%
-      cbind(model=models$name[[mod]], parcomb=parcomb) %>%
-      bind_cols(rl.pars[parcomb, ]) %>%
-      mutate(alphaS = ifelse("alphaDBD" %in% colnames(rl.pars), alphaDBD, alphaDBR)) %>%
-      mutate(sim = sim) %>%
-      relocate(model, parcomb, sim)
-
-    # Compute mean individual accuracy and rewards
-    rew.acc = sim.data %>%
-      # Compute individual accuracy and rewards on each trial
-      group_by(sim, model, alphaS, session, trial, player, duration, ratio, max) %>% # for each individual trial
-      reframe(acc = sum(decision),
-              rew = sum(reward)) %>%
-      mutate(acc = acc / (duration + 1)) %>%
-      mutate(rew = rew / (duration + 1)) %>%
-      # Compute average individual accuracy
-      group_by(sim, model, alphaS, ratio, max) %>%
-      reframe(acc.mean = mean(acc), rew.mean = mean(rew))
-
-    # Compute mean individual accuracy ~ time
-    acc.time = sim.data %>%
-      # Compute average individual accuracy at each time step
-      group_by(sim, model, alphaS, time, ratio, max) %>%
-      reframe(frac.corr = mean(decision))
-
-    # Compute mean switch rate
-    switches = sim.data %>%
-      group_by(model, alphaS, sim, session, trial, player, duration, ratio, max) %>%
-      mutate(switches = ifelse(lag(decision) != decision, 1, 0)) %>%
-      reframe(switches = sum(switches, na.rm=T) / duration) %>%
-      group_by(model, alphaS, sim, ratio, max) %>%
-      reframe(switches.mean = mean(switches))
-
-    # Compute mean switches ~ time
-    switches.time = sim.data %>%
-      group_by(model, alphaS, sim, session, trial, player, duration, ratio, max) %>%
-      mutate(switch = ifelse(lag(decision) != decision, 1, 0)) %>%
-      group_by(model, alphaS, sim, time, ratio, max) %>%
-      reframe(switch.frac = sum(switch, na.rm = T) / max(player))
-
-    list(rew.acc=rew.acc, acc.time=acc.time, switches=switches, switches.time=switches.time)
-  }
   
   for(mod in 1:length(models$name)){
     
@@ -173,15 +171,15 @@ if(!file.exists(paste(resultsdir, "numsims.rds", sep = "/"))){
   
   results = lapply(results, function(x) bind_rows(x))
   saveRDS(results, file = 
-            paste(resultsdir, "numsims.rds", sep = "/"))
+            paste(resultsdir, "numsims_v1.rds", sep = "/"))
   
   sink()
   
 }else{
-  results = readRDS(file = paste(resultsdir, "numsims.rds", sep = "/"))
+  results = readRDS(file = paste(resultsdir, "numsims_v1.rds", sep = "/"))
 }
 
-#### Plot results ####
+#### Plot results for v1 ####
 
 # List to save plots to
 plot.list = list()
@@ -203,7 +201,9 @@ facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
 #       reframe(acc.delta= mean(delta),
 #               lower = quantile(delta, probs = .05),
 #               upper = quantile(delta, probs = .95))
-plot.data.c = results$rew.acc %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+plot.data.c = results$rew.acc %>% 
+  mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
+  filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
   group_by(model, alphaS, ratio, max) %>% # Group by model, social learning weight, ratio, and max
   reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
   ungroup() %>%
@@ -221,14 +221,14 @@ plot.data.c = results$rew.acc %>% filter(model != "arl.fixed" | alphaS == 0) %>%
   ) %>%
   select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise)) %>%
   filter(model != "arl.fixed")
-write.csv(plot.data.c, file = paste(resultsdir, "accdiff.csv", sep = "/"))
+write.csv(plot.data.c, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
 
 
 # Merge data
 plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "accdiff.csv")) %>%
   filter(model != "arl.fixed") %>% select(-c(X))
 plot.data = rbind(plot.data.nc, plot.data.c)
-write.csv(plot.data, file = paste(resultsdir, "accdiff.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
 
 
 # Reward-based DB vs. VS
@@ -261,7 +261,7 @@ p = plot.data.c %>% filter(model %in% c("dbr1.fixed", "vsr1.fixed")) %>%
 p
 #plot.list =  append(plot.list, list(p))
 ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "accdiff.jpeg", sep = "/"))
+         filename = paste(resultsdir, "accdiff_v1.jpeg", sep = "/"))
 
 # Individual Accuracy over time
 # plot.data = results$acc.time %>%
@@ -270,7 +270,9 @@ ggexport(p, width = 2800, height = 1440,
 #   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
 #   group_by(ratio, max, time) %>%
 #   mutate(acc.delta = acc.mean - acc.mean[which(model == "arl.fixed")])
-plot.data.c = results$acc.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+plot.data.c = results$acc.time %>% 
+  mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
+  filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
   group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
   reframe(acc.mean.vec = list(frac.corr[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
   ungroup() %>%
@@ -288,14 +290,14 @@ plot.data.c = results$acc.time %>% filter(model != "arl.fixed" | alphaS == 0) %>
   filter(model != "arl.fixed")
 
 
-write.csv(plot.data.c, file = paste(resultsdir, "acctimediff.csv", sep = "/"))
+write.csv(plot.data.c, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/"))
 
 
 # Merge data
 plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "acctimediff.csv")) %>%
   filter(model != "arl.fixed") %>% select(-c(X))
 plot.data = rbind(plot.data.nc, plot.data.c)
-write.csv(plot.data, file = paste(resultsdir, "acctimediff.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/"))
 
 # Reward-based DB vs. VS
 p1=plot.data.c %>% filter(model == "dbr1.fixed") %>%
@@ -356,7 +358,7 @@ p2
 p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
               labels = c("a", "b"), font.label = list(size=rel(30)))
 ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "acctimediff.jpeg", sep = "/"))
+         filename = paste(resultsdir, "acctimediff_v1.jpeg", sep = "/"))
 
 # Switch-rate over time
 # plot.data = results$switches.time %>%
@@ -365,7 +367,9 @@ ggexport(p, width = 2800, height = 1440,
 #   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
 #   group_by(ratio, max, time) %>%
 #   mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
-plot.data.c = results$switches.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+plot.data.c = results$switches.time %>% 
+  mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
+  filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
   group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
   reframe(switch.mean.vec = list(switch.frac[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
   ungroup() %>%
@@ -383,13 +387,13 @@ plot.data.c = results$switches.time %>% filter(model != "arl.fixed" | alphaS == 
   filter(model != "arl.fixed")
 
 
-write.csv(plot.data.c, file = paste(resultsdir, "switchtimediff.csv", sep = "/"))
+write.csv(plot.data.c, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))
 
 # Merge data
 plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "switchtimediff.csv")) %>%
   filter(model != "arl.fixed") %>% select(-c(X))
 plot.data = rbind(plot.data.nc, plot.data.c)
-write.csv(plot.data, file = paste(resultsdir, "switchtimediff.csv", sep = "/"))
+write.csv(plot.data, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))
 
 # Reward-based DB vs. VS
 p1 = plot.data.c %>% filter(model == "dbr1.fixed") %>%
@@ -441,4 +445,4 @@ p2
 p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
               labels = c("a", "b"), font.label = list(size=rel(30)))
 ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "switchtimediff.jpeg", sep = "/"))
+         filename = paste(resultsdir, "switchtimediff_v1.jpeg", sep = "/"))
