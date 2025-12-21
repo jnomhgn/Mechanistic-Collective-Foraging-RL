@@ -241,17 +241,17 @@ computeloo <-function(models, adaptivity, log.file){
 
 #### Run model comparison ####
 
-# Get models
-models = getmodels(hierarch = T)
-
-# Compile models to avoid recompiling 
-models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
-
 # Results list
 results = list()
 
 # Run model comparison in parallel if results do not exist
 if(!file.exists(paste(resultsdir, "modelcomp.Rdata", sep = "/"))){
+
+  # Get models
+  models = getmodels(hierarch = T)
+
+  # Compile models to avoid recompiling 
+  models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
 
   plan(multisession, workers = as.integer((parallel::detectCores() - 1) / 4))
 
@@ -267,222 +267,229 @@ if(!file.exists(paste(resultsdir, "modelcomp.Rdata", sep = "/"))){
   list2env(results, globalenv())
 
 }else{
-
+  print("Results for model comparison already exist. Skipping computation.")
   # Load results
   load(file = paste(resultsdir, "modelcomp.Rdata", sep = "/"))
 }
 
-print(comparison[, ])
+# print(comparison[, ])
 
 #### Posterior predictions ####
 
-# Get initial distribution of players from data
-decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision, duration)
+# Only run if posterior predictions do not exist yet
+if(!file.exists(paste(resultsdir, "postpredict_acctime.csv", sep = "/")) &
+   !file.exists(paste(resultsdir, "postpredict_acc.csv", sep = "/"))){
 
-# Number of times experiments were simulated from each model
-nsim=100
+  # Get initial distribution of players from data
+  decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision, duration)
 
-# Simulations for accuracy over time
+  # Number of times experiments were simulated from each model
+  nsim=100
 
-# Experimental parameters (identical for all simulations)
-exp.pars = list(
-  sessions = 18,
-  trials = 12,
-  nplayers = 5, # number of players per session
-  durations.vec = c(75)  # The simulation functions sample trial lengths from this vector (equally) 
-  # and randomly assigns them to the different environments
-)
-# Add unique ids for players (rows are sessions)
-exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
+  # Simulations for accuracy over time
 
-# Environmental parameters (identical for all simulations)
-max = round(c(.5, .7, .9), digits = 2)
-ratio = round(c(.5, .65, .8, .95), digits = 2)
-env.pars = expand.grid(max=max, ratio=ratio)
-env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
+  # Experimental parameters (identical for all simulations)
+  exp.pars = list(
+    sessions = 18,
+    trials = 12,
+    nplayers = 5, # number of players per session
+    durations.vec = c(75)  # The simulation functions sample trial lengths from this vector (equally) 
+    # and randomly assigns them to the different environments
+  )
+  # Add unique ids for players (rows are sessions)
+  exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
 
-# Set the winning model / the best, simplest model
-winner = unname(winner)
+  # Environmental parameters (identical for all simulations)
+  max = round(c(.5, .7, .9), digits = 2)
+  ratio = round(c(.5, .65, .8, .95), digits = 2)
+  env.pars = expand.grid(max=max, ratio=ratio)
+  env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 
-# Load fit
-fit = readRDS(paste(resultsdir, paste(winner, "fit", "rds", sep = "."), sep = "/"))
+  # Set the winning model / the best, simplest model
+  winner = unname(winner)
 
-# Get index of winning model in fixed effects model lsit (used for simulation)
-winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
-models = getmodels(hierarch = F)
-winnerindx = grep(paste0("^", winner, "\\.fixed$"), unlist(models$name))
+  # Load fit
+  fit = readRDS(paste(resultsdir, paste(winner, "fit", "rds", sep = "."), sep = "/"))
 
-# Extract draws
-draws = tidy_draws(fit)
-rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[winnerindx][[1]])] 
-rl.pars = apply(rl.pars, 2, mean)
-rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
+  # Get index of winning model in fixed effects model lsit (used for simulation)
+  winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
+  models = getmodels(hierarch = F)
+  winnerindx = grep(paste0("^", winner, "\\.fixed$"), unlist(models$name))
 
-# Extract columns with environment-specific social learning weights and put in matrix.
-# If adaptive model
-if(grepl(pattern = "2", winner)){
+  # Extract draws
+  draws = tidy_draws(fit)
+  rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[winnerindx][[1]])] 
+  rl.pars = apply(rl.pars, 2, mean)
+  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
 
-  # Extract columns into matrix with corresponding indices
-  par.names <- grep("^alpha[^\\[]*\\[", names(rl.pars), value = TRUE)
+  # Extract columns with environment-specific social learning weights and put in matrix.
+  # If adaptive model
+  if(grepl(pattern = "2", winner)){
 
-  # Get number of different parameters that vary by environment
-  par.num = length(par.names) / 12
+    # Extract columns into matrix with corresponding indices
+    par.names <- grep("^alpha[^\\[]*\\[", names(rl.pars), value = TRUE)
 
-  # Loop through parameters that vary by environment
-  for (p in 1:par.num) {
-    par.names.subset = par.names[((p - 1) * 12 + 1):(p * 12)]
-    par.indx <- do.call(rbind, regmatches(par.names.subset, gregexpr("\\d+", par.names.subset)))
-    par.mat <- matrix(NA, nrow = max(as.integer(par.indx[,1])), ncol = max(as.integer(par.indx[,2])))
+    # Get number of different parameters that vary by environment
+    par.num = length(par.names) / 12
 
-    for (i in seq_along(par.names.subset)) {
-      row <- as.integer(par.indx[i, 1])
-      col <- as.integer(par.indx[i, 2])
-      par.mat[row, col] <- rl.pars[par.names.subset[i]][[1]]
+    # Loop through parameters that vary by environment
+    for (p in 1:par.num) {
+      par.names.subset = par.names[((p - 1) * 12 + 1):(p * 12)]
+      par.indx <- do.call(rbind, regmatches(par.names.subset, gregexpr("\\d+", par.names.subset)))
+      par.mat <- matrix(NA, nrow = max(as.integer(par.indx[,1])), ncol = max(as.integer(par.indx[,2])))
+
+      for (i in seq_along(par.names.subset)) {
+        row <- as.integer(par.indx[i, 1])
+        col <- as.integer(par.indx[i, 2])
+        par.mat[row, col] <- rl.pars[par.names.subset[i]][[1]]
+      }
+
+      # Remove alphaVSD entries from rl.pars and rename matrix
+      rl.pars = rl.pars[!names(rl.pars) %in% par.names.subset]
+      par.name = unique(sub("\\[.*$", "", par.names.subset))
+
+      # Add matrix to rlpars
+      rl.pars[par.name] = list(par.mat)
     }
-
-    # Remove alphaVSD entries from rl.pars and rename matrix
-    rl.pars = rl.pars[!names(rl.pars) %in% par.names.subset]
-    par.name = unique(sub("\\[.*$", "", par.names.subset))
-
-    # Add matrix to rlpars
-    rl.pars[par.name] = list(par.mat)
   }
-}
 
-# Remove fit (to save memory)
-remove(fit)
+  # Remove fit (to save memory)
+  remove(fit)
 
-# Prep simulation
-f = get(models$sim[[winnerindx]])
-sim.pars = c(exp.pars, env.pars, rl.pars, decfreq.init = list(decfreq.init))
+  # Prep simulation
+  f = get(models$sim[[winnerindx]])
+  sim.pars = c(exp.pars, env.pars, rl.pars, decfreq.init = list(decfreq.init))
 
-# Simulate
-results = list()
-for(sim in 1:nsim){
-  print(paste("Simulation", sim, "of", nsim))
-  sim.data = f(sim.parameters = sim.pars, postpredict = T, duration.actual = F) %>% mutate(sim=sim, decision = decision - 1)
-  results[[sim]] = sim.data
-}
-results = bind_rows(results)
+  # Simulate
+  results = list()
+  for(sim in 1:nsim){
+    print(paste("Simulation", sim, "of", nsim))
+    sim.data = f(sim.parameters = sim.pars, postpredict = T, duration.actual = F) %>% mutate(sim=sim, decision = decision - 1)
+    results[[sim]] = sim.data
+  }
+  results = bind_rows(results)
 
-# Summarise simulated data
-plot.data = results %>%
-  group_by(sim, time, ratio, max) %>% 
-  reframe(acc = mean(decision))  %>%
-  group_by(time, ratio, max) %>%
-  reframe(mu =mean(acc), se = sd(acc) / sqrt(nsim)) %>%
-  mutate(lower = mu - se, upper = mu + se)
+  # Summarise simulated data
+  plot.data = results %>%
+    group_by(sim, time, ratio, max) %>% 
+    reframe(acc = mean(decision))  %>%
+    group_by(time, ratio, max) %>%
+    reframe(mu =mean(acc), se = sd(acc) / sqrt(nsim)) %>%
+    mutate(lower = mu - se, upper = mu + se)
 
-write.csv(plot.data, file = paste(resultsdir, "postpredict_acctime.csv", sep = "/"))
+  write.csv(plot.data, file = paste(resultsdir, "postpredict_acctime.csv", sep = "/"))
 
-# Plot posterior means + hdis 
-ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
-names(ratio.labs) = sort(unique(plot.data$ratio))
+  # Plot posterior means + hdis 
+  ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
+  names(ratio.labs) = sort(unique(plot.data$ratio))
 
-max.labs = paste("Max Catch", sort(unique(plot.data$max)))
-names(max.labs) = sort(unique(plot.data$max))
+  max.labs = paste("Max Catch", sort(unique(plot.data$max)))
+  names(max.labs) = sort(unique(plot.data$max))
 
-facet.labeller = labeller(ratio.fac = ratio.labs, max.fac = max.labs)
+  facet.labeller = labeller(ratio.fac = ratio.labs, max.fac = max.labs)
 
-p = plot.data %>% 
-  ggplot(aes(x=time, y=mu, ymin=lower, ymax=upper, col=as.factor(max), fill=as.factor(max))) +
-  scale_color_viridis(name="Max Catch", discrete = T) +
-  scale_fill_viridis(name="Max Catch", discrete = T)+
-  ylim(0, 1) +
-  geom_ribbon(alpha=.5) +
-  geom_line() +
-  geom_hline(yintercept = .5, lty=2) +
-  theme_linedraw(base_size = 11) +
-  theme(text = element_text(size=rel(5)),
-        strip.text.x = element_text(size=rel(7)),
-        strip.text.y = element_text(size=rel(7)), 
-        axis.text.x = element_text(size=rel(7)),
-        axis.title.x = element_text(size=rel(7)),
-        axis.text.y = element_text(size=rel(7)),
-        axis.title.y = element_text(size=rel(7)),
-        legend.text = element_text(size=rel(7)), 
-        legend.title = element_text(size=rel(7)),
-        plot.title = element_text(hjust = 0.5, size = rel(8)),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  labs(x="Time", y="Mean Accuracy \n", 
-      col="Probability Maximum") +
-  facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
-ggexport(p, width=1920, height=1080, 
-        filename = paste(resultsdir,"postpredict_acctime.jpeg", sep = "/"))
+  p = plot.data %>% 
+    ggplot(aes(x=time, y=mu, ymin=lower, ymax=upper, col=as.factor(max), fill=as.factor(max))) +
+    scale_color_viridis(name="Max Catch", discrete = T) +
+    scale_fill_viridis(name="Max Catch", discrete = T)+
+    ylim(0, 1) +
+    geom_ribbon(alpha=.5) +
+    geom_line() +
+    geom_hline(yintercept = .5, lty=2) +
+    theme_linedraw(base_size = 11) +
+    theme(text = element_text(size=rel(5)),
+          strip.text.x = element_text(size=rel(7)),
+          strip.text.y = element_text(size=rel(7)), 
+          axis.text.x = element_text(size=rel(7)),
+          axis.title.x = element_text(size=rel(7)),
+          axis.text.y = element_text(size=rel(7)),
+          axis.title.y = element_text(size=rel(7)),
+          legend.text = element_text(size=rel(7)), 
+          legend.title = element_text(size=rel(7)),
+          plot.title = element_text(hjust = 0.5, size = rel(8)),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    labs(x="Time", y="Mean Accuracy \n", 
+        col="Probability Maximum") +
+    facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
+  ggexport(p, width=1920, height=1080, 
+          filename = paste(resultsdir,"postpredict_acctime.jpeg", sep = "/"))
 
-# Posterior predictions for accuracy
+  # Posterior predictions for accuracy
 
-# Experimental parameters (identical for all simulations)
-exp.pars = list(
-  sessions = 18,
-  trials = 12,
-  nplayers = 5 # number of players per session
-)
-# Add unique ids for players (rows are sessions)
-exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
+  # Experimental parameters (identical for all simulations)
+  exp.pars = list(
+    sessions = 18,
+    trials = 12,
+    nplayers = 5 # number of players per session
+  )
+  # Add unique ids for players (rows are sessions)
+  exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
 
-# Update sim parameters
-sim.pars = c(exp.pars, rl.pars, decfreq.init= list(decfreq.init))
+  # Update sim parameters
+  sim.pars = c(exp.pars, rl.pars, decfreq.init= list(decfreq.init))
 
-# Simulate
-results = list()
-for(sim in 1:nsim){
-  print(paste("Simulation", sim, "of", nsim))
-  sim.data = f(sim.parameters = sim.pars, postpredict = T, duration.actual = T) %>% mutate(sim=sim, decision = decision - 1)
-  results[[sim]] = sim.data
-  
-}
-results = bind_rows(results)
+  # Simulate
+  results = list()
+  for(sim in 1:nsim){
+    print(paste("Simulation", sim, "of", nsim))
+    sim.data = f(sim.parameters = sim.pars, postpredict = T, duration.actual = T) %>% mutate(sim=sim, decision = decision - 1)
+    results[[sim]] = sim.data
+    
+  }
+  results = bind_rows(results)
 
-# Summarise simulated data for accuracy
-plot.data.catch = results %>%
-  group_by(sim, ratio, max) %>% 
-  reframe(acc = mean(decision))  %>%
-  group_by(ratio, max) %>%
-  reframe(mu =mean(acc)) %>%
-  mutate(social.fac=3, social="catches") %>%
-  relocate(c(social.fac, social))
+  # Summarise simulated data for accuracy
+  plot.data.catch = results %>%
+    group_by(sim, ratio, max) %>% 
+    reframe(acc = mean(decision))  %>%
+    group_by(ratio, max) %>%
+    reframe(mu =mean(acc)) %>%
+    mutate(social.fac=3, social="catches") %>%
+    relocate(c(social.fac, social))
 
-plot.data.nocatch = read.csv(file = paste(resultsdir, "../..", "nocatches", "modelcomp", "nonadaptive", "postpredict_acc.csv", sep = "/"))
+  plot.data.nocatch = read.csv(file = paste(resultsdir, "../..", "nocatches", "modelcomp", "nonadaptive", "postpredict_acc.csv", sep = "/"))
 
-plot.data = bind_rows(plot.data.nocatch, plot.data.catch)
+  plot.data = bind_rows(plot.data.nocatch, plot.data.catch)
 
-write.csv(plot.data, file = paste(resultsdir, "postpredict_acc.csv", sep = "/"), row.names = F)
+  write.csv(plot.data, file = paste(resultsdir, "postpredict_acc.csv", sep = "/"), row.names = F)
 
-# Plot posterior means + hdis 
-ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
-names(ratio.labs) = sort(unique(plot.data$ratio))
+  # Plot posterior means + hdis 
+  ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
+  names(ratio.labs) = sort(unique(plot.data$ratio))
 
-max.labs = paste("Max Catch", sort(unique(plot.data$max)))
-names(max.labs) = sort(unique(plot.data$max))
+  max.labs = paste("Max Catch", sort(unique(plot.data$max)))
+  names(max.labs) = sort(unique(plot.data$max))
 
-facet.labeller = labeller(ratio.fac = ratio.labs, max.fac = max.labs)
+  facet.labeller = labeller(ratio.fac = ratio.labs, max.fac = max.labs)
 
-p = plot.data %>% 
-  ggplot(aes(x=social, y=mu, col=as.factor(max), fill=as.factor(max))) +
-  scale_color_viridis(name="Max Catch", discrete = T) +
-  scale_fill_viridis(name="Max Catch", discrete = T)+
-  ylim(0, 1) +
-  geom_point(size=7) +
-  geom_hline(yintercept = .5, lty=2) +
-  theme_linedraw(base_size = 11) +
-  theme(text = element_text(size=rel(5)),
-        strip.text.x = element_text(size=rel(7)),
-        strip.text.y = element_text(size=rel(7)), 
-        axis.text.x = element_text(size=rel(7)),
-        axis.title.x = element_text(size=rel(7)),
-        axis.text.y = element_text(size=rel(7)),
-        axis.title.y = element_text(size=rel(7)),
-        legend.text = element_text(size=rel(7)), 
-        legend.title = element_text(size=rel(7)),
-        plot.title = element_text(hjust = 0.5, size = rel(8)),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  labs(x="Time", y="Mean Accuracy \n", 
-      col="Probability Maximum") +
-  facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
-p
-ggexport(p, width=1920, height=1080, 
-        filename = paste(resultsdir, "postpredict_acc.jpeg", sep="/"))
+  p = plot.data %>% 
+    ggplot(aes(x=social, y=mu, col=as.factor(max), fill=as.factor(max))) +
+    scale_color_viridis(name="Max Catch", discrete = T) +
+    scale_fill_viridis(name="Max Catch", discrete = T)+
+    ylim(0, 1) +
+    geom_point(size=7) +
+    geom_hline(yintercept = .5, lty=2) +
+    theme_linedraw(base_size = 11) +
+    theme(text = element_text(size=rel(5)),
+          strip.text.x = element_text(size=rel(7)),
+          strip.text.y = element_text(size=rel(7)), 
+          axis.text.x = element_text(size=rel(7)),
+          axis.title.x = element_text(size=rel(7)),
+          axis.text.y = element_text(size=rel(7)),
+          axis.title.y = element_text(size=rel(7)),
+          legend.text = element_text(size=rel(7)), 
+          legend.title = element_text(size=rel(7)),
+          plot.title = element_text(hjust = 0.5, size = rel(8)),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    labs(x="Time", y="Mean Accuracy \n", 
+        col="Probability Maximum") +
+    facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
+  p
+  ggexport(p, width=1920, height=1080, 
+          filename = paste(resultsdir, "postpredict_acc.jpeg", sep="/"))
+  }else{
+    print("Posterior predictions already exist. Skipping computation.")
+  }
 
   
   

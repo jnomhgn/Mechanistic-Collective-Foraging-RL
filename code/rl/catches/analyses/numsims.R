@@ -175,276 +175,283 @@ if(!file.exists(paste(resultsdir, "numsims_v1.rds", sep = "/"))){
   sink()
   
 }else{
+  print("Results from numerical simulations for v1 already exist. Skipping simulations.")
   results = readRDS(file = paste(resultsdir, "numsims_v1.rds", sep = "/"))
 }
 
 #### Plot results for v1 ####
 
-# List to save plots to
-plot.list = list()
+# Run only if results do not already exist
+if(!file.exists(paste(resultsdir, "accdiff_v1.csv", sep = "/"))){
 
-# Facet labels
-max.labs = paste("Maximum Yield", sort(unique(results$rew.acc$max)))
-names(max.labs) = sort(unique(results$rew.acc$max))
+  # List to save plots to
+  plot.list = list()
 
-ratio.labs = paste("Yield Ratio", sort(unique(results$rew.acc$ratio)))
-names(ratio.labs) = sort(unique(results$rew.acc$ratio))
+  # Facet labels
+  max.labs = paste("Maximum Yield", sort(unique(results$rew.acc$max)))
+  names(max.labs) = sort(unique(results$rew.acc$max))
 
-facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
+  ratio.labs = paste("Yield Ratio", sort(unique(results$rew.acc$ratio)))
+  names(ratio.labs) = sort(unique(results$rew.acc$ratio))
 
-# plot.data = results$rew.acc %>%
-#       group_by(sim, ratio, max) %>%
-#       mutate(delta = acc.mean - acc.mean[which(model == "arl.fixed")]) %>%
-#       # Summarise sampling distribution
-#       group_by(model, alphaS, ratio, max) %>%
-#       reframe(acc.delta= mean(delta),
-#               lower = quantile(delta, probs = .05),
-#               upper = quantile(delta, probs = .95))
-plot.data.c = results$rew.acc %>% 
-  mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
-  filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
-  group_by(model, alphaS, ratio, max) %>% # Group by model, social learning weight, ratio, and max
-  reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
-  ungroup() %>%
-  group_by(ratio, max) %>%
-  mutate(
-    acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
-  ) %>%
-  ungroup() %>%
-  rowwise() %>%
-  mutate(
-    pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
-    acc.delta = mean(pairwise),
-    lower = quantile(pairwise, probs = 0.05),
-    upper = quantile(pairwise, probs = 0.95)
-  ) %>%
-  select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise)) %>%
-  filter(model != "arl.fixed")
-write.csv(plot.data.c, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
+  facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
 
-
-# Merge data
-plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "accdiff.csv")) %>%
-  filter(model != "arl.fixed") %>% select(-c(X))
-plot.data = rbind(plot.data.nc, plot.data.c)
-write.csv(plot.data, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
+  # plot.data = results$rew.acc %>%
+  #       group_by(sim, ratio, max) %>%
+  #       mutate(delta = acc.mean - acc.mean[which(model == "arl.fixed")]) %>%
+  #       # Summarise sampling distribution
+  #       group_by(model, alphaS, ratio, max) %>%
+  #       reframe(acc.delta= mean(delta),
+  #               lower = quantile(delta, probs = .05),
+  #               upper = quantile(delta, probs = .95))
+  plot.data.c = results$rew.acc %>% 
+    mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
+    filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+    group_by(model, alphaS, ratio, max) %>% # Group by model, social learning weight, ratio, and max
+    reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
+    ungroup() %>%
+    group_by(ratio, max) %>%
+    mutate(
+      acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
+    ) %>%
+    ungroup() %>%
+    rowwise() %>%
+    mutate(
+      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
+      acc.delta = mean(pairwise),
+      lower = quantile(pairwise, probs = 0.05),
+      upper = quantile(pairwise, probs = 0.95)
+    ) %>%
+    select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise)) %>%
+    filter(model != "arl.fixed")
+  write.csv(plot.data.c, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
 
 
-# Reward-based DB vs. VS
-p = plot.data.c %>% filter(model %in% c("dbr1.fixed", "vsr1.fixed")) %>%
-  ggplot(aes(x=alphaS, fill=as.factor(model), col=as.factor(model))) + 
-  labs(y="Individual Accuracy \n") +
-  scale_y_continuous(breaks=seq(-0.5, 1, by=.1))+
-  scale_x_continuous(name=bquote(paste("\n ", alpha[DBr], " / ", alpha[VSr])), breaks = seq(0, 1, by=.1))+
-  scale_fill_viridis(discrete = T, begin = .1, end = .8, 
-                     name="Model", labels=c("DBr", "VSr")) +
-  scale_color_viridis(discrete = T, begin = .1, end = .8, 
+  # Merge data
+  plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "accdiff.csv")) %>%
+    filter(model != "arl.fixed") %>% select(-c(X))
+  plot.data = rbind(plot.data.nc, plot.data.c)
+  write.csv(plot.data, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
+
+
+  # Reward-based DB vs. VS
+  p = plot.data.c %>% filter(model %in% c("dbr1.fixed", "vsr1.fixed")) %>%
+    ggplot(aes(x=alphaS, fill=as.factor(model), col=as.factor(model))) + 
+    labs(y="Individual Accuracy \n") +
+    scale_y_continuous(breaks=seq(-0.5, 1, by=.1))+
+    scale_x_continuous(name=bquote(paste("\n ", alpha[DBr], " / ", alpha[VSr])), breaks = seq(0, 1, by=.1))+
+    scale_fill_viridis(discrete = T, begin = .1, end = .8, 
                       name="Model", labels=c("DBr", "VSr")) +
-  geom_hline(yintercept = 0, lty=2)+
-  geom_hline(yintercept = 0.05, lty=2)+
-  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.5)+
-  geom_line(aes(y=acc.delta), lwd=2) +
-  theme_linedraw(base_size = 11) +
-  theme(text = element_text(size=rel(5)),
-        strip.text.x = element_text(size=rel(7)),
-        strip.text.y = element_text(size=rel(7)), 
-        axis.text.x = element_text(size=rel(7)),
-        axis.title.x = element_text(size=rel(7)),
-        axis.text.y = element_text(size=rel(7)),
-        axis.title.y = element_text(size=rel(7)),
-        legend.text = element_text(size=rel(7)), 
-        legend.title = element_text(size=rel(7)),
-        plot.title = element_text(hjust = 0.5, size = rel(8)),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  facet_grid(ratio ~ max, labeller = facet.labeller)
-p
-#plot.list =  append(plot.list, list(p))
-ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "accdiff_v1.jpeg", sep = "/"))
+    scale_color_viridis(discrete = T, begin = .1, end = .8, 
+                        name="Model", labels=c("DBr", "VSr")) +
+    geom_hline(yintercept = 0, lty=2)+
+    geom_hline(yintercept = 0.05, lty=2)+
+    geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.5)+
+    geom_line(aes(y=acc.delta), lwd=2) +
+    theme_linedraw(base_size = 11) +
+    theme(text = element_text(size=rel(5)),
+          strip.text.x = element_text(size=rel(7)),
+          strip.text.y = element_text(size=rel(7)), 
+          axis.text.x = element_text(size=rel(7)),
+          axis.title.x = element_text(size=rel(7)),
+          axis.text.y = element_text(size=rel(7)),
+          axis.title.y = element_text(size=rel(7)),
+          legend.text = element_text(size=rel(7)), 
+          legend.title = element_text(size=rel(7)),
+          plot.title = element_text(hjust = 0.5, size = rel(8)),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    facet_grid(ratio ~ max, labeller = facet.labeller)
+  p
+  #plot.list =  append(plot.list, list(p))
+  ggexport(p, width = 2800, height = 1440, 
+          filename = paste(resultsdir, "accdiff_v1.jpeg", sep = "/"))
 
-# Individual Accuracy over time
-# plot.data = results$acc.time %>%
-#   group_by(model, alphaS, ratio, max, time) %>%
-#   reframe(acc.mean = mean(frac.corr)) %>%
-#   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
-#   group_by(ratio, max, time) %>%
-#   mutate(acc.delta = acc.mean - acc.mean[which(model == "arl.fixed")])
-plot.data.c = results$acc.time %>% 
-  mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
-  filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
-  group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
-  reframe(acc.mean.vec = list(frac.corr[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
-  ungroup() %>%
-  group_by(ratio, max, time) %>%
-  mutate(
-    acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
-  ) %>%
-  ungroup() %>%
-  rowwise() %>%
-  mutate(
-    pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
-    acc.delta = mean(pairwise)
-  ) %>%
-  select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise)) %>%
-  filter(model != "arl.fixed")
-
-
-write.csv(plot.data.c, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/"))
-
-
-# Merge data
-plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "acctimediff.csv")) %>%
-  filter(model != "arl.fixed") %>% select(-c(X))
-plot.data = rbind(plot.data.nc, plot.data.c)
-write.csv(plot.data, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/"))
-
-# Reward-based DB vs. VS
-p1=plot.data.c %>% filter(model == "dbr1.fixed") %>%
-  ggplot(aes(x=time, y=acc.delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=1, lty=2) +
-  geom_hline(yintercept = 0, lty=2)+
-  geom_hline(yintercept = 0.1, lty=2) +
-  scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
-  
-  scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr], "\n")), end = 1) +
-  theme(text = element_text(size=20),
-        plot.title = element_text(hjust = 0.5),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  labs(x="\n Time", y="Difference in Individual Accuracy \n") +
-  theme_linedraw(base_size = 11) +
-  theme(text = element_text(size=rel(5)),
-        strip.text.x = element_text(size=rel(7)),
-        strip.text.y = element_text(size=rel(7)), 
-        axis.text.x = element_text(size=rel(7)),
-        axis.title.x = element_text(size=rel(7)),
-        axis.text.y = element_text(size=rel(7)),
-        axis.title.y = element_text(size=rel(7)),
-        legend.text = element_text(size=rel(3.5)), 
-        legend.key.size = unit(2, "cm"),
-        legend.title = element_text(size=rel(7)),
-        plot.title = element_text(hjust = 0.5, size = rel(8)),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  facet_grid(ratio ~ max, labeller = facet.labeller)
-p1
-
-p2=plot.data.c %>% filter(model == "vsr1.fixed") %>%
-  ggplot(aes(x=time, y=acc.delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=1, lty=2) +
-  geom_hline(yintercept = 0, lty=2)+
-  geom_hline(yintercept = 0.1, lty=2) +
-  scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
-  
-  scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr], "\n")), end = 1) +
-  theme(text = element_text(size=20),
-        plot.title = element_text(hjust = 0.5),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  labs(x="\n Time", y="") +
-  theme_linedraw(base_size = 11) +
-  theme(text = element_text(size=rel(5)),
-        strip.text.x = element_text(size=rel(7)),
-        strip.text.y = element_text(size=rel(7)), 
-        axis.text.x = element_text(size=rel(7)),
-        axis.title.x = element_text(size=rel(7)),
-        axis.text.y = element_text(size=rel(7)),
-        axis.title.y = element_text(size=rel(7)),
-        legend.text = element_text(size=rel(3.5)), 
-        legend.key.size = unit(2, "cm"),
-        legend.title = element_text(size=rel(7)),
-        plot.title = element_text(hjust = 0.5, size = rel(8)),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  facet_grid(ratio ~ max, labeller = facet.labeller)
-p2
-p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
-              labels = c("a", "b"), font.label = list(size=rel(30)))
-ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "acctimediff_v1.jpeg", sep = "/"))
-
-# Switch-rate over time
-# plot.data = results$switches.time %>%
-#   group_by(model, alphaS, ratio, max, time) %>%
-#   reframe(switch.mean = mean(switch.frac)) %>%
-#   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
-#   group_by(ratio, max, time) %>%
-#   mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
-plot.data.c = results$switches.time %>% 
-  mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
-  filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
-  group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
-  reframe(switch.mean.vec = list(switch.frac[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
-  ungroup() %>%
-  group_by(ratio, max, time) %>%
-  mutate(
-    switch.mean.vec.arl = list(switch.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
-  ) %>%
-  ungroup() %>%
-  rowwise() %>%
-  mutate(
-    pairwise = list(as.vector(outer(switch.mean.vec, switch.mean.vec.arl, "-"))), # Compute pairwise differences
-    switch.delta = mean(pairwise)
-  ) %>%
-  select(-c(switch.mean.vec, switch.mean.vec.arl, pairwise)) %>%
-  filter(model != "arl.fixed")
+  # Individual Accuracy over time
+  # plot.data = results$acc.time %>%
+  #   group_by(model, alphaS, ratio, max, time) %>%
+  #   reframe(acc.mean = mean(frac.corr)) %>%
+  #   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
+  #   group_by(ratio, max, time) %>%
+  #   mutate(acc.delta = acc.mean - acc.mean[which(model == "arl.fixed")])
+  plot.data.c = results$acc.time %>% 
+    mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
+    filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+    group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
+    reframe(acc.mean.vec = list(frac.corr[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
+    ungroup() %>%
+    group_by(ratio, max, time) %>%
+    mutate(
+      acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
+    ) %>%
+    ungroup() %>%
+    rowwise() %>%
+    mutate(
+      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
+      acc.delta = mean(pairwise)
+    ) %>%
+    select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise)) %>%
+    filter(model != "arl.fixed")
 
 
-write.csv(plot.data.c, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))
+  write.csv(plot.data.c, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/"))
 
-# Merge data
-plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "switchtimediff.csv")) %>%
-  filter(model != "arl.fixed") %>% select(-c(X))
-plot.data = rbind(plot.data.nc, plot.data.c)
-write.csv(plot.data, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))
 
-# Reward-based DB vs. VS
-p1 = plot.data.c %>% filter(model == "dbr1.fixed") %>%
-  ggplot(aes(x=time, y=switch.delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=1, lty=2) +
-  #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
-  labs(x="\n Time", y="Difference in Switch Rate \n") +
-  #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
-  scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr],  "\n")), end = 1) +
-  theme_linedraw(base_size = 11) +
-  theme(text = element_text(size=rel(5)),
-        strip.text.x = element_text(size=rel(7)),
-        strip.text.y = element_text(size=rel(7)), 
-        axis.text.x = element_text(size=rel(7)),
-        axis.title.x = element_text(size=rel(7)),
-        axis.text.y = element_text(size=rel(7)),
-        axis.title.y = element_text(size=rel(7)),
-        legend.text = element_text(size=rel(3.5)), 
-        legend.key.size = unit(2, "cm"),
-        legend.title = element_text(size=rel(7)),
-        plot.title = element_text(hjust = 0.5, size = rel(8)),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  facet_grid(ratio ~ max, labeller = facet.labeller)
-p1
+  # Merge data
+  plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "acctimediff.csv")) %>%
+    filter(model != "arl.fixed") %>% select(-c(X))
+  plot.data = rbind(plot.data.nc, plot.data.c)
+  write.csv(plot.data, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/"))
 
-p2 = plot.data.c %>% filter(model == "vsr1.fixed") %>%
-  ggplot(aes(x=time, y=switch.delta, group=alphaS, col=alphaS)) +
-  geom_line(alpha=1, lty=2) +
-  #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
-  labs(x="\n Time", y="") +
-  #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
-  scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr],  "\n")), end = 1) +
-  theme_linedraw(base_size = 11) +
-  theme(text = element_text(size=rel(5)),
-        strip.text.x = element_text(size=rel(7)),
-        strip.text.y = element_text(size=rel(7)), 
-        axis.text.x = element_text(size=rel(7)),
-        axis.title.x = element_text(size=rel(7)),
-        axis.text.y = element_text(size=rel(7)),
-        axis.title.y = element_text(size=rel(7)),
-        legend.text = element_text(size=rel(3.5)), 
-        legend.key.size = unit(2, "cm"),
-        legend.title = element_text(size=rel(7)),
-        plot.title = element_text(hjust = 0.5, size = rel(8)),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  facet_grid(ratio ~ max, labeller = facet.labeller)
-p2
+  # Reward-based DB vs. VS
+  p1=plot.data.c %>% filter(model == "dbr1.fixed") %>%
+    ggplot(aes(x=time, y=acc.delta, group=alphaS, col=alphaS)) +
+    geom_line(alpha=1, lty=2) +
+    geom_hline(yintercept = 0, lty=2)+
+    geom_hline(yintercept = 0.1, lty=2) +
+    scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
+    
+    scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr], "\n")), end = 1) +
+    theme(text = element_text(size=20),
+          plot.title = element_text(hjust = 0.5),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    labs(x="\n Time", y="Difference in Individual Accuracy \n") +
+    theme_linedraw(base_size = 11) +
+    theme(text = element_text(size=rel(5)),
+          strip.text.x = element_text(size=rel(7)),
+          strip.text.y = element_text(size=rel(7)), 
+          axis.text.x = element_text(size=rel(7)),
+          axis.title.x = element_text(size=rel(7)),
+          axis.text.y = element_text(size=rel(7)),
+          axis.title.y = element_text(size=rel(7)),
+          legend.text = element_text(size=rel(3.5)), 
+          legend.key.size = unit(2, "cm"),
+          legend.title = element_text(size=rel(7)),
+          plot.title = element_text(hjust = 0.5, size = rel(8)),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    facet_grid(ratio ~ max, labeller = facet.labeller)
+  p1
 
-p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
-              labels = c("a", "b"), font.label = list(size=rel(30)))
-ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "switchtimediff_v1.jpeg", sep = "/"))
+  p2=plot.data.c %>% filter(model == "vsr1.fixed") %>%
+    ggplot(aes(x=time, y=acc.delta, group=alphaS, col=alphaS)) +
+    geom_line(alpha=1, lty=2) +
+    geom_hline(yintercept = 0, lty=2)+
+    geom_hline(yintercept = 0.1, lty=2) +
+    scale_y_continuous(limits = c(-.3, .3),  breaks=seq(-1, 1, by=0.1))+
+    
+    scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr], "\n")), end = 1) +
+    theme(text = element_text(size=20),
+          plot.title = element_text(hjust = 0.5),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    labs(x="\n Time", y="") +
+    theme_linedraw(base_size = 11) +
+    theme(text = element_text(size=rel(5)),
+          strip.text.x = element_text(size=rel(7)),
+          strip.text.y = element_text(size=rel(7)), 
+          axis.text.x = element_text(size=rel(7)),
+          axis.title.x = element_text(size=rel(7)),
+          axis.text.y = element_text(size=rel(7)),
+          axis.title.y = element_text(size=rel(7)),
+          legend.text = element_text(size=rel(3.5)), 
+          legend.key.size = unit(2, "cm"),
+          legend.title = element_text(size=rel(7)),
+          plot.title = element_text(hjust = 0.5, size = rel(8)),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    facet_grid(ratio ~ max, labeller = facet.labeller)
+  p2
+  p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
+                labels = c("a", "b"), font.label = list(size=rel(30)))
+  ggexport(p, width = 2800, height = 1440, 
+          filename = paste(resultsdir, "acctimediff_v1.jpeg", sep = "/"))
+
+  # Switch-rate over time
+  # plot.data = results$switches.time %>%
+  #   group_by(model, alphaS, ratio, max, time) %>%
+  #   reframe(switch.mean = mean(switch.frac)) %>%
+  #   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
+  #   group_by(ratio, max, time) %>%
+  #   mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
+  plot.data.c = results$switches.time %>% 
+    mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
+    filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
+    group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
+    reframe(switch.mean.vec = list(switch.frac[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
+    ungroup() %>%
+    group_by(ratio, max, time) %>%
+    mutate(
+      switch.mean.vec.arl = list(switch.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
+    ) %>%
+    ungroup() %>%
+    rowwise() %>%
+    mutate(
+      pairwise = list(as.vector(outer(switch.mean.vec, switch.mean.vec.arl, "-"))), # Compute pairwise differences
+      switch.delta = mean(pairwise)
+    ) %>%
+    select(-c(switch.mean.vec, switch.mean.vec.arl, pairwise)) %>%
+    filter(model != "arl.fixed")
+
+
+  write.csv(plot.data.c, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))
+
+  # Merge data
+  plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "switchtimediff.csv")) %>%
+    filter(model != "arl.fixed") %>% select(-c(X))
+  plot.data = rbind(plot.data.nc, plot.data.c)
+  write.csv(plot.data, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))
+
+  # Reward-based DB vs. VS
+  p1 = plot.data.c %>% filter(model == "dbr1.fixed") %>%
+    ggplot(aes(x=time, y=switch.delta, group=alphaS, col=alphaS)) +
+    geom_line(alpha=1, lty=2) +
+    #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
+    labs(x="\n Time", y="Difference in Switch Rate \n") +
+    #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
+    scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr],  "\n")), end = 1) +
+    theme_linedraw(base_size = 11) +
+    theme(text = element_text(size=rel(5)),
+          strip.text.x = element_text(size=rel(7)),
+          strip.text.y = element_text(size=rel(7)), 
+          axis.text.x = element_text(size=rel(7)),
+          axis.title.x = element_text(size=rel(7)),
+          axis.text.y = element_text(size=rel(7)),
+          axis.title.y = element_text(size=rel(7)),
+          legend.text = element_text(size=rel(3.5)), 
+          legend.key.size = unit(2, "cm"),
+          legend.title = element_text(size=rel(7)),
+          plot.title = element_text(hjust = 0.5, size = rel(8)),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    facet_grid(ratio ~ max, labeller = facet.labeller)
+  p1
+
+  p2 = plot.data.c %>% filter(model == "vsr1.fixed") %>%
+    ggplot(aes(x=time, y=switch.delta, group=alphaS, col=alphaS)) +
+    geom_line(alpha=1, lty=2) +
+    #geom_line(data=plot.data %>% filter(model == "m2.1" & alphaS == 0)) +
+    labs(x="\n Time", y="") +
+    #scale_y_continuous(limits = c(0,.6),  breaks=seq(0, 1, by=.2))+
+    scale_color_viridis(name=bquote(paste(alpha[DBr], " / ", alpha[VSr],  "\n")), end = 1) +
+    theme_linedraw(base_size = 11) +
+    theme(text = element_text(size=rel(5)),
+          strip.text.x = element_text(size=rel(7)),
+          strip.text.y = element_text(size=rel(7)), 
+          axis.text.x = element_text(size=rel(7)),
+          axis.title.x = element_text(size=rel(7)),
+          axis.text.y = element_text(size=rel(7)),
+          axis.title.y = element_text(size=rel(7)),
+          legend.text = element_text(size=rel(3.5)), 
+          legend.key.size = unit(2, "cm"),
+          legend.title = element_text(size=rel(7)),
+          plot.title = element_text(hjust = 0.5, size = rel(8)),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    facet_grid(ratio ~ max, labeller = facet.labeller)
+  p2
+
+  p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
+                labels = c("a", "b"), font.label = list(size=rel(30)))
+  ggexport(p, width = 2800, height = 1440, 
+          filename = paste(resultsdir, "switchtimediff_v1.jpeg", sep = "/"))
+}else{
+  print("Plots from numerical simulations for v1 already exist. Skipping.")
+}
 
 
 #### Run Simulations For v2 ####
@@ -576,100 +583,107 @@ if(!file.exists(paste(resultsdir, "numsims_v2.rds", sep = "/"))){
   sink()
   
 }else{
+  print("Results from numerical simulations for v2 already exist. Skipping simulations.")
   results = readRDS(file = paste(resultsdir, "numsims_v2.rds", sep = "/"))
 }
 
 #### Plot Results For v2 ####
 
-# List to save plots to
-plot.list = list()
+# Run only if results do not already exist
+if(!file.exists(paste(resultsdir, "accdiff_v2.csv", sep = "/"))){
 
-# Facet labels
-max.labs = paste("Maximum Yield", sort(unique(results$rew.acc$max)))
-names(max.labs) = sort(unique(results$rew.acc$max))
+  # List to save plots to
+  plot.list = list()
 
-ratio.labs = paste("Yield Ratio", sort(unique(results$rew.acc$ratio)))
-names(ratio.labs) = sort(unique(results$rew.acc$ratio))
+  # Facet labels
+  max.labs = paste("Maximum Yield", sort(unique(results$rew.acc$max)))
+  names(max.labs) = sort(unique(results$rew.acc$max))
 
-facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
+  ratio.labs = paste("Yield Ratio", sort(unique(results$rew.acc$ratio)))
+  names(ratio.labs) = sort(unique(results$rew.acc$ratio))
 
-plot.data.c.vsndbr = results$rew.acc %>% 
-  filter(model != "vsnvsr1.fixed") %>% 
-  select(-c(alphaVSD, alphaVSR, alphaVSDR, sigmaVSDR)) %>% # Unused
-  mutate(alphaDBR = map_dbl(alphaDBR, ~ if (is.null(.x)) NA_real_ else .x[1, 1])) %>%  # "Constant" across environments 
-  mutate(alphaS = alphaDBR) %>% 
-  group_by(model, alphaS, ratio, max) %>% # Group by model, social learning weight, ratio, and max
-  reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
-  ungroup() %>%
-  group_by(ratio, max) %>%
-  mutate(
-    acc.mean.vec.vsn = list(acc.mean.vec[model == "vsn2.fixed"][[1]]) # Extract the arl.fixed vector
-  ) %>%
-  ungroup() %>%
-  rowwise() %>%
-  mutate(
-    pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.vsn, "-"))), # Compute pairwise differences
-    acc.delta = mean(pairwise),
-    lower = quantile(pairwise, probs = 0.05),
-    upper = quantile(pairwise, probs = 0.95)
-  ) %>%
-  select(-c(acc.mean.vec, acc.mean.vec.vsn, pairwise)) %>%
-  filter(model != "vsn2.fixed")
+  facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
 
-plot.data.c.vsnvsr = results$rew.acc %>% 
-  filter(model != "vsndbr2.fixed") %>% 
-  select(-c(alphaVSD, alphaVSR, alphaDBR)) %>% # Unused
-  group_by(model, alphaVSDR, sigmaVSDR, ratio, max) %>% # Group by model, social learning weight, ratio, and max
-  reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
-  ungroup() %>% 
-  group_by(ratio, max) %>%
-  mutate(
-    acc.mean.vec.vsn = list(acc.mean.vec[model == "vsn2.fixed"][[1]]) # Extract the arl.fixed vector
-  ) %>% 
-  ungroup() %>%
-  rowwise() %>%
-  mutate(
-    pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.vsn, "-"))), # Compute pairwise differences
-    acc.delta = mean(pairwise),
-    lower = quantile(pairwise, probs = 0.05),
-    upper = quantile(pairwise, probs = 0.95)
-  ) %>%
-  select(-c(acc.mean.vec, acc.mean.vec.vsn, pairwise)) %>%
-  filter(model != "vsn2.fixed")
+  plot.data.c.vsndbr = results$rew.acc %>% 
+    filter(model != "vsnvsr1.fixed") %>% 
+    select(-c(alphaVSD, alphaVSR, alphaVSDR, sigmaVSDR)) %>% # Unused
+    mutate(alphaDBR = map_dbl(alphaDBR, ~ if (is.null(.x)) NA_real_ else .x[1, 1])) %>%  # "Constant" across environments 
+    mutate(alphaS = alphaDBR) %>% 
+    group_by(model, alphaS, ratio, max) %>% # Group by model, social learning weight, ratio, and max
+    reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
+    ungroup() %>%
+    group_by(ratio, max) %>%
+    mutate(
+      acc.mean.vec.vsn = list(acc.mean.vec[model == "vsn2.fixed"][[1]]) # Extract the arl.fixed vector
+    ) %>%
+    ungroup() %>%
+    rowwise() %>%
+    mutate(
+      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.vsn, "-"))), # Compute pairwise differences
+      acc.delta = mean(pairwise),
+      lower = quantile(pairwise, probs = 0.05),
+      upper = quantile(pairwise, probs = 0.95)
+    ) %>%
+    select(-c(acc.mean.vec, acc.mean.vec.vsn, pairwise)) %>%
+    filter(model != "vsn2.fixed")
 
-# Bind data
-plot.data.c = bind_rows(plot.data.c.vsndbr, plot.data.c.vsnvsr)
-write.csv(plot.data.c, file = paste(resultsdir, "accdiff_v2.csv", sep = "/"))
+  plot.data.c.vsnvsr = results$rew.acc %>% 
+    filter(model != "vsndbr2.fixed") %>% 
+    select(-c(alphaVSD, alphaVSR, alphaDBR)) %>% # Unused
+    group_by(model, alphaVSDR, sigmaVSDR, ratio, max) %>% # Group by model, social learning weight, ratio, and max
+    reframe(acc.mean.vec = list(acc.mean[which(sim%in% c(1:nsim))])) %>% # Vector of nsim accuracies for each group
+    ungroup() %>% 
+    group_by(ratio, max) %>%
+    mutate(
+      acc.mean.vec.vsn = list(acc.mean.vec[model == "vsn2.fixed"][[1]]) # Extract the arl.fixed vector
+    ) %>% 
+    ungroup() %>%
+    rowwise() %>%
+    mutate(
+      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.vsn, "-"))), # Compute pairwise differences
+      acc.delta = mean(pairwise),
+      lower = quantile(pairwise, probs = 0.05),
+      upper = quantile(pairwise, probs = 0.95)
+    ) %>%
+    select(-c(acc.mean.vec, acc.mean.vec.vsn, pairwise)) %>%
+    filter(model != "vsn2.fixed")
 
-# Reward-based DB 
-p = plot.data.c %>% filter(model %in% c("vsndbr2.fixed")) %>%
-  ggplot(aes(x=alphaS, fill=as.factor(model), col=as.factor(model))) + 
-  labs(y="Individual Accuracy \n") +
-  scale_y_continuous(breaks=seq(-0.5, 1, by=.1))+
-  scale_x_continuous(name=bquote(paste("\n ", alpha[DBr], " / ", alpha[VSr])), breaks = seq(0, 1, by=.1))+
-  scale_fill_viridis(discrete = T, begin = .1, end = .8, 
-                     name="Model", labels=c("VSnDBr")) +
-  scale_color_viridis(discrete = T, begin = .1, end = .8, 
+  # Bind data
+  plot.data.c = bind_rows(plot.data.c.vsndbr, plot.data.c.vsnvsr)
+  write.csv(plot.data.c, file = paste(resultsdir, "accdiff_v2.csv", sep = "/"))
+
+  # Reward-based DB 
+  p = plot.data.c %>% filter(model %in% c("vsndbr2.fixed")) %>%
+    ggplot(aes(x=alphaS, fill=as.factor(model), col=as.factor(model))) + 
+    labs(y="Individual Accuracy \n") +
+    scale_y_continuous(breaks=seq(-0.5, 1, by=.1))+
+    scale_x_continuous(name=bquote(paste("\n ", alpha[DBr], " / ", alpha[VSr])), breaks = seq(0, 1, by=.1))+
+    scale_fill_viridis(discrete = T, begin = .1, end = .8, 
                       name="Model", labels=c("VSnDBr")) +
-  geom_hline(yintercept = 0, lty=2)+
-  geom_hline(yintercept = 0.05, lty=2)+
-  geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.5)+
-  geom_line(aes(y=acc.delta), lwd=2) +
-  theme_linedraw(base_size = 11) +
-  facet_grid(ratio ~ max, labeller = facet.labeller)
-p
-#plot.list =  append(plot.list, list(p))
-ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "accdiff_v2_vsndbr.jpeg", sep = "/"))
+    scale_color_viridis(discrete = T, begin = .1, end = .8, 
+                        name="Model", labels=c("VSnDBr")) +
+    geom_hline(yintercept = 0, lty=2)+
+    geom_hline(yintercept = 0.05, lty=2)+
+    geom_ribbon(aes(ymin=lower, ymax=upper), alpha=.5)+
+    geom_line(aes(y=acc.delta), lwd=2) +
+    theme_linedraw(base_size = 11) +
+    facet_grid(ratio ~ max, labeller = facet.labeller)
+  p
+  #plot.list =  append(plot.list, list(p))
+  ggexport(p, width = 2800, height = 1440, 
+          filename = paste(resultsdir, "accdiff_v2_vsndbr.jpeg", sep = "/"))
 
-# Location-based VS Reward-based VS 
-p = plot.data.c %>% filter(model %in% c("vsnvsr1.fixed")) %>%
-  ggplot(aes(x=alphaVSDR, y=sigmaVSDR, fill=acc.delta)) +
-  geom_tile() +
-  scale_fill_viridis(name="Individual Accuracy \n") +
-  theme_linedraw(base_size = 11) +
-  facet_grid(ratio ~ max, labeller = facet.labeller)
-p
-#plot.list =  append(plot.list, list(p))
-ggexport(p, width = 2800, height = 1440, 
-         filename = paste(resultsdir, "accdiff_v2_vsnvsr.jpeg", sep = "/"))
+  # Location-based VS Reward-based VS 
+  p = plot.data.c %>% filter(model %in% c("vsnvsr1.fixed")) %>%
+    ggplot(aes(x=alphaVSDR, y=sigmaVSDR, fill=acc.delta)) +
+    geom_tile() +
+    scale_fill_viridis(name="Individual Accuracy \n") +
+    theme_linedraw(base_size = 11) +
+    facet_grid(ratio ~ max, labeller = facet.labeller)
+  p
+  #plot.list =  append(plot.list, list(p))
+  ggexport(p, width = 2800, height = 1440, 
+          filename = paste(resultsdir, "accdiff_v2_vsnvsr.jpeg", sep = "/"))
+}else{
+  print("Plots from numerical simulations for v2 already exist. Skipping.")
+}

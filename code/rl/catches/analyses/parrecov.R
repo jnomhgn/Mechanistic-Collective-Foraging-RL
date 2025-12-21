@@ -41,7 +41,7 @@ warmup = 1000
 refresh = 100
 
 # Load winning model
-load(file = paste(resultsdir, "..", "modelcomp", "nonadaptive", "modelcomp.Rdata", sep = "/"))
+load(file = paste(resultsdir, "..", "modelcomp", "modelcomp.Rdata", sep = "/"))
 
 # Parse name
 winner = gsub(pattern = ".hierarch", "", winner)
@@ -195,51 +195,58 @@ for(mod in 1:length(models$name)){
     
     
   }else{
-    
+    print("Results for parameter recovery already exist. Skipping.")
     # Save results for model 
     results = readRDS(file = paste(resultsdir, paste(models$name[[mod]], "rds", sep = "."), sep = "/"))
     
   }
+
+  # Plot only if results do not already exist
+  if(!file.exists(paste(resultsdir, paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))){
   
-  labels = c(
-    expression(alpha["Q,-"]),
-    expression(alpha["Q,+"]),
-    expression(beta["Q"]), 
-    expression(beta["C"]),
-    expression(alpha["VSDR"]), 
-    expression(sigma["VSDR"])
-  )
-  
-  results = results %>%
-    mutate(par = factor(par, 
-                        levels = sort(unique(results$par)),
-                        labels = labels)
-    )  
-  
-  p = results %>%
-    ggplot(aes(x=true.pars, y=.mean)) + 
-    geom_pointrange(aes(y=.mean, ymin=.lower, ymax=.upper)) +
-    stat_cor(aes(y=.mean, label = after_stat(r.label)), method = "pearson", size=rel(7)) +
-    labs(x="\n Generating Parameter Value", y="Estimated Parameter Value \n") +
-    theme_linedraw(base_size = 11) +
-    theme(text = element_text(size=rel(5)),
-          strip.text.x = element_text(size=rel(10)),
-          strip.text.y = element_text(size=rel(10)), 
-          axis.text.x = element_text(size=rel(7)),
-          axis.title.x = element_text(size=rel(10)),
-          axis.text.y = element_text(size=rel(7)),
-          axis.title.y = element_text(size=rel(10)),
-          legend.text = element_text(size=rel(7)), 
-          legend.title = element_text(size=rel(7)),
-          plot.title = element_text(hjust = 0.5, size = rel(8)),
-          plot.margin = margin(1,1,1,1, "cm")) +
-    facet_wrap(~ par, scales = "free", , labeller = label_parsed) 
-  p
-  
-  
-  ggexport(p, width = 2560, height = 1440,
-           filename = paste(resultsdir, paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))
-  print(p)
+    labels = c(
+      expression(alpha["Q,-"]),
+      expression(alpha["Q,+"]),
+      expression(beta["Q"]), 
+      expression(beta["C"]),
+      expression(alpha["VSDR"]), 
+      expression(sigma["VSDR"])
+    )
+    
+    results = results %>%
+      mutate(par = factor(par, 
+                          levels = sort(unique(results$par)),
+                          labels = labels)
+      )  
+    
+    p = results %>%
+      ggplot(aes(x=true.pars, y=.mean)) + 
+      geom_pointrange(aes(y=.mean, ymin=.lower, ymax=.upper)) +
+      stat_cor(aes(y=.mean, label = after_stat(r.label)), method = "pearson", size=rel(7)) +
+      labs(x="\n Generating Parameter Value", y="Estimated Parameter Value \n") +
+      theme_linedraw(base_size = 11) +
+      theme(text = element_text(size=rel(5)),
+            strip.text.x = element_text(size=rel(10)),
+            strip.text.y = element_text(size=rel(10)), 
+            axis.text.x = element_text(size=rel(7)),
+            axis.title.x = element_text(size=rel(10)),
+            axis.text.y = element_text(size=rel(7)),
+            axis.title.y = element_text(size=rel(10)),
+            legend.text = element_text(size=rel(7)), 
+            legend.title = element_text(size=rel(7)),
+            plot.title = element_text(hjust = 0.5, size = rel(8)),
+            plot.margin = margin(1,1,1,1, "cm")) +
+      facet_wrap(~ par, scales = "free", , labeller = label_parsed) 
+    p
+    
+    
+    ggexport(p, width = 2560, height = 1440,
+            filename = paste(resultsdir, paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))
+    print(p)
+
+  }else{
+    print("Plots for parameter recovery already exist. Skipping.")
+  }
   
 }
 

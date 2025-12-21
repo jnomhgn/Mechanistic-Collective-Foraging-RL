@@ -180,39 +180,46 @@ if(!file.exists(paste("results/rl/alone/parrecov", paste(models$name[[mod]], "Rd
 }
 
 #### Plot results  ####
-labels = c(
-  expression(alpha["Q,-"]),
-  expression(alpha["Q,+"]),
-  expression(beta["Q"]), 
-  expression(beta["C"])
-)
 
-results = results %>%
-  mutate(par = factor(par, 
-                      levels = sort(unique(results$par)),
-                      labels = labels)
-  )  
+# Plot only if results do not already exist (no .jpeg file)
+if(!any(grepl("\\.jpeg$", list.files(paste("results/rl/alone/parrecov", sep = "/"))))){
 
-p = results %>%
-  ggplot(aes(x=true.pars, y=.mean)) + 
-  geom_pointrange(aes(y=.mean, ymin=.lower, ymax=.upper)) +
-  stat_cor(aes(y=.mean, label = after_stat(r.label)), method = "pearson", size=rel(7)) +
-  labs(x="\n Generating Parameter Value", y="Estimated Parameter Value \n") +
-  theme_linedraw(base_size = 11) +
-  theme(text = element_text(size=rel(5)),
-        strip.text.x = element_text(size=rel(10)),
-        strip.text.y = element_text(size=rel(10)), 
-        axis.text.x = element_text(size=rel(7)),
-        axis.title.x = element_text(size=rel(10)),
-        axis.text.y = element_text(size=rel(7)),
-        axis.title.y = element_text(size=rel(10)),
-        legend.text = element_text(size=rel(7)), 
-        legend.title = element_text(size=rel(7)),
-        plot.title = element_text(hjust = 0.5, size = rel(8)),
-        plot.margin = margin(1,1,1,1, "cm")) +
-  facet_wrap(~ par, scales = "free", , labeller = label_parsed) 
-p
+  labels = c(
+    expression(alpha["Q,-"]),
+    expression(alpha["Q,+"]),
+    expression(beta["Q"]), 
+    expression(beta["C"])
+  )
 
-ggexport(p, width = 2560, height = 1440,
-         filename = paste("results/rl/alone/parrecov", paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))
-print(p)
+  results = results %>%
+    mutate(par = factor(par, 
+                        levels = sort(unique(results$par)),
+                        labels = labels)
+    )  
+
+  p = results %>%
+    ggplot(aes(x=true.pars, y=.mean)) + 
+    geom_pointrange(aes(y=.mean, ymin=.lower, ymax=.upper)) +
+    stat_cor(aes(y=.mean, label = after_stat(r.label)), method = "pearson", size=rel(7)) +
+    labs(x="\n Generating Parameter Value", y="Estimated Parameter Value \n") +
+    theme_linedraw(base_size = 11) +
+    theme(text = element_text(size=rel(5)),
+          strip.text.x = element_text(size=rel(10)),
+          strip.text.y = element_text(size=rel(10)), 
+          axis.text.x = element_text(size=rel(7)),
+          axis.title.x = element_text(size=rel(10)),
+          axis.text.y = element_text(size=rel(7)),
+          axis.title.y = element_text(size=rel(10)),
+          legend.text = element_text(size=rel(7)), 
+          legend.title = element_text(size=rel(7)),
+          plot.title = element_text(hjust = 0.5, size = rel(8)),
+          plot.margin = margin(1,1,1,1, "cm")) +
+    facet_wrap(~ par, scales = "free", , labeller = label_parsed) 
+  p
+
+  ggexport(p, width = 2560, height = 1440,
+          filename = paste("results/rl/alone/parrecov", paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))
+  print(p)
+}else{
+  print("Parameter recovery plots already exist. Skipping.")
+}
