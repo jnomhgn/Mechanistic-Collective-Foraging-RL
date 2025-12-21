@@ -2,16 +2,16 @@
 .Rhistory
 .RData
 .Ruserdata
+.Rprofile
 
+renv
+activate.R
 
-behavioral/results
-bayesianforager/results
-rl/results
-figures/results
+results/
+
 
 
 **/__pycache__
-/ddm/**/*.csv
 
 *.rds
 *png
