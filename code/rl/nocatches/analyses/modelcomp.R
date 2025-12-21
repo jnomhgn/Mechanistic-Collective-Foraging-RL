@@ -1,23 +1,23 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("rl/code/nocatches/functions/", list.files("rl/code/nocatches/functions"))
+function.list = paste0("code/rl/nocatches/functions/", list.files("code/rl/nocatches/functions"))
 # function.list = function.list[sapply(function.list, function(x) !grepl("2", x))]
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
-if(!dir.exists("rl/results/nocatches")){dir.create("rl/results/nocatches")}
-if(!dir.exists("rl/results/nocatches/modelcomp")){dir.create("rl/results/nocatches/modelcomp")}
-if(!dir.exists("rl/results/nocatches/modelcomp/nonadaptive")){dir.create("rl/results/nocatches/modelcomp/nonadaptive")}
-if(!dir.exists("rl/results/nocatches/modelcomp/nonadaptive/diagnostics")){dir.create("rl/results/nocatches/modelcomp/nonadaptive/diagnostics")}
-if(!dir.exists("rl/results/nocatches/modelcomp/nonadaptive/diagnostics/detailed")){dir.create("rl/results/nocatches/modelcomp/nonadaptive/diagnostics/detailed")}
+if(!dir.exists("results/rl/nocatches")){dir.create("results/rl/nocatches")}
+if(!dir.exists("results/rl/nocatches/modelcomp")){dir.create("results/rl/nocatches/modelcomp")}
+if(!dir.exists("results/rl/nocatches/modelcomp/nonadaptive")){dir.create("results/rl/nocatches/modelcomp/nonadaptive")}
+if(!dir.exists("results/rl/nocatches/modelcomp/nonadaptive/diagnostics")){dir.create("results/rl/nocatches/modelcomp/nonadaptive/diagnostics")}
+if(!dir.exists("results/rl/nocatches/modelcomp/nonadaptive/diagnostics/detailed")){dir.create("results/rl/nocatches/modelcomp/nonadaptive/diagnostics/detailed")}
 
-if(!dir.exists("rl/results/nocatches/modelcomp/adaptive")){dir.create("rl/results/nocatches/modelcomp/adaptive")}
-if(!dir.exists("rl/results/nocatches/modelcomp/adaptive/diagnostics")){dir.create("rl/results/nocatches/modelcomp/adaptive/diagnostics")}
-if(!dir.exists("rl/results/nocatches/modelcomp/adaptive/diagnostics/detailed")){dir.create("rl/results/nocatches/modelcomp/adaptive/diagnostics/detailed")}
+if(!dir.exists("results/rl/nocatches/modelcomp/adaptive")){dir.create("results/rl/nocatches/modelcomp/adaptive")}
+if(!dir.exists("results/rl/nocatches/modelcomp/adaptive/diagnostics")){dir.create("results/rl/nocatches/modelcomp/adaptive/diagnostics")}
+if(!dir.exists("results/rl/nocatches/modelcomp/adaptive/diagnostics/detailed")){dir.create("results/rl/nocatches/modelcomp/adaptive/diagnostics/detailed")}
 
 
-resultsdir = "rl/results/nocatches/modelcomp"
+resultsdir = "results/rl/nocatches/modelcomp"
 
 
 #### Prepare model comparison ####

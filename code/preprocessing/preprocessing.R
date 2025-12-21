@@ -1,6 +1,7 @@
 #### Setup #### 
 datadir = "data/raw"
 resultsdir = "data/processed"
+if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = T)}
 
 library(stringr)
 library(dplyr)

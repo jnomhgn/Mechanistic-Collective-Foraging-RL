@@ -4,7 +4,7 @@ import os
 import pandas
 
 # Set results directory and create if it doesn't exist
-resultsdir = os.path.join(os.getcwd(), 'data/processed')
+resultsdir = 'data/processed'
 
 # Read in preprocessed data
 df = pandas.read_csv(os.path.join(resultsdir, 'data_long.csv'))

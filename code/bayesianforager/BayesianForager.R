@@ -1,11 +1,9 @@
 
 #Optimal Asocial foraging: Bayesian Inference simulations
-library(reticulate)
 
 # Create results directories
-getwd()
-if(!dir.exists("bayesianforager/results")){dir.create("bayesianforager/results")}
-resultsdir = "bayesianforager/results"
+resultsdir = "results/bayesianforager"
+if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = TRUE)}
 
 #Numerical simulation of difference between two beta distributions
 diff_beta <- function(a1,b1,a2,b2, N_sample){
@@ -118,7 +116,8 @@ library(parallel)
 result <- mclapply(
   1:nrow(d) ,
   function(i) Sim_fct(100, d$duration[i], 1, 2, d$max[i], d$ratio[i], 2, d$correct[i]),
-  mc.cores=30)
+  mc.cores=detectCores()-1
+)
 
 #Calculate mean accuracies for each environment
 mean_accuracies <- array(NA, c(3,4))

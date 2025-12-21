@@ -48,34 +48,34 @@ getmodels <- function(hierarch=FALSE){
       
       # Without gq for loglik
       stan = list(
-        "rl/code/catches/stan/arl.fixed.stan",
-        "rl/code/catches/stan/dbn1.fixed.stan",
-        "rl/code/catches/stan/dbn2.fixed.stan",
-        "rl/code/catches/stan/vsn1.fixed.stan",
-        "rl/code/catches/stan/vsn2.fixed.stan",
-        "rl/code/catches/stan/dbr1.fixed.stan",
-        "rl/code/catches/stan/dbr2.fixed.stan",
-        "rl/code/catches/stan/vsr1.fixed.stan",
-        "rl/code/catches/stan/dbnvsr1.fixed.stan",
-        "rl/code/catches/stan/vsndbr1.fixed.stan",
-        "rl/code/catches/stan/vsnvsr1.fixed.stan",
-        "rl/code/catches/stan/dbndbr1.fixed.stan"
+        "code/rl/catches/stan/arl.fixed.stan",
+        "code/rl/catches/stan/dbn1.fixed.stan",
+        "code/rl/catches/stan/dbn2.fixed.stan",
+        "code/rl/catches/stan/vsn1.fixed.stan",
+        "code/rl/catches/stan/vsn2.fixed.stan",
+        "code/rl/catches/stan/dbr1.fixed.stan",
+        "code/rl/catches/stan/dbr2.fixed.stan",
+        "code/rl/catches/stan/vsr1.fixed.stan",
+        "code/rl/catches/stan/dbnvsr1.fixed.stan",
+        "code/rl/catches/stan/vsndbr1.fixed.stan",
+        "code/rl/catches/stan/vsnvsr1.fixed.stan",
+        "code/rl/catches/stan/dbndbr1.fixed.stan"
         
       ),
       # With gq for loglik
       stan.loglik = list(
-        "rl/code/catches/stan/arl.fixed.ll.stan",
-        "rl/code/catches/stan/dbn1.fixed.ll.stan",
-        "rl/code/catches/stan/dbn2.fixed.ll.stan",
-        "rl/code/catches/stan/vsn1.fixed.ll.stan",
-        "rl/code/catches/stan/vsn2.fixed.ll.stan",
-        "rl/code/catches/stan/dbr1.fixed.ll.stan",
-        "rl/code/catches/stan/dbr2.fixed.ll.stan",
-        "rl/code/catches/stan/vsr1.fixed.ll.stan",
-        "rl/code/catches/stan/dbnvsr1.fixed.ll.stan",
-        "rl/code/catches/stan/vsndbr1.fixed.ll.stan",
-        "rl/code/catches/stan/vsnvsr1.fixed.ll.stan",
-        "rl/code/catches/stan/dbndbr1.fixed.ll.stan"
+        "code/rl/catches/stan/arl.fixed.ll.stan",
+        "code/rl/catches/stan/dbn1.fixed.ll.stan",
+        "code/rl/catches/stan/dbn2.fixed.ll.stan",
+        "code/rl/catches/stan/vsn1.fixed.ll.stan",
+        "code/rl/catches/stan/vsn2.fixed.ll.stan",
+        "code/rl/catches/stan/dbr1.fixed.ll.stan",
+        "code/rl/catches/stan/dbr2.fixed.ll.stan",
+        "code/rl/catches/stan/vsr1.fixed.ll.stan",
+        "code/rl/catches/stan/dbnvsr1.fixed.ll.stan",
+        "code/rl/catches/stan/vsndbr1.fixed.ll.stan",
+        "code/rl/catches/stan/vsnvsr1.fixed.ll.stan",
+        "code/rl/catches/stan/dbndbr1.fixed.ll.stan"
       ),
       
       # Fixed parameters
@@ -797,45 +797,45 @@ getmodels <- function(hierarch=FALSE){
       
       # Without gq for loglik
       stan = list(
-        "rl/code/catches/stan/arl.hierarch.stan",
-        "rl/code/catches/stan/dbn1.hierarch.stan",
-        "rl/code/catches/stan/dbn2.hierarch.stan",
-        "rl/code/catches/stan/vsn1.hierarch.stan",
-        "rl/code/catches/stan/vsn2.hierarch.stan",
-        "rl/code/catches/stan/dbr1.hierarch.stan",
+        "code/rl/catches/stan/arl.hierarch.stan",
+        "code/rl/catches/stan/dbn1.hierarch.stan",
+        "code/rl/catches/stan/dbn2.hierarch.stan",
+        "code/rl/catches/stan/vsn1.hierarch.stan",
+        "code/rl/catches/stan/vsn2.hierarch.stan",
+        "code/rl/catches/stan/dbr1.hierarch.stan",
         NA,
-        "rl/code/catches/stan/vsr1.hierarch.stan",
+        "code/rl/catches/stan/vsr1.hierarch.stan",
         NA, 
-        "rl/code/catches/stan/dbnvsr1.hierarch.stan",
+        "code/rl/catches/stan/dbnvsr1.hierarch.stan",
         NA, 
-        "rl/code/catches/stan/vsndbr1.hierarch.stan",
+        "code/rl/catches/stan/vsndbr1.hierarch.stan",
         NA,
-        "rl/code/catches/stan/vsnvsr1.hierarch.stan",
+        "code/rl/catches/stan/vsnvsr1.hierarch.stan",
         NA,
-        "rl/code/catches/stan/dbndbr1.hierarch.stan",
+        "code/rl/catches/stan/dbndbr1.hierarch.stan",
         NA
         
         
       ),
       # With gq for loglik
       stan.loglik = list(
-        "rl/code/catches/stan/arl.hierarch.ll.stan",
-        "rl/code/catches/stan/dbn1.hierarch.ll.stan",
-        "rl/code/catches/stan/dbn2.hierarch.ll.stan",
-        "rl/code/catches/stan/vsn1.hierarch.ll.stan",
-        "rl/code/catches/stan/vsn2.hierarch.ll.stan",
-        "rl/code/catches/stan/dbr1.hierarch.ll.stan",
-        "rl/code/catches/stan/dbr2.hierarch.ll.stan", 
-        "rl/code/catches/stan/vsr1.hierarch.ll.stan",
-        "rl/code/catches/stan/vsr2.hierarch.ll.stan",
-        "rl/code/catches/stan/dbnvsr1.hierarch.ll.stan",
-        "rl/code/catches/stan/dbnvsr2.hierarch.ll.stan",
-        "rl/code/catches/stan/vsndbr1.hierarch.ll.stan",
-        "rl/code/catches/stan/vsndbr2.hierarch.ll.stan",
-        "rl/code/catches/stan/vsnvsr1.hierarch.ll.stan",
-        "rl/code/catches/stan/vsnvsr2.hierarch.ll.stan",
-        "rl/code/catches/stan/dbndbr1.hierarch.ll.stan",
-        "rl/code/catches/stan/dbndbr2.hierarch.ll.stan"
+        "code/rl/catches/stan/arl.hierarch.ll.stan",
+        "code/rl/catches/stan/dbn1.hierarch.ll.stan",
+        "code/rl/catches/stan/dbn2.hierarch.ll.stan",
+        "code/rl/catches/stan/vsn1.hierarch.ll.stan",
+        "code/rl/catches/stan/vsn2.hierarch.ll.stan",
+        "code/rl/catches/stan/dbr1.hierarch.ll.stan",
+        "code/rl/catches/stan/dbr2.hierarch.ll.stan", 
+        "code/rl/catches/stan/vsr1.hierarch.ll.stan",
+        "code/rl/catches/stan/vsr2.hierarch.ll.stan",
+        "code/rl/catches/stan/dbnvsr1.hierarch.ll.stan",
+        "code/rl/catches/stan/dbnvsr2.hierarch.ll.stan",
+        "code/rl/catches/stan/vsndbr1.hierarch.ll.stan",
+        "code/rl/catches/stan/vsndbr2.hierarch.ll.stan",
+        "code/rl/catches/stan/vsnvsr1.hierarch.ll.stan",
+        "code/rl/catches/stan/vsnvsr2.hierarch.ll.stan",
+        "code/rl/catches/stan/dbndbr1.hierarch.ll.stan",
+        "code/rl/catches/stan/dbndbr2.hierarch.ll.stan"
       ),
       
       # Fixed parameters

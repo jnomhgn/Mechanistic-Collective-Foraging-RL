@@ -10,7 +10,7 @@ import scipy as sc
 import os
 
 # Set results directory
-resultsdir = os.path.join(os.getcwd(), 'figures/results')
+resultsdir = os.path.join(os.getcwd(), 'results/figures')
 if not os.path.exists(resultsdir):
     os.makedirs(resultsdir)
 
@@ -46,10 +46,10 @@ Aexp = np.mean(Aexp,axis=-1) # Average over time
 Mexp = np.mean(Aexp,axis=-1) # Experimental data means
 
 # RL
-df = pandas.read_csv('rl/results/catches/modelcomp/nonadaptive/postpredict_acc.csv') # Reinforcement learning model. Check
+df = pandas.read_csv('results/rl/catches/modelcomp/nonadaptive/postpredict_acc.csv') # Reinforcement learning model. Check
 Mrl = np.zeros((3,len(Lp1),len(Lratio))) 
 
-Bay = np.load('bayesianforager/results/mean_accuracies.npy') # Bayesian agents models. Check
+Bay = np.load('results/bayesianforager/mean_accuracies.npy') # Bayesian agents models. Check
 
 fig, ax = plt.subplots(4,3,figsize=(7.5,10),sharex=True,sharey=True)
 
@@ -206,7 +206,7 @@ for i, method in enumerate(['Exp', 'Bayes', 'RL']):
         
         elif method == 'Bayes':
 
-                A = np.load('bayesianforager/results/accuracies_time.npy')
+                A = np.load('results/bayesianforager/accuracies_time.npy')
                 lt1s = np.arange(1,76,1)
                 #fig, ax = plt.subplots(1,4,figsize=(15,3),sharey=True)
 
@@ -235,7 +235,7 @@ for i, method in enumerate(['Exp', 'Bayes', 'RL']):
                 Mean = np.zeros((3,len(Lm),len(Lr)))
                 lt1s = np.arange(1,76,1)
 
-                df = pandas.read_csv('rl/results/alone/modelcomp/postpredict_acctime.csv')
+                df = pandas.read_csv('results/rl/alone/modelcomp/postpredict_acctime.csv')
                 for M in range(len(Lm)):
                         for R in range(len(Lr)):
                                 Max = Lm[M]; Ratio = Lr[R]
@@ -366,7 +366,7 @@ for i, method in enumerate(['Exp', 'ARL', 'SRL']):
                 Mean = np.zeros((3,len(Lm),len(Lr)))
                 lt1s = np.arange(1,76,1)
 
-                df = pandas.read_csv('rl/results/nocatches/modelcomp/nonadaptive/postpredict_acctime.csv')
+                df = pandas.read_csv('results/rl/nocatches/modelcomp/nonadaptive/postpredict_acctime.csv')
                 for M in range(len(Lm)):
                         for R in range(len(Lr)):
                                 Max = Lm[M]; Ratio = Lr[R]
@@ -401,7 +401,7 @@ for i, method in enumerate(['Exp', 'ARL', 'SRL']):
                 Mean = np.zeros((3,len(Lm),len(Lr)))
                 lt1s = np.arange(1,76,1)
 
-                df = pandas.read_csv('rl/results/nocatches/modelcomp/adaptive/postpredict_acctime.csv')
+                df = pandas.read_csv('results/rl/nocatches/modelcomp/adaptive/postpredict_acctime.csv')
                 for M in range(len(Lm)):
                         for R in range(len(Lr)):
                                 Max = Lm[M]; Ratio = Lr[R]
@@ -557,7 +557,7 @@ fig.savefig(os.path.join(resultsdir, 'Fig5.pdf'),bbox_inches='tight')
 #                 Mean = np.zeros((3,len(Lm),len(Lr)))
 #                 lt1s = np.arange(1,76,1)
 
-#                 df = pandas.read_csv('rl/results/catches/modelcomp/postpredict_acctime.csv')
+#                 df = pandas.read_csv('results/rl/catches/modelcomp/postpredict_acctime.csv')
 #                 for M in range(len(Lm)):
 #                         for R in range(len(Lr)):
 #                                 Max = Lm[M]; Ratio = Lr[R]
@@ -634,7 +634,7 @@ Lp1 = [0.5,0.7,0.9]
 Lratio = [0.5,0.65,0.8,0.95]
 
 for icond in range(1, 3):
-        df = pandas.read_csv('rl/results/catches/numsims/accdiff.csv')
+        df = pandas.read_csv('results/rl/catches/numsims/accdiff.csv')
         indca = np.where(df['model']=='arl.fixed')[0]
         Lkd = np.arange(0,1+0.01,0.01)
         name = ['DB','VS']

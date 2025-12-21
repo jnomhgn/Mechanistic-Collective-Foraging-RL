@@ -1,14 +1,14 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("rl/code/nocatches/functions/", list.files("rl/code/nocatches/functions"))
+function.list = paste0("code/rl/nocatches/functions/", list.files("code/rl/nocatches/functions"))
 function.list = function.list[sapply(function.list, function(x) !grepl("2", x))]
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
-if(!dir.exists("rl/results/nocatches")){dir.create("rl/results/nocatches")}
-if(!dir.exists("rl/results/nocatches/numsims")){dir.create("rl/results/nocatches/numsims")}
-resultsdir = "rl/results/nocatches/numsims"
+if(!dir.exists("results/rl/nocatches")){dir.create("results/rl/nocatches")}
+if(!dir.exists("results/rl/nocatches/numsims")){dir.create("results/rl/nocatches/numsims")}
+resultsdir = "results/rl/nocatches/numsims"
 
 
 #### Prepare simulations ####

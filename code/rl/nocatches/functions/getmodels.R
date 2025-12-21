@@ -36,32 +36,32 @@ getmodels <- function(hierarch=FALSE){
       
       # Without gq for loglik
       stan = list(
-        "rl/code/nocatches/stan/arl.fixed.stan",
-        "rl/code/nocatches/stan/dbn1.fixed.stan",
-        "rl/code/nocatches/stan/dbn2.fixed.stan",
-        "rl/code/nocatches/stan/vsn1.fixed.stan",
-        "rl/code/nocatches/stan/vsn2.fixed.stan",
-        "rl/code/nocatches/stan/dbr1.fixed.stan",
-        "rl/code/nocatches/stan/vsr1.fixed.stan",
-        "rl/code/nocatches/stan/dbnvsr1.fixed.stan",
-        "rl/code/nocatches/stan/vsndbr1.fixed.stan",
-        "rl/code/nocatches/stan/vsnvsr1.fixed.stan",
-        "rl/code/nocatches/stan/dbndbr1.fixed.stan"
+        "code/rl/nocatches/stan/arl.fixed.stan",
+        "code/rl/nocatches/stan/dbn1.fixed.stan",
+        "code/rl/nocatches/stan/dbn2.fixed.stan",
+        "code/rl/nocatches/stan/vsn1.fixed.stan",
+        "code/rl/nocatches/stan/vsn2.fixed.stan",
+        "code/rl/nocatches/stan/dbr1.fixed.stan",
+        "code/rl/nocatches/stan/vsr1.fixed.stan",
+        "code/rl/nocatches/stan/dbnvsr1.fixed.stan",
+        "code/rl/nocatches/stan/vsndbr1.fixed.stan",
+        "code/rl/nocatches/stan/vsnvsr1.fixed.stan",
+        "code/rl/nocatches/stan/dbndbr1.fixed.stan"
         
       ),
       # With gq for loglik
       stan.loglik = list(
-        "rl/code/nocatches/stan/arl.fixed.ll.stan",
-        "rl/code/nocatches/stan/dbn1.fixed.ll.stan",
-        "rl/code/nocatches/stan/dbn2.fixed.ll.stan",
-        "rl/code/nocatches/stan/vsn1.fixed.ll.stan",
-        "rl/code/nocatches/stan/vsn2.fixed.ll.stan",
-        "rl/code/nocatches/stan/dbr1.fixed.ll.stan",
-        "rl/code/nocatches/stan/vsr1.fixed.ll.stan",
-        "rl/code/nocatches/stan/dbnvsr1.fixed.ll.stan",
-        "rl/code/nocatches/stan/vsndbr1.fixed.ll.stan",
-        "rl/code/nocatches/stan/vsnvsr1.fixed.ll.stan",
-        "rl/code/nocatches/stan/dbndbr1.fixed.ll.stan"
+        "code/rl/nocatches/stan/arl.fixed.ll.stan",
+        "code/rl/nocatches/stan/dbn1.fixed.ll.stan",
+        "code/rl/nocatches/stan/dbn2.fixed.ll.stan",
+        "code/rl/nocatches/stan/vsn1.fixed.ll.stan",
+        "code/rl/nocatches/stan/vsn2.fixed.ll.stan",
+        "code/rl/nocatches/stan/dbr1.fixed.ll.stan",
+        "code/rl/nocatches/stan/vsr1.fixed.ll.stan",
+        "code/rl/nocatches/stan/dbnvsr1.fixed.ll.stan",
+        "code/rl/nocatches/stan/vsndbr1.fixed.ll.stan",
+        "code/rl/nocatches/stan/vsnvsr1.fixed.ll.stan",
+        "code/rl/nocatches/stan/dbndbr1.fixed.ll.stan"
       ),
       
       # Fixed parameters
@@ -408,33 +408,33 @@ getmodels <- function(hierarch=FALSE){
       
       # Without gq for loglik
       stan = list(
-        "rl/code/nocatches/stan/arl.hierarch.stan",
-        "rl/code/nocatches/stan/dbn1.hierarch.stan",
-        "rl/code/nocatches/stan/dbn2.hierarch.stan",
-        "rl/code/nocatches/stan/vsn1.hierarch.stan",
-        "rl/code/nocatches/stan/vsn2.hierarch.stan",
-        "rl/code/nocatches/stan/dbr1.hierarch.stan",
-        "rl/code/nocatches/stan/vsr1.hierarch.stan",
-        "rl/code/nocatches/stan/dbnvsr1.hierarch.stan",
-        "rl/code/nocatches/stan/vsndbr1.hierarch.stan",
-        "rl/code/nocatches/stan/vsnvsr1.hierarch.stan",
-        "rl/code/nocatches/stan/dbndbr1.hierarch.stan"
+        "code/rl/nocatches/stan/arl.hierarch.stan",
+        "code/rl/nocatches/stan/dbn1.hierarch.stan",
+        "code/rl/nocatches/stan/dbn2.hierarch.stan",
+        "code/rl/nocatches/stan/vsn1.hierarch.stan",
+        "code/rl/nocatches/stan/vsn2.hierarch.stan",
+        "code/rl/nocatches/stan/dbr1.hierarch.stan",
+        "code/rl/nocatches/stan/vsr1.hierarch.stan",
+        "code/rl/nocatches/stan/dbnvsr1.hierarch.stan",
+        "code/rl/nocatches/stan/vsndbr1.hierarch.stan",
+        "code/rl/nocatches/stan/vsnvsr1.hierarch.stan",
+        "code/rl/nocatches/stan/dbndbr1.hierarch.stan"
         
         
       ),
       # With gq for loglik
       stan.loglik = list(
-        "rl/code/nocatches/stan/arl.hierarch.ll.stan",
-        "rl/code/nocatches/stan/dbn1.hierarch.ll.stan",
-        "rl/code/nocatches/stan/dbn2.hierarch.ll.stan",
-        "rl/code/nocatches/stan/vsn1.hierarch.ll.stan",
-        "rl/code/nocatches/stan/vsn2.hierarch.ll.stan",
-        "rl/code/nocatches/stan/dbr1.hierarch.ll.stan",
-        "rl/code/nocatches/stan/vsr1.hierarch.ll.stan",
-        "rl/code/nocatches/stan/dbnvsr1.hierarch.ll.stan",
-        "rl/code/nocatches/stan/vsndbr1.hierarch.ll.stan",
-        "rl/code/nocatches/stan/vsnvsr1.hierarch.ll.stan",
-        "rl/code/nocatches/stan/dbndbr1.hierarch.ll.stan"
+        "code/rl/nocatches/stan/arl.hierarch.ll.stan",
+        "code/rl/nocatches/stan/dbn1.hierarch.ll.stan",
+        "code/rl/nocatches/stan/dbn2.hierarch.ll.stan",
+        "code/rl/nocatches/stan/vsn1.hierarch.ll.stan",
+        "code/rl/nocatches/stan/vsn2.hierarch.ll.stan",
+        "code/rl/nocatches/stan/dbr1.hierarch.ll.stan",
+        "code/rl/nocatches/stan/vsr1.hierarch.ll.stan",
+        "code/rl/nocatches/stan/dbnvsr1.hierarch.ll.stan",
+        "code/rl/nocatches/stan/vsndbr1.hierarch.ll.stan",
+        "code/rl/nocatches/stan/vsnvsr1.hierarch.ll.stan",
+        "code/rl/nocatches/stan/dbndbr1.hierarch.ll.stan"
       ),
       
       # Fixed parameters

@@ -38,42 +38,42 @@ set.seed(42)
 
 # Pre process data from raw data to formatted data for analyses
 print("Preprocessing data...")
-source("./preprocessing/preprocessing.R")
+source("./code/preprocessing/preprocessing.R")
 
 # Convert preprocessed data to numpy arrays.
 print("Converting data to numpy arrays...")
-source_python("preprocessing/numpy_conversion.py")
+source_python("./code/preprocessing/numpy_conversion.py")
 
 #### Run Behavioral Analyses ####
 print("Running behavioral analyses...")
-source("behavioral/code/behavioral.R")
+source("./code/behavioral/behavioral.R")
 
 #### Run Bayesian Agent Analysis ####
 print("Running Bayesian Forager analyses...")
-source("bayesianforager/code/BayesianForager.R")
+source("./code/bayesianforager/BayesianForager.R")
 
 # #### Alone condition ####
 
 # Run model comparison
 print("Running model comparison for alone condition...")
-source("rl/code/alone/analyses/modelcomp.R")
+source("./code/rl/alone/analyses/modelcomp.R")
 rm(list = ls())
 
 # Run parameter recovery
 print("Running parameter recovery for alone condition...")
-source("rl/code/alone/analyses/parrecov.R")
+source("code/rl/alone/analyses/parrecov.R")
 rm(list = ls())
 
 # #### No catches condition ####
 
 # Run numerical simulations
 print("Running numerical simulations for no catches condition...")
-source("rl/code/nocatches/analyses/numsims.R")
+source("code/rl/nocatches/analyses/numsims.R")
 rm(list = ls())
 
 # Run model comparison
 print("Running model comparison for no catches condition...")
-source("rl/code/nocatches/analyses/modelcomp.R")
+source("code/rl/nocatches/analyses/modelcomp.R")
 rm(list = ls())
 
 
@@ -81,17 +81,17 @@ rm(list = ls())
 
 # Run numerical simulations
 print("Running numerical simulations for catches condition...")
-source("rl/code/catches/analyses/numsims.R")
+source("code/rl/catches/analyses/numsims.R")
 rm(list = ls())
 
 # Run model comparison
 print("Running model comparison for catches condition...")
-source("rl/code/catches/analyses/modelcomp.R")
+source("code/rl/catches/analyses/modelcomp.R")
 rm(list = ls())
 
 # Run parameter recovery
 print("Running parameter recovery for catches condition...")
-source("rl/code/catches/analyses/parrecov.R")
+source("code/rl/catches/analyses/parrecov.R")
 rm(list = ls())
 
 #### Create figures ####

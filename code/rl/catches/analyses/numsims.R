@@ -1,14 +1,13 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("rl/code/catches/functions/", list.files("rl/code/catches/functions"))
+function.list = paste0("code/rl/catches/functions/", list.files("code/rl/catches/functions"))
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
-if(!dir.exists("rl/results/figures")){dir.create("rl/results/figures")}
-if(!dir.exists("rl/results/catches")){dir.create("rl/results/catches")}
-if(!dir.exists("rl/results/catches/numsims")){dir.create("rl/results/catches/numsims")}
-resultsdir = "rl/results/catches/numsims"
+if(!dir.exists("results/rl/catches")){dir.create("results/rl/catches")}
+if(!dir.exists("results/rl/catches/numsims")){dir.create("results/rl/catches/numsims")}
+resultsdir = "results/rl/catches/numsims"
 
 #### Prepare simulations ####
 
@@ -225,7 +224,7 @@ write.csv(plot.data.c, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
 
 
 # Merge data
-plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "accdiff.csv")) %>%
+plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "accdiff.csv")) %>%
   filter(model != "arl.fixed") %>% select(-c(X))
 plot.data = rbind(plot.data.nc, plot.data.c)
 write.csv(plot.data, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
@@ -294,7 +293,7 @@ write.csv(plot.data.c, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/")
 
 
 # Merge data
-plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "acctimediff.csv")) %>%
+plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "acctimediff.csv")) %>%
   filter(model != "arl.fixed") %>% select(-c(X))
 plot.data = rbind(plot.data.nc, plot.data.c)
 write.csv(plot.data, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/"))
@@ -390,7 +389,7 @@ plot.data.c = results$switches.time %>%
 write.csv(plot.data.c, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))
 
 # Merge data
-plot.data.nc = read.csv(file.path("rl", "results", "nocatches", "numsims", "switchtimediff.csv")) %>%
+plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "switchtimediff.csv")) %>%
   filter(model != "arl.fixed") %>% select(-c(X))
 plot.data = rbind(plot.data.nc, plot.data.c)
 write.csv(plot.data, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))

@@ -1,16 +1,16 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("rl/code/catches/functions/", list.files("rl/code/catches/functions"))
+function.list = paste0("code/rl/catches/functions/", list.files("code/rl/catches/functions"))
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
-if(!dir.exists("rl/results/catches")){dir.create("rl/results/catches")}
-if(!dir.exists("rl/results/catches/modelcomp")){dir.create("rl/results/catches/modelcomp")}
-if(!dir.exists("rl/results/catches/modelcomp/diagnostics")){dir.create("rl/results/catches/modelcomp/diagnostics")}
-if(!dir.exists("rl/results/catches/modelcomp/diagnostics/detailed")){dir.create("rl/results/catches/modelcomp/diagnostics/detailed")}
+if(!dir.exists("results/rl/catches")){dir.create("results/rl/catches")}
+if(!dir.exists("results/rl/catches/modelcomp")){dir.create("results/rl/catches/modelcomp")}
+if(!dir.exists("results/rl/catches/modelcomp/diagnostics")){dir.create("results/rl/catches/modelcomp/diagnostics")}
+if(!dir.exists("results/rl/catches/modelcomp/diagnostics/detailed")){dir.create("results/rl/catches/modelcomp/diagnostics/detailed")}
 
-resultsdir = "rl/results/catches/modelcomp"
+resultsdir = "results/rl/catches/modelcomp"
 
 
 #### Prepare model comparison ####

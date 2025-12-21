@@ -1,18 +1,18 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("rl/code/alone/functions/", list.files("rl/code/alone/functions/"))
+function.list = paste0("code/rl/alone/functions/", list.files("code/rl/alone/functions/"))
 sapply(function.list, source, .GlobalEnv)
 
 # Create results directories
-if(!dir.exists("rl/results")){dir.create("rl/results")}
-if(!dir.exists("rl/results/alone")){dir.create("rl/results/alone")}
-if(!dir.exists("rl/results/alone/parrecov")){dir.create("rl/results/alone/parrecov")}
+if(!dir.exists("results/rl")){dir.create("results/rl")}
+if(!dir.exists("results/rl/alone")){dir.create("results/rl/alone")}
+if(!dir.exists("results/rl/alone/parrecov")){dir.create("results/rl/alone/parrecov")}
 
 #### Prepare parameter recovery ####
 
 # Load winning model
-load(file = paste("rl/results/alone/modelcomp", "modelcomp.Rdata", sep = "/"))
+load(file = paste("results/rl/alone/modelcomp", "modelcomp.Rdata", sep = "/"))
 #remove(results, comparison, comparison.named)
 
 # Parse name
@@ -60,7 +60,7 @@ refresh = 100
 
 #### Run parameter recovery ####
 
-if(!file.exists(paste("rl/results/alone/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))){
+if(!file.exists(paste("results/rl/alone/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))){
 
   # Results list
   results = list()
@@ -91,7 +91,7 @@ if(!file.exists(paste("rl/results/alone/parrecov", paste(models$name[[mod]], "Rd
 
     # Write log to text file fot when knitting
     prgrss = paste("Simulating from model", models$name[[mod]], ". Simulation", sim, "out of", nsim)
-    log.file = paste(paste("rl/results/alone/parrecov",
+    log.file = paste(paste("results/rl/alone/parrecov",
                            "log.txt", sep = "/"))
     if(!file.exists(log.file)){file.create(log.file)}
     write(prgrss, log.file, append = TRUE, ncolumns = 1)
@@ -169,13 +169,13 @@ if(!file.exists(paste("rl/results/alone/parrecov", paste(models$name[[mod]], "Rd
     mutate(par = factor(par, levels = names(models$free.pars[[mod]]))) # factorise for ordering when plotting
 
   # Save results for model
-  save(results, file = paste("rl/results/alone/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))
+  save(results, file = paste("results/rl/alone/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))
 
 
 }else{
 
   # Save results for model
-  load(file = paste("rl/results/alone/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))
+  load(file = paste("results/rl/alone/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))
 
 }
 
@@ -214,5 +214,5 @@ p = results %>%
 p
 
 ggexport(p, width = 2560, height = 1440,
-         filename = paste("rl/results/alone/parrecov", paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))
+         filename = paste("results/rl/alone/parrecov", paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))
 print(p)

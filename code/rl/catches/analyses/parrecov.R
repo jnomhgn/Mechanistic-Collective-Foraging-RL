@@ -1,15 +1,15 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("rl/code/catches/functions/", list.files("rl/code/catches/functions/"))
+function.list = paste0("code/rl/catches/functions/", list.files("code/rl/catches/functions/"))
 sapply(function.list, source, .GlobalEnv)
 
 # Create results directories
-if(!dir.exists("rl/results")){dir.create("rl/results")}
-if(!dir.exists("rl/results/catches")){dir.create("rl/results/catches")}
-if(!dir.exists("rl/results/catches/parrecov")){dir.create("rl/results/catches/parrecov")}
+if(!dir.exists("results/rl")){dir.create("results/rl")}
+if(!dir.exists("results/rl/catches")){dir.create("results/rl/catches")}
+if(!dir.exists("results/rl/catches/parrecov")){dir.create("results/rl/catches/parrecov")}
 
-resultsdir = "rl/results/catches/parrecov"
+resultsdir = "results/rl/catches/parrecov"
 
 #### Prepare parameter recovery ####
 

@@ -26,21 +26,21 @@ getmodels <- function(hierarch=FALSE){
       
       # Without gq for loglik
       stan = list(
-        "rl/code/alone/stan/m1.1.fixed.stan",
-        "rl/code/alone/stan/m2.1.fixed.stan",
-        "rl/code/alone/stan/m3.1.fixed.stan",
-        "rl/code/alone/stan/m4.1.fixed.stan",
-        "rl/code/alone/stan/m4.2.fixed.stan",
-        "rl/code/alone/stan/m4.3.fixed.stan"
+        "code/rl/alone/stan/m1.1.fixed.stan",
+        "code/rl/alone/stan/m2.1.fixed.stan",
+        "code/rl/alone/stan/m3.1.fixed.stan",
+        "code/rl/alone/stan/m4.1.fixed.stan",
+        "code/rl/alone/stan/m4.2.fixed.stan",
+        "code/rl/alone/stan/m4.3.fixed.stan"
       ),
       # With gq for loglik
       stan.loglik = list(
-        "rl/code/alone/stan/m1.1.fixed.ll.stan",
-        "rl/code/alone/stan/m2.1.fixed.ll.stan",
-        "rl/code/alone/stan/m3.1.fixed.ll.stan",
-        "rl/code/alone/stan/m4.1.fixed.ll.stan",
-        "rl/code/alone/stan/m4.2.fixed.ll.stan",
-        "rl/code/alone/stan/m4.3.fixed.ll.stan"
+        "code/rl/alone/stan/m1.1.fixed.ll.stan",
+        "code/rl/alone/stan/m2.1.fixed.ll.stan",
+        "code/rl/alone/stan/m3.1.fixed.ll.stan",
+        "code/rl/alone/stan/m4.1.fixed.ll.stan",
+        "code/rl/alone/stan/m4.2.fixed.ll.stan",
+        "code/rl/alone/stan/m4.3.fixed.ll.stan"
       ),
       
       # Fixed parameters
@@ -247,21 +247,21 @@ getmodels <- function(hierarch=FALSE){
       
       # Without gq for loglik
       stan = list(
-        "rl/code/alone/stan/m1.1.hierarch.stan",
-        "rl/code/alone/stan/m2.1.hierarch.stan",
-        "rl/code/alone/stan/m3.1.hierarch.stan",
-        "rl/code/alone/stan/m4.1.hierarch.stan",
-        "rl/code/alone/stan/m4.2.hierarch.stan",
-        "rl/code/alone/stan/m4.3.hierarch.stan"
+        "code/rl/alone/stan/m1.1.hierarch.stan",
+        "code/rl/alone/stan/m2.1.hierarch.stan",
+        "code/rl/alone/stan/m3.1.hierarch.stan",
+        "code/rl/alone/stan/m4.1.hierarch.stan",
+        "code/rl/alone/stan/m4.2.hierarch.stan",
+        "code/rl/alone/stan/m4.3.hierarch.stan"
       ),
       # With gq for loglik
       stan.loglik = list(
-        "rl/code/alone/stan/m1.1.hierarch.ll.stan",
-        "rl/code/alone/stan/m2.1.hierarch.ll.stan",
-        "rl/code/alone/stan/m3.1.hierarch.ll.stan",
-        "rl/code/alone/stan/m4.1.hierarch.ll.stan",
-        "rl/code/alone/stan/m4.2.hierarch.ll.stan",
-        "rl/code/alone/stan/m4.3.hierarch.ll.stan"
+        "code/rl/alone/stan/m1.1.hierarch.ll.stan",
+        "code/rl/alone/stan/m2.1.hierarch.ll.stan",
+        "code/rl/alone/stan/m3.1.hierarch.ll.stan",
+        "code/rl/alone/stan/m4.1.hierarch.ll.stan",
+        "code/rl/alone/stan/m4.2.hierarch.ll.stan",
+        "code/rl/alone/stan/m4.3.hierarch.ll.stan"
       ),
       
       # Fixed parameters

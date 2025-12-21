@@ -25,9 +25,8 @@ library(posterior)
 
 
 # Create directories
-if(!dir.exists("behavioral")){dir.create("behavioral")}
-if(!dir.exists("behavioral/results")){dir.create("behavioral/results")}
-resultsdir = "behavioral/results"
+resultsdir = "results/behavioral"
+if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = T)}
 
 
 #### Prepare analysis ####
