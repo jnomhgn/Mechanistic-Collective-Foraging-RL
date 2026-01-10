@@ -56,10 +56,15 @@ getmodels <- function(hierarch=FALSE){
         "code/rl/catches/stan/dbr1.fixed.stan",
         "code/rl/catches/stan/dbr2.fixed.stan",
         "code/rl/catches/stan/vsr1.fixed.stan",
+        "code/rl/catches/stan/vsr2.fixed.stan",
         "code/rl/catches/stan/dbnvsr1.fixed.stan",
+        "code/rl/catches/stan/dbnvsr2.fixed.stan",
         "code/rl/catches/stan/vsndbr1.fixed.stan",
+        "code/rl/catches/stan/vsndbr2.fixed.stan",
         "code/rl/catches/stan/vsnvsr1.fixed.stan",
-        "code/rl/catches/stan/dbndbr1.fixed.stan"
+        "code/rl/catches/stan/vsnvsr2.fixed.stan",
+        "code/rl/catches/stan/dbndbr1.fixed.stan",
+        "code/rl/catches/stan/dbndbr2.fixed.stan"
         
       ),
       # With gq for loglik
@@ -72,10 +77,15 @@ getmodels <- function(hierarch=FALSE){
         "code/rl/catches/stan/dbr1.fixed.ll.stan",
         "code/rl/catches/stan/dbr2.fixed.ll.stan",
         "code/rl/catches/stan/vsr1.fixed.ll.stan",
+        "code/rl/catches/stan/vsr2.fixed.ll.stan",
         "code/rl/catches/stan/dbnvsr1.fixed.ll.stan",
+        "code/rl/catches/stan/dbnvsr2.fixed.ll.stan",
         "code/rl/catches/stan/vsndbr1.fixed.ll.stan",
+        "code/rl/catches/stan/vsndbr2.fixed.ll.stan",
         "code/rl/catches/stan/vsnvsr1.fixed.ll.stan",
-        "code/rl/catches/stan/dbndbr1.fixed.ll.stan"
+        "code/rl/catches/stan/vsnvsr2.fixed.ll.stan",
+        "code/rl/catches/stan/dbndbr1.fixed.ll.stan",
+        "code/rl/catches/stan/dbndbr2.fixed.ll.stan"
       ),
       
       # Fixed parameters

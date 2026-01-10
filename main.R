@@ -29,77 +29,95 @@ library(randtoolbox)
 library(parallel)
 library(future)
 library(future.apply)
+options(future.globals.maxSize = 1.0 * 1e9)
 
 # Python integration setup
 library(reticulate)
-use_virtualenv(virtualenv = file.path(getwd(), "venv"), required = TRUE)
+# use_virtualenv(virtualenv = file.path(getwd(), "venv"), required = TRUE)
 
 # Add seed for reproducibility
 set.seed(42)
 
 
-#### Data Pre-Processing ####
+# #### Data Pre-Processing ####
 
-# Pre process data from raw data to formatted data for analyses
-print("Preprocessing data...")
-source("./code/preprocessing/preprocessing.R")
+# # Pre process data from raw data to formatted data for analyses
+# print("Preprocessing data...")
+# source("./code/preprocessing/preprocessing.R")
 
-# Convert preprocessed data to numpy arrays.
-print("Converting data to numpy arrays...")
-source_python("./code/preprocessing/numpy_conversion.py")
+# # Convert preprocessed data to numpy arrays.
+# print("Converting data to numpy arrays...")
+# source_python("./code/preprocessing/numpy_conversion.py")
 
-#### Run Behavioral Analyses ####
-print("Running behavioral analyses...")
-source("./code/behavioral/behavioral.R")
+# #### Run Behavioral Analyses ####
+# print("Running behavioral analyses...")
+# source("./code/behavioral/behavioral.R")
 
-#### Run Bayesian Agent Analysis ####
-print("Running Bayesian Forager analyses...")
-source("./code/bayesianforager/BayesianForager.R")
+# #### Run Bayesian Agent Analysis ####
+# print("Running Bayesian Forager analyses...")
+# source("./code/bayesianforager/BayesianForager.R")
 
-#### Alone condition ####
+# #### Alone condition ####
 
-# Run model comparison
-print("Running model comparison for alone condition...")
-source("./code/rl/alone/analyses/modelcomp.R")
+# # Run model comparison
+# print("Running model comparison for alone condition...")
+# source("./code/rl/alone/analyses/modelcomp.R")
+# rm(list = ls())
+
+# # Run parameter recovery
+# print("Running parameter recovery for alone condition...")
+# source("code/rl/alone/analyses/parrecov.R")
+# rm(list = ls())
+
+# #### No catches condition ####
+
+# # Run numerical simulations
+# print("Running numerical simulations for no catches condition...")
+# source("code/rl/nocatches/analyses/numsims.R")
+# rm(list = ls())
+
+# # Run model comparison
+# print("Running model comparison for no catches condition...")
+# source("code/rl/nocatches/analyses/modelcomp.R")
+# rm(list = ls())
+
+
+# #### Catches condition ####
+
+# # Run numerical simulations
+# print("Running numerical simulations for catches condition...")
+# source("code/rl/catches/analyses/numsims.R")
+# rm(list = ls())
+
+# # Run model comparison
+# print("Running model comparison for catches condition...")
+# source("code/rl/catches/analyses/modelcomp.R")
+# rm(list = ls())
+
+# # Run parameter recovery
+# print("Running parameter recovery for catches condition...")
+# source("code/rl/catches/analyses/parrecov.R")
+# rm(list = ls())
+
+# #### Create figures ####
+
+# # Plot figures
+# print("Creating figures...")
+# source_python("figures/code/figures.py")
+
+#### Run model recovery for all conditions at the end due to computation time ####
+
+# Alone condition
+print("Running model recovery for alone condition...")
+source("code/rl/alone/analyses/modelrecov.R")
 rm(list = ls())
 
-# Run parameter recovery
-print("Running parameter recovery for alone condition...")
-source("code/rl/alone/analyses/parrecov.R")
+# No catches condition
+print("Running model recovery for no catches condition...")
+source("code/rl/nocatches/analyses/modelrecov.R")
 rm(list = ls())
 
-#### No catches condition ####
-
-# Run numerical simulations
-print("Running numerical simulations for no catches condition...")
-source("code/rl/nocatches/analyses/numsims.R")
+# Catches condition
+print("Running model recovery for catches condition...")
+source("code/rl/catches/analyses/modelrecov.R")
 rm(list = ls())
-
-# Run model comparison
-print("Running model comparison for no catches condition...")
-source("code/rl/nocatches/analyses/modelcomp.R")
-rm(list = ls())
-
-
-#### Catches condition ####
-
-# Run numerical simulations
-print("Running numerical simulations for catches condition...")
-source("code/rl/catches/analyses/numsims.R")
-rm(list = ls())
-
-# Run model comparison
-print("Running model comparison for catches condition...")
-source("code/rl/catches/analyses/modelcomp.R")
-rm(list = ls())
-
-# Run parameter recovery
-print("Running parameter recovery for catches condition...")
-source("code/rl/catches/analyses/parrecov.R")
-rm(list = ls())
-
-#### Create figures ####
-
-# Plot figures
-print("Creating figures...")
-source_python("figures/code/figures.py")

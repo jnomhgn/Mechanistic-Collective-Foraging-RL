@@ -1,5 +1,5 @@
 # Function to simulate synthetic data
-vsn2.fixed.sim <- function(sim.parameters, postpredict=False, duration.actual=F){
+vsn2.fixed.sim <- function(sim.parameters, postpredict=F, duration.actual=F){
   
   with(data = sim.parameters, expr = {
     
