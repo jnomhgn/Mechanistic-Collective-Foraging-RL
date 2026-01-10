@@ -9,7 +9,7 @@ resultsdir = 'data/processed'
 # Run only if .npy files do not already exist
 if any(f.endswith('.npy') for f in os.listdir(resultsdir)):
 
-    print("Numpy files already exist. Skipping conversion.")
+    print("Skipping conversion. Numpy files already exist. ")
 
 else:
     

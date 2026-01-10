@@ -186,11 +186,11 @@ computeloo <-function(models, adaptivity, log.file){
     ll = ll[, , indx]
     
     # Compute relative effect sample sizes
-    r_eff = relative_eff(exp(ll), cores = 2)
+    r_eff = relative_eff(exp(ll), cores = 1)
     
     # Compute psis loo
     loo.model = paste("loo", mfit, sep = ".")
-    assign(loo.model, loo(ll, r_eff = r_eff, cores = 4))
+    assign(loo.model, loo(ll, r_eff = r_eff, cores = 1))
     remove(ll)
     
     # Save diagnostics
@@ -252,12 +252,14 @@ if(!file.exists(paste(resultsdir, adaptivity, "modelcomp.Rdata", sep = "/"))){
   # Compile models to avoid recompiling 
   models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
 
-  plan(multisession, workers = length(models$stan.loglik))
+  plan(multisession, workers = min(length(models$stan.loglik) * cores, (parallel::detectCores()-1) / cores))
 
   # Fit models in parallel
   future_lapply(1:length(models$stan.loglik), function(mfit) {
     fitmodel(mfit, models, stan.data.d, adaptivity, chains, cores, iter, warmup, refresh, log.file)
   })
+
+  plan(sequential)
 
   # Compute PSIS-LOO sequentially
   results = computeloo(models, adaptivity, log.file)
@@ -315,14 +317,13 @@ if(!file.exists(paste(resultsdir, adaptivity, "postpredict_acctime.csv", sep = "
   # Get and index winning model in fixed effects model lsit (used for simulation)
   winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
   models = getmodels(hierarch = F)
-  winnerindx = grep(pattern = winner, models$name)
-  models = lapply(models, function(x) x[winnerindx])
+  winnerindx = grep(paste0("^", winner, "\\.fixed$"), unlist(models$name))
 
-  # Extract draws
+   # Extract draws
   draws = tidy_draws(fit)
-  rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[[1]])] 
+  rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[winnerindx][[1]])] 
   rl.pars = apply(rl.pars, 2, mean)
-  rl.pars = append(rl.pars, models$fixed.pars[[winnerindx]])
+  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
 
   # Prep simulation
   f = get(models$sim[[1]])
@@ -508,7 +509,7 @@ if(!file.exists(paste(resultsdir, adaptivity, "modelcomp.Rdata", sep = "/"))){
   # Compile models to avoid recompiling 
   models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
 
-  plan(multisession, workers = length(models$stan.loglik))
+  plan(multisession, workers = min(length(models$stan.loglik) * cores, (parallel::detectCores()-1) / cores))
 
   # Fit models in parallel
   future_lapply(1:length(models$stan.loglik), function(mfit) {

@@ -149,11 +149,11 @@ computeloo <- function(models, log.file){
     ll = ll[, , indx]
 
     # Compute relative effect sample sizes
-    r_eff = relative_eff(exp(ll), cores = 2)
+    r_eff = relative_eff(exp(ll), cores = 1)
 
     # Compute psis loo
     loo.model = paste("loo", mfit, sep = ".")
-    assign(loo.model, loo(ll, r_eff = r_eff, cores = 4))
+    assign(loo.model, loo(ll, r_eff = r_eff, cores = 1))
     remove(ll)
 
     # Save diagnostics
@@ -206,12 +206,13 @@ if(!file.exists("results/rl/alone/modelcomp/modelcomp.Rdata")){
   # Results list
   results = list()
 
-  plan(multisession, workers = length(models$stan.loglik))
+  plan(multisession, workers = min(length(models$stan.loglik) * cores, (parallel::detectCores()-1) / cores))
 
   # Fit models in parallel
   future_lapply(1:length(models$stan.loglik), function(mfit) {
     modelfit(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh, log.file)
   })
+  plan(sequential)
 
   # Compute PSIS-LOO sequentially
   results = computeloo(models, log.file)

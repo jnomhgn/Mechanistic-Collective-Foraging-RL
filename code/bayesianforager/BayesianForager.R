@@ -120,7 +120,7 @@ if (!file.exists(file.path(resultsdir, "mean_accuracies.npy")) &
   result <- mclapply(
     1:nrow(d) ,
     function(i) Sim_fct(100, d$duration[i], 1, 2, d$max[i], d$ratio[i], 2, d$correct[i]),
-    mc.cores=detectCores()-1
+    mc.cores=detectCores()/2
   )
 
   #Calculate mean accuracies for each environment

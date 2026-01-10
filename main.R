@@ -56,7 +56,7 @@ source("./code/behavioral/behavioral.R")
 print("Running Bayesian Forager analyses...")
 source("./code/bayesianforager/BayesianForager.R")
 
-# #### Alone condition ####
+#### Alone condition ####
 
 # Run model comparison
 print("Running model comparison for alone condition...")
@@ -68,7 +68,7 @@ print("Running parameter recovery for alone condition...")
 source("code/rl/alone/analyses/parrecov.R")
 rm(list = ls())
 
-# #### No catches condition ####
+#### No catches condition ####
 
 # Run numerical simulations
 print("Running numerical simulations for no catches condition...")
