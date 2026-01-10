@@ -81,7 +81,7 @@ refresh = 100
 #### Functions for model fitting and loo computation ####
 
 # Function that runs model comparison in parallel
-fitmodel <- function(mfit, models, stan.data.d, adaptivity, chains, cores, iter, warmup, refresh, log.file){
+fitmodel <- function(mfit, models, stan.data.d, adaptivity, chains, cores, iter, warmup, refresh){
 
   # Create log file
   log.file = paste(resultsdir, adaptivity,
@@ -159,7 +159,7 @@ fitmodel <- function(mfit, models, stan.data.d, adaptivity, chains, cores, iter,
 }
 
 # Function to compute PSIS-LOO for each model fit sequentially
-computeloo <-function(models, adaptivity, log.file){
+computeloo <-function(models, adaptivity){
 
   # Results list
   results = list()
@@ -252,17 +252,17 @@ if(!file.exists(paste(resultsdir, adaptivity, "modelcomp.Rdata", sep = "/"))){
   # Compile models to avoid recompiling 
   models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
 
-  plan(multisession, workers = min(length(models$stan.loglik) * cores, (parallel::detectCores()-1) / cores))
+  plan(multisession, workers = max(1L, min(length(models$stan.loglik), floor((max(1L, parallel::detectCores() - 1L)) / max(1L, cores)))))
 
   # Fit models in parallel
   future_lapply(1:length(models$stan.loglik), function(mfit) {
-    fitmodel(mfit, models, stan.data.d, adaptivity, chains, cores, iter, warmup, refresh, log.file)
+    fitmodel(mfit, models, stan.data.d, adaptivity, chains, cores, iter, warmup, refresh)
   })
 
   plan(sequential)
 
   # Compute PSIS-LOO sequentially
-  results = computeloo(models, adaptivity, log.file)
+  results = computeloo(models, adaptivity)
 
   # Extract results from list
   list2env(results, globalenv())
@@ -326,8 +326,8 @@ if(!file.exists(paste(resultsdir, adaptivity, "postpredict_acctime.csv", sep = "
   rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
 
   # Prep simulation
-  f = get(models$sim[[1]])
-  sim.pars = c(exp.pars, env.pars, rl.pars, list(decfreq.init))
+  f = get(models$sim[[winnerindx]])
+  sim.pars = c(exp.pars, env.pars, rl.pars, decfreq.init = list(decfreq.init))
 
   # Simulate
   results = list()
@@ -411,17 +411,16 @@ if(!file.exists(paste(resultsdir, adaptivity, "postpredict_acctime.csv", sep = "
   # Get and index winning model in fixed effects model lsit (used for simulation)
   winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
   models = getmodels(hierarch = F)
-  winnerindx = grep(pattern = winner, models$name)
-  models = lapply(models, function(x) x[winnerindx])
+  winnerindx = grep(paste0("^", winner, "\\.fixed$"), unlist(models$name))
 
-  # Extract draws
+   # Extract draws
   draws = tidy_draws(fit)
-  rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[[1]])] 
+  rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[winnerindx][[1]])] 
   rl.pars = apply(rl.pars, 2, mean)
-  rl.pars = append(rl.pars, models$fixed.pars[[1]])
+  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
 
   # Prep simulation
-  f = get(models$sim[[1]])
+  f = get(models$sim[[winnerindx]])
   sim.pars = c(exp.pars, rl.pars, decfreq.init= list(decfreq.init))
 
   # Simulate
@@ -485,7 +484,7 @@ if(!file.exists(paste(resultsdir, adaptivity, "postpredict_acctime.csv", sep = "
   ggexport(p, width=1920, height=1080, 
           filename = paste(resultsdir, "nonadaptive", "postpredict_acc.jpeg", sep="/"))
   }else{
-    sprintf("Posterior predictions for %s model already exist. Skipping simulation.", adaptivity)
+    sprintf("Posterior predictions for %s model already exist. Skipping simulation.", adaptivity) %>% print()
   }
 
 
@@ -509,15 +508,15 @@ if(!file.exists(paste(resultsdir, adaptivity, "modelcomp.Rdata", sep = "/"))){
   # Compile models to avoid recompiling 
   models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
 
-  plan(multisession, workers = min(length(models$stan.loglik) * cores, (parallel::detectCores()-1) / cores))
+  plan(multisession, workers = max(1L, min(length(models$stan.loglik), floor((max(1L, parallel::detectCores() - 1L)) / max(1L, cores)))))
 
   # Fit models in parallel
   future_lapply(1:length(models$stan.loglik), function(mfit) {
-    fitmodel(mfit, models, stan.data.d, adaptivity, chains, cores, iter, warmup, refresh, log.file)
+    fitmodel(mfit, models, stan.data.d, adaptivity, chains, cores, iter, warmup, refresh)
   })
 
   # Compute PSIS-LOO sequentially
-  results = computeloo(models, adaptivity, log.file)
+  results = computeloo(models, adaptivity)
 
   # Extract results from list
   list2env(results, globalenv())
@@ -569,7 +568,7 @@ if(!file.exists(paste(resultsdir, adaptivity, "postpredict_acctime.csv", sep = "
   # Get and index winning model in fixed effects model lsit (used for simulation)
   winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
   models = getmodels(hierarch = F)
-  winnerindx = grep(pattern = winner, models$name)
+  winnerindx = grep(paste0("^", winner, "\\.fixed$"), unlist(models$name))
   # models = lapply(models, function(x) x[winnerindx])
 
   # Extract draws
@@ -661,7 +660,7 @@ if(!file.exists(paste(resultsdir, adaptivity, "postpredict_acctime.csv", sep = "
 
   # Simulate
   results = list()
-  for(sim in 1:2){
+  for(sim in 1:nsim){
     print(paste("Simulation", sim, "of", nsim))
     sim.data = f(sim.parameters = sim.pars, postpredict = T, duration.actual = T) %>% mutate(sim=sim, decision = decision - 1)
     results[[sim]] = sim.data
@@ -709,5 +708,5 @@ if(!file.exists(paste(resultsdir, adaptivity, "postpredict_acctime.csv", sep = "
   ggexport(p, width=1920, height=1080, 
           filename = paste(resultsdir, "adaptive", "postpredict_acc.jpeg", sep="/"))
   }else{
-    sprintf("Posterior predictions for %s model already exist. Skipping simulation.", adaptivity)
+    sprintf("Posterior predictions for %s model already exist. Skipping simulation.", adaptivity) %>% print()
   }

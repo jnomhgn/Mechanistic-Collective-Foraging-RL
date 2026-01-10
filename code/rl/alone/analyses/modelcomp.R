@@ -58,7 +58,7 @@ refresh = 100
 
 # Function that runs model comparison in parallel over models
 
-modelfit <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh, log.file){
+modelfit <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh){
 
   # Create log file for each model
   log.file = paste("results/rl/alone/modelcomp", paste("log", models$name[[mfit]], "txt", sep="."), sep = "/")
@@ -126,7 +126,7 @@ modelfit <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, ref
 }
 
 # Function to compute PSIS-LOO for each model fit sequentially
-computeloo <- function(models, log.file){
+computeloo <- function(models){
 
   # Results list
   results = list()
@@ -206,16 +206,16 @@ if(!file.exists("results/rl/alone/modelcomp/modelcomp.Rdata")){
   # Results list
   results = list()
 
-  plan(multisession, workers = min(length(models$stan.loglik) * cores, (parallel::detectCores()-1) / cores))
+  plan(multisession, workers = max(1L, min(length(models$stan.loglik), floor((max(1L, parallel::detectCores() - 1L)) / max(1L, cores)))))
 
   # Fit models in parallel
   future_lapply(1:length(models$stan.loglik), function(mfit) {
-    modelfit(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh, log.file)
+    modelfit(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh)
   })
   plan(sequential)
 
   # Compute PSIS-LOO sequentially
-  results = computeloo(models, log.file)
+  results = computeloo(models)
 
   # Extract results from list
   list2env(results, globalenv())
@@ -266,19 +266,19 @@ if(!file.exists(paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", s
   # Set the winning model / the best, simplest model. Edit if needed
   winner = "m4.1"
 
-  # Index model in list
-  models = getmodels(hierarch = F)
-  models = lapply(models, function(x) x[which(models$name %in% winner)])
-  winnerindx = which(models$name == winner)
-
   # Load fit
   fit = readRDS(paste("results/rl/alone/modelcomp", paste(winner, "fit", "rds", sep = "."), sep = "/"))
 
+  # Get and index winning model in fixed effects model lsit (used for simulation)
+  winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
+  models = getmodels(hierarch = F)
+  winnerindx = grep(paste0("^", winner), unlist(models$name))
+
   # Extract draws
   draws = tidy_draws(fit)
-  rl.pars = draws[, names(draws) %in% names(models$free.pars[[1]])]
+  rl.pars = draws[, names(draws) %in% names(models$free.pars[winnerindx][[1]])] 
   rl.pars = apply(rl.pars, 2, mean)
-  rl.pars = append(rl.pars, models$fixed.pars[[winnerindx]])
+  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
 
   # Prep simulation
   f = get(models$sim[[winnerindx]])
@@ -363,19 +363,19 @@ if(!file.exists(paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", s
   # Set the winning model / the best, simplest model
   winner = "m4.1"
 
-  # Index model in list
-  models = getmodels(hierarch = F)
-  models = lapply(models, function(x) x[which(models$name %in% winner)])
-  winnerindx = which(models$name == winner)
-
   # Load fit
   fit = readRDS(paste("results/rl/alone/modelcomp", paste(winner, "fit", "rds", sep = "."), sep = "/"))
 
+  # Get and index winning model in fixed effects model lsit (used for simulation)
+  winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
+  models = getmodels(hierarch = F)
+  winnerindx = grep(paste0("^", winner), unlist(models$name))
+
   # Extract draws
   draws = tidy_draws(fit)
-  rl.pars = draws[, names(draws) %in% names(models$free.pars[[1]])]
+  rl.pars = draws[, names(draws) %in% names(models$free.pars[winnerindx][[1]])] 
   rl.pars = apply(rl.pars, 2, mean)
-  rl.pars = append(rl.pars, models$fixed.pars[[1]])
+  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
 
   # Prep simulation
   f = get(models$sim[[winnerindx]])
