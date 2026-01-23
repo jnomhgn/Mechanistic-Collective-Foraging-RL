@@ -166,7 +166,7 @@ fitmodel <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, ref
 
 
 # Function to compute PSIS-LOO for each model fit sequentially
-computeloo <-function(models, adaptivity, log.file){
+computeloo <-function(models, adaptivity, log.file, stan.data){
 
   # Results list
   results = list()
@@ -188,8 +188,8 @@ computeloo <-function(models, adaptivity, log.file){
     ll = extract_log_lik(fit, parameter_name = "log_lik", merge_chains = FALSE)
     remove(fit)
     
-    # Drop log likelihood of observations that were set to 0 in stan (time == 0)
-    indx = unique(which(ll != 0, arr.ind = T)[, 3])
+    # Drop log likelihood of observations where time == 0
+    indx = which(stan.data$time != 0, arr.ind = T)
     ll = ll[, , indx]
     
     # Compute relative effect sample sizes
@@ -262,7 +262,7 @@ if(!file.exists(paste(resultsdir, "modelcomp.Rdata", sep = "/"))){
   plan(sequential)
 
   # Compute PSIS-LOO sequentially
-  results = computeloo(models, adaptivity, log.file)
+  results = computeloo(models, adaptivity, log.file, stan.data=stan.data.d)
 
   # Extract results from list
   list2env(results, globalenv())

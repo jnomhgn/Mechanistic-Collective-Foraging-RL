@@ -159,7 +159,7 @@ fitmodel <- function(mfit, models, stan.data.d, adaptivity, chains, cores, iter,
 }
 
 # Function to compute PSIS-LOO for each model fit sequentially
-computeloo <-function(models, adaptivity){
+computeloo <-function(models, adaptivity, stan.data){
 
   # Results list
   results = list()
@@ -180,11 +180,11 @@ computeloo <-function(models, adaptivity){
     # Extract log likelihood values from model fit
     ll = extract_log_lik(fit, parameter_name = "log_lik", merge_chains = FALSE)
     remove(fit)
-    
-    # Drop log likelihood of observations that were set to 0 in stan (time == 0)
-    indx = unique(which(ll != 0, arr.ind = T)[, 3])
+
+    # Drop log likelihood of observations where time == 0
+    indx = which(stan.data$time != 0, arr.ind = T)
     ll = ll[, , indx]
-    
+
     # Compute relative effect sample sizes
     r_eff = relative_eff(exp(ll), cores = 1)
     
@@ -262,7 +262,7 @@ if(!file.exists(paste(resultsdir, adaptivity, "modelcomp.Rdata", sep = "/"))){
   plan(sequential)
 
   # Compute PSIS-LOO sequentially
-  results = computeloo(models, adaptivity)
+  results = computeloo(models, adaptivity, stan.data=stan.data.d)
 
   # Extract results from list
   list2env(results, globalenv())
@@ -516,7 +516,7 @@ if(!file.exists(paste(resultsdir, adaptivity, "modelcomp.Rdata", sep = "/"))){
   })
 
   # Compute PSIS-LOO sequentially
-  results = computeloo(models, adaptivity)
+  results = computeloo(models, adaptivity, stan.data=stan.data.d)
 
   # Extract results from list
   list2env(results, globalenv())

@@ -52,7 +52,7 @@ refresh = 100
 #### Simulation Setup ####
 
 # Number of simulations
-nsim=2
+nsim=10
 
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
@@ -94,7 +94,7 @@ modelfit <- function(msim, mfit, sim, models, stan.data.d, chains, cores, iter, 
 }
 
 # Function to compute PSIS-LOO for each model fit sequentially
-computeloo <- function(msim, sim, models){
+computeloo <- function(msim, sim, models, stan.data){
 
   # Results list
   results = list()
@@ -112,28 +112,23 @@ computeloo <- function(msim, sim, models){
     # Extract log likelihood values from model fit
     ll = extract_log_lik(fit, parameter_name = "log_lik", merge_chains = FALSE)
 
-    # Drop log likelihood of observations that were set to 0 in stan (time == 0)
-    indx = unique(which(ll != 0, arr.ind = T)[, 3])
-    ll = ll[, , indx, drop = FALSE]
+    # Drop log likelihood of observations where time == 0
+    indx = which(stan.data$time != 0, arr.ind = T)
+    ll = ll[, , indx]
 
     # Compute relative effect sample sizes
-     r_eff = relative_eff(exp(ll), cores = 1)
-    # if(length(dim(ll)) == 2){
-    #   r_eff = relative_eff(exp(ll), cores = 1, chain_id=rep(1L, nrow(ll)))
-    # }else{
-    #   r_eff = relative_eff(exp(ll), cores = 1)
-    # }
+    r_eff = relative_eff(exp(ll), cores = 1)
     
     # Compute psis loo
     loo.model = paste("loo", mfit, sep = ".")
     assign(loo.model, loo(ll, r_eff = r_eff, cores = 1))
     remove(ll)
 
-    # # Save diagnostics
-    # jpeg(paste(resultsdir, "diagnostics", paste(models$name[[msim]], models$name[[mfit]], sim, "paretok", "jpeg", sep = "."), sep = "/"),
-    #      width = 2550, height = 1440, units = "px")
-    # plot(get(loo.model))
-    # dev.off()
+    # Save diagnostics
+    jpeg(paste(resultsdir, "diagnostics", paste(models$name[[msim]], models$name[[mfit]], sim, "paretok", "jpeg", sep = "."), sep = "/"),
+         width = 2550, height = 1440, units = "px")
+    plot(get(loo.model))
+    dev.off()
 
     # Print model comp info to log.txt
     sink(log.file, append = T)
@@ -275,7 +270,7 @@ if(!file.exists(paste(resultsdir, "modelrecov.rds", sep = "/"))){
       plan(sequential)
 
       # Compute PSIS-LOO for each model fit sequentially
-      modelcomp = computeloo(msim, sim, models)
+      modelcomp = computeloo(msim, sim, models, stan.data=stan.data.sim)
 
       # Save local model comparison results
       saveRDS(modelcomp, file = paste(resultsdir, paste(models$name[[msim]], "mcomp", sim, "rds", sep = "."), sep = "/"))

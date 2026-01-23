@@ -125,7 +125,7 @@ generated quantities{
 
      // Compute log likelyhood of data given policy
       if(time[observation] == 0){
-        log_lik[observation] = 0;
+        log_lik[observation] = positive_infinity();
       }else{
         log_lik[observation] = categorical_lpmf(decision[observation] | p); 
       }
