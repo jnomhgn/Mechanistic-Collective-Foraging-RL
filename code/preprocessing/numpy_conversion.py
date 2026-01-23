@@ -4,7 +4,7 @@ import os
 import pandas
 
 # Set results directory and create if it doesn't exist
-resultsdir = 'data/processed'
+resultsdir = os.path.join('data', 'processed')
 
 # Run only if .npy files do not already exist
 if any(f.endswith('.npy') for f in os.listdir(resultsdir)):

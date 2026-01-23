@@ -2,7 +2,7 @@
 #Optimal Asocial foraging: Bayesian Inference simulations
 
 # Create results directories
-resultsdir = "results/bayesianforager"
+resultsdir <- file.path("results", "bayesianforager")
 if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = TRUE)}
 
 # Run only if results do not already exist
@@ -110,7 +110,7 @@ if (!file.exists(file.path(resultsdir, "mean_accuracies.npy")) &
   }#sim_funct
 
   #Get correct initial conditions from empirical data
-  data_long = read.csv("data/processed/data_long.csv")
+  data_long = read.csv(file.path("data", "processed", "data_long.csv"))
   d <- data_long[which(data_long$cond == 1 & data_long$time==0),]
 
   #Pass to mclapply; it makes sense to select as many cores as there are parameter combinations in case you have access to a computer cluster ("mc.cores" argument)

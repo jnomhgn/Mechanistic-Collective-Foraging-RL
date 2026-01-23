@@ -1,18 +1,19 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("code/rl/alone/functions/", list.files("code/rl/alone/functions/"))
+dir_functions <- file.path("code", "rl", "alone", "functions")
+function.list = file.path(dir_functions, list.files(dir_functions))
 sapply(function.list, source, .GlobalEnv)
 
 # Create results directories
-if(!dir.exists("results/rl")){dir.create("results/rl")}
-if(!dir.exists("results/rl/alone")){dir.create("results/rl/alone")}
-if(!dir.exists("results/rl/alone/parrecov")){dir.create("results/rl/alone/parrecov")}
+if(!dir.exists(file.path("results","rl"))){dir.create(file.path("results","rl"))}
+if(!dir.exists(file.path("results","rl","alone"))){dir.create(file.path("results","rl","alone"))}
+if(!dir.exists(file.path("results","rl","alone","parrecov"))){dir.create(file.path("results","rl","alone","parrecov"))}
 
 #### Prepare parameter recovery ####
 
 # Load winning model
-load(file = paste("results/rl/alone/modelcomp", "modelcomp.Rdata", sep = "/"))
+load(file = file.path("results", "rl", "alone", "modelcomp", "modelcomp.Rdata"))
 #remove(results, comparison, comparison.named)
 
 # Parse name
@@ -60,7 +61,7 @@ refresh = 100
 
 #### Run parameter recovery ####
 
-if(!file.exists(paste("results/rl/alone/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))){
+if(!file.exists(file.path("results","rl","alone","parrecov", paste(models$name[[mod]], "Rdata", sep = ".")))){
 
   # Results list
   results = list()
@@ -89,10 +90,9 @@ if(!file.exists(paste("results/rl/alone/parrecov", paste(models$name[[mod]], "Rd
   # Loop over simulations
   for(sim in 1:nsim){
 
-    # Write log to text file fot when knitting
+    # Write log to text file for when knitting
     prgrss = paste("Simulating from model", models$name[[mod]], ". Simulation", sim, "out of", nsim)
-    log.file = paste(paste("results/rl/alone/parrecov",
-                           "log.txt", sep = "/"))
+    log.file = file.path("results", "rl", "alone", "parrecov", "log.txt")
     if(!file.exists(log.file)){file.create(log.file)}
     write(prgrss, log.file, append = TRUE, ncolumns = 1)
 
@@ -169,20 +169,20 @@ if(!file.exists(paste("results/rl/alone/parrecov", paste(models$name[[mod]], "Rd
     mutate(par = factor(par, levels = names(models$free.pars[[mod]]))) # factorise for ordering when plotting
 
   # Save results for model
-  save(results, file = paste("results/rl/alone/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))
+  save(results, file = file.path("results", "rl", "alone", "parrecov", paste(models$name[[mod]], "Rdata", sep = ".")))
 
 
 }else{
 
   # Save results for model
-  load(file = paste("results/rl/alone/parrecov", paste(models$name[[mod]], "Rdata", sep = "."), sep = "/"))
+  load(file = file.path("results", "rl", "alone", "parrecov", paste(models$name[[mod]], "Rdata", sep = ".")))
 
 }
 
 #### Plot results  ####
 
 # Plot only if results do not already exist (no .jpeg file)
-if(!any(grepl("\\.jpeg$", list.files(paste("results/rl/alone/parrecov", sep = "/"))))){
+if(!any(grepl("\\.jpeg$", list.files(file.path("results", "rl", "alone", "parrecov"))))){
 
   labels = c(
     expression(alpha["Q,-"]),
@@ -217,8 +217,8 @@ if(!any(grepl("\\.jpeg$", list.files(paste("results/rl/alone/parrecov", sep = "/
     facet_wrap(~ par, scales = "free", , labeller = label_parsed) 
   p
 
-  ggexport(p, width = 2560, height = 1440,
-          filename = paste("results/rl/alone/parrecov", paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))
+    ggexport(p, width = 2560, height = 1440,
+      filename = file.path("results", "rl", "alone", "parrecov", paste(models$name[[mod]], "jpeg", sep = ".")))
   print(p)
 }else{
   print("Parameter recovery plots already exist. Skipping.")

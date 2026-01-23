@@ -1,15 +1,13 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("code/rl/catches/functions/", list.files("code/rl/catches/functions/"))
+dir_functions <- file.path("code", "rl", "catches", "functions")
+function.list = file.path(dir_functions, list.files(dir_functions))
 sapply(function.list, source, .GlobalEnv)
 
-# Create results directories
-if(!dir.exists("results/rl")){dir.create("results/rl")}
-if(!dir.exists("results/rl/catches")){dir.create("results/rl/catches")}
-if(!dir.exists("results/rl/catches/parrecov")){dir.create("results/rl/catches/parrecov")}
-
-resultsdir = "results/rl/catches/parrecov"
+# Create results directory (ensure it exists)
+resultsdir <- file.path("results", "rl", "catches", "parrecov")
+if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = TRUE)}
 
 #### Prepare parameter recovery ####
 
@@ -41,7 +39,7 @@ warmup = 1000
 refresh = 100
 
 # Load winning model
-load(file = paste(resultsdir, "..", "modelcomp", "modelcomp.Rdata", sep = "/"))
+load(file = file.path(resultsdir, "..", "modelcomp", "modelcomp.Rdata"))
 
 # Parse name
 winner = gsub(pattern = ".hierarch", "", winner)
@@ -62,7 +60,7 @@ models$compiled = sapply(1:length(models$name), function(x)
 # Loop over models
 for(mod in 1:length(models$name)){
   
-  if(!file.exists(paste(resultsdir,paste(models$name[[mod]], "rds", sep = "."), sep = "/"))){
+  if(!file.exists(file.path(resultsdir, paste(models$name[[mod]], "rds", sep = ".")))){
     
     # Results list
     results = list()
@@ -91,10 +89,9 @@ for(mod in 1:length(models$name)){
     # Loop over simulations
     for(sim in 1:nsim){
       
-      # Write log to text file fot when knitting
+      # Write log to text file for when knitting
       prgrss = paste("Simulating from model", models$name[[mod]], ". Simulation", sim, "out of", nsim)
-      log.file = paste(paste("social/results/parrecov",
-                             "log.txt", sep = "/"))
+      log.file = file.path(resultsdir, "log.txt")
       if(!file.exists(log.file)){file.create(log.file)}
       write(prgrss, log.file, append = TRUE, ncolumns = 1)
       
@@ -158,7 +155,7 @@ for(mod in 1:length(models$name)){
       # # Plot and save some diagnostics
       # diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars[[mod]]))
       # ggexport(plotlist = diag.list, width = 1920, height = 1080,
-      #          filename = paste("social/results/parrecov/diagnostics", paste(models$name[[mod]], "sim", sim, "diagnostics", "jpeg",  sep = "."), sep = "/"))
+      #          filename = file.path(resultsdir, "diagnostics", paste(models$name[[mod]], "sim", sim, "diagnostics", "jpeg",  sep = ".")))
       # 
       
       # Summarise posterior
@@ -191,18 +188,18 @@ for(mod in 1:length(models$name)){
       mutate(par = factor(par, levels = names(models$free.pars.pop[[mod]]))) # factorise for ordering when plotting
     
     # Save results for model 
-    saveRDS(results, file = paste(resultsdir, paste(models$name[[mod]], "rds", sep = "."), sep = "/"))
+    saveRDS(results, file = file.path(resultsdir, paste(models$name[[mod]], "rds", sep = ".")))
     
     
   }else{
     print("Results for parameter recovery already exist. Skipping.")
     # Save results for model 
-    results = readRDS(file = paste(resultsdir, paste(models$name[[mod]], "rds", sep = "."), sep = "/"))
+    results = readRDS(file = file.path(resultsdir, paste(models$name[[mod]], "rds", sep = ".")))
     
   }
 
   # Plot only if results do not already exist
-  if(!file.exists(paste(resultsdir, paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))){
+  if(!file.exists(file.path(resultsdir, paste(models$name[[mod]], "jpeg", sep = ".")))){
   
     labels = c(
       expression(alpha["Q,-"]),
@@ -240,8 +237,8 @@ for(mod in 1:length(models$name)){
     p
     
     
-    ggexport(p, width = 2560, height = 1440,
-            filename = paste(resultsdir, paste(models$name[[mod]], "jpeg", sep = "."), sep = "/"))
+        ggexport(p, width = 2560, height = 1440,
+          filename = file.path(resultsdir, paste(models$name[[mod]], "jpeg", sep = ".")))
     print(p)
 
   }else{

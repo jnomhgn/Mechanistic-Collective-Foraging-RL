@@ -1,13 +1,14 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("code/rl/catches/functions/", list.files("code/rl/catches/functions"))
+dir_functions <- file.path("code", "rl", "catches", "functions")
+function.list = file.path(dir_functions, list.files(dir_functions))
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
-if(!dir.exists("results/rl/catches")){dir.create("results/rl/catches")}
-if(!dir.exists("results/rl/catches/numsims")){dir.create("results/rl/catches/numsims")}
-resultsdir = "results/rl/catches/numsims"
+if(!dir.exists(file.path("results", "rl", "catches"))){dir.create(file.path("results", "rl", "catches"))}
+if(!dir.exists(file.path("results", "rl", "catches", "numsims"))){dir.create(file.path("results", "rl", "catches", "numsims"))}
+resultsdir <- file.path("results", "rl", "catches", "numsims")
 
 #### Prepare simulations ####
 
@@ -90,7 +91,7 @@ sim_fun = function(sim, sim.pars, rl.pars, f, models, mod, parcomb) {
 #### Run simulations for v1 ####
 
 # Add caching
-if(!file.exists(paste(resultsdir, "numsims_v1.rds", sep = "/"))){
+if(!file.exists(file.path(resultsdir, "numsims_v1.rds"))){
 
   # Get model list
   models = getmodels()
@@ -102,7 +103,7 @@ if(!file.exists(paste(resultsdir, "numsims_v1.rds", sep = "/"))){
   rl.pars = list()
 
   # Load ARL model fit for the no catches condition
-  fit = readRDS(paste(resultsdir, "../../nocatches/modelcomp/nonadaptive/arl.hierarch.fit.rds", sep = "/"))
+  fit = readRDS(file.path(resultsdir, "..", "..", "nocatches", "modelcomp", "nonadaptive", "arl.hierarch.fit.rds"))
 
   # Get ARL parameter estimates
   draws = fit %>%
@@ -123,7 +124,7 @@ if(!file.exists(paste(resultsdir, "numsims_v1.rds", sep = "/"))){
   rl.pars.catches = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>% 
     cbind(t(arl.pars.catches)) %>% cbind(srl.pars)
 
-  log.txt = paste(resultsdir, "log_v1.txt", sep = "/")
+  log.txt = file.path(resultsdir, "log_v1.txt")
   if(!file.exists(log.txt)){file.create(log.txt)}
   
   sink(log.txt, append = T)
@@ -169,20 +170,19 @@ if(!file.exists(paste(resultsdir, "numsims_v1.rds", sep = "/"))){
   }
   
   results = lapply(results, function(x) bind_rows(x))
-  saveRDS(results, file = 
-            paste(resultsdir, "numsims_v1.rds", sep = "/"))
+  saveRDS(results, file = file.path(resultsdir, "numsims_v1.rds"))
   
   sink()
   
 }else{
   print("Results from numerical simulations for v1 already exist. Skipping simulations.")
-  results = readRDS(file = paste(resultsdir, "numsims_v1.rds", sep = "/"))
+  results = readRDS(file = file.path(resultsdir, "numsims_v1.rds"))
 }
 
 #### Plot results for v1 ####
 
 # Run only if results do not already exist
-if(!file.exists(paste(resultsdir, "accdiff_v1.csv", sep = "/"))){
+if(!file.exists(file.path(resultsdir, "accdiff_v1.csv"))){
 
   # List to save plots to
   plot.list = list()
@@ -224,14 +224,14 @@ if(!file.exists(paste(resultsdir, "accdiff_v1.csv", sep = "/"))){
     ) %>%
     select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise)) %>%
     filter(model != "arl.fixed")
-  write.csv(plot.data.c, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
+  write.csv(plot.data.c, file = file.path(resultsdir, "accdiff_v1.csv"))
 
 
   # Merge data
   plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "accdiff.csv")) %>%
     filter(model != "arl.fixed") %>% select(-c(X))
   plot.data = rbind(plot.data.nc, plot.data.c)
-  write.csv(plot.data, file = paste(resultsdir, "accdiff_v1.csv", sep = "/"))
+  write.csv(plot.data, file = file.path(resultsdir, "accdiff_v1.csv"))
 
 
   # Reward-based DB vs. VS
@@ -263,8 +263,8 @@ if(!file.exists(paste(resultsdir, "accdiff_v1.csv", sep = "/"))){
     facet_grid(ratio ~ max, labeller = facet.labeller)
   p
   #plot.list =  append(plot.list, list(p))
-  ggexport(p, width = 2800, height = 1440, 
-          filename = paste(resultsdir, "accdiff_v1.jpeg", sep = "/"))
+    ggexport(p, width = 2800, height = 1440, 
+      filename = file.path(resultsdir, "accdiff_v1.jpeg"))
 
   # Individual Accuracy over time
   # plot.data = results$acc.time %>%
@@ -293,14 +293,14 @@ if(!file.exists(paste(resultsdir, "accdiff_v1.csv", sep = "/"))){
     filter(model != "arl.fixed")
 
 
-  write.csv(plot.data.c, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/"))
+  write.csv(plot.data.c, file = file.path(resultsdir, "acctimediff_v1.csv"))
 
 
   # Merge data
   plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "acctimediff.csv")) %>%
     filter(model != "arl.fixed") %>% select(-c(X))
   plot.data = rbind(plot.data.nc, plot.data.c)
-  write.csv(plot.data, file = paste(resultsdir, "acctimediff_v1.csv", sep = "/"))
+  write.csv(plot.data, file = file.path(resultsdir, "acctimediff_v1.csv"))
 
   # Reward-based DB vs. VS
   p1=plot.data.c %>% filter(model == "dbr1.fixed") %>%
@@ -360,8 +360,8 @@ if(!file.exists(paste(resultsdir, "accdiff_v1.csv", sep = "/"))){
   p2
   p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
                 labels = c("a", "b"), font.label = list(size=rel(30)))
-  ggexport(p, width = 2800, height = 1440, 
-          filename = paste(resultsdir, "acctimediff_v1.jpeg", sep = "/"))
+    ggexport(p, width = 2800, height = 1440, 
+      filename = file.path(resultsdir, "acctimediff_v1.jpeg"))
 
   # Switch-rate over time
   # plot.data = results$switches.time %>%
@@ -390,13 +390,13 @@ if(!file.exists(paste(resultsdir, "accdiff_v1.csv", sep = "/"))){
     filter(model != "arl.fixed")
 
 
-  write.csv(plot.data.c, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))
+  write.csv(plot.data.c, file = file.path(resultsdir, "switchtimediff_v1.csv"))
 
   # Merge data
   plot.data.nc = read.csv(file.path("results", "rl", "nocatches", "numsims", "switchtimediff.csv")) %>%
     filter(model != "arl.fixed") %>% select(-c(X))
   plot.data = rbind(plot.data.nc, plot.data.c)
-  write.csv(plot.data, file = paste(resultsdir, "switchtimediff_v1.csv", sep = "/"))
+  write.csv(plot.data, file = file.path(resultsdir, "switchtimediff_v1.csv"))
 
   # Reward-based DB vs. VS
   p1 = plot.data.c %>% filter(model == "dbr1.fixed") %>%
@@ -447,8 +447,8 @@ if(!file.exists(paste(resultsdir, "accdiff_v1.csv", sep = "/"))){
 
   p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
                 labels = c("a", "b"), font.label = list(size=rel(30)))
-  ggexport(p, width = 2800, height = 1440, 
-          filename = paste(resultsdir, "switchtimediff_v1.jpeg", sep = "/"))
+    ggexport(p, width = 2800, height = 1440, 
+      filename = file.path(resultsdir, "switchtimediff_v1.jpeg"))
 }else{
   print("Plots from numerical simulations for v1 already exist. Skipping.")
 }
@@ -457,7 +457,7 @@ if(!file.exists(paste(resultsdir, "accdiff_v1.csv", sep = "/"))){
 #### Run Simulations For v2 ####
 
 # Add caching
-if(!file.exists(paste(resultsdir, "numsims_v2.rds", sep = "/"))){
+if(!file.exists(file.path(resultsdir, "numsims_v2.rds"))){
 
   # Get model list
   models = getmodels()
@@ -469,7 +469,7 @@ if(!file.exists(paste(resultsdir, "numsims_v2.rds", sep = "/"))){
                                                       )])
 
   # Load VSN2 model fit for the no catches condition
-  fit = readRDS(paste(resultsdir, "../../nocatches/modelcomp/adaptive/vsn2.hierarch.fit.rds", sep = "/"))
+  fit = readRDS(file.path(resultsdir, "..", "..", "nocatches", "modelcomp", "adaptive", "vsn2.hierarch.fit.rds"))
 
   # Get parameter estimates
   draws = fit %>%
@@ -511,7 +511,7 @@ if(!file.exists(paste(resultsdir, "numsims_v2.rds", sep = "/"))){
   # Remove fit
   remove(fit)
 
-  log.txt = paste(resultsdir, "log_v2.txt", sep = "/")
+  log.txt = file.path(resultsdir, "log_v2.txt")
   if(!file.exists(log.txt)){file.create(log.txt)}
   
   sink(log.txt, append = T)
@@ -577,20 +577,19 @@ if(!file.exists(paste(resultsdir, "numsims_v2.rds", sep = "/"))){
   }
   
   results = lapply(results, function(x) bind_rows(x))
-  saveRDS(results, file = 
-            paste(resultsdir, "numsims_v2.rds", sep = "/"))
+  saveRDS(results, file = file.path(resultsdir, "numsims_v2.rds"))
   
   sink()
   
 }else{
   print("Results from numerical simulations for v2 already exist. Skipping simulations.")
-  results = readRDS(file = paste(resultsdir, "numsims_v2.rds", sep = "/"))
+  results = readRDS(file = file.path(resultsdir, "numsims_v2.rds"))
 }
 
 #### Plot Results For v2 ####
 
 # Run only if results do not already exist
-if(!file.exists(paste(resultsdir, "accdiff_v2.csv", sep = "/"))){
+if(!file.exists(file.path(resultsdir, "accdiff_v2.csv"))){
 
   # List to save plots to
   plot.list = list()
@@ -650,7 +649,7 @@ if(!file.exists(paste(resultsdir, "accdiff_v2.csv", sep = "/"))){
 
   # Bind data
   plot.data.c = bind_rows(plot.data.c.vsndbr, plot.data.c.vsnvsr)
-  write.csv(plot.data.c, file = paste(resultsdir, "accdiff_v2.csv", sep = "/"))
+  write.csv(plot.data.c, file = file.path(resultsdir, "accdiff_v2.csv"))
 
   # Reward-based DB 
   p = plot.data.c %>% filter(model %in% c("vsndbr2.fixed")) %>%
@@ -670,8 +669,8 @@ if(!file.exists(paste(resultsdir, "accdiff_v2.csv", sep = "/"))){
     facet_grid(ratio ~ max, labeller = facet.labeller)
   p
   #plot.list =  append(plot.list, list(p))
-  ggexport(p, width = 2800, height = 1440, 
-          filename = paste(resultsdir, "accdiff_v2_vsndbr.jpeg", sep = "/"))
+    ggexport(p, width = 2800, height = 1440, 
+      filename = file.path(resultsdir, "accdiff_v2_vsndbr.jpeg"))
 
   # Location-based VS Reward-based VS 
   p = plot.data.c %>% filter(model %in% c("vsnvsr1.fixed")) %>%
@@ -682,8 +681,8 @@ if(!file.exists(paste(resultsdir, "accdiff_v2.csv", sep = "/"))){
     facet_grid(ratio ~ max, labeller = facet.labeller)
   p
   #plot.list =  append(plot.list, list(p))
-  ggexport(p, width = 2800, height = 1440, 
-          filename = paste(resultsdir, "accdiff_v2_vsnvsr.jpeg", sep = "/"))
+    ggexport(p, width = 2800, height = 1440, 
+      filename = file.path(resultsdir, "accdiff_v2_vsnvsr.jpeg"))
 }else{
   print("Plots from numerical simulations for v2 already exist. Skipping.")
 }

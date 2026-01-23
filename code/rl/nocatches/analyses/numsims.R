@@ -1,14 +1,15 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("code/rl/nocatches/functions/", list.files("code/rl/nocatches/functions"))
+dir_functions <- file.path("code", "rl", "nocatches", "functions")
+function.list = file.path(dir_functions, list.files(dir_functions))
 function.list = function.list[sapply(function.list, function(x) !grepl("2", x))]
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
-if(!dir.exists("results/rl/nocatches")){dir.create("results/rl/nocatches")}
-if(!dir.exists("results/rl/nocatches/numsims")){dir.create("results/rl/nocatches/numsims")}
-resultsdir = "results/rl/nocatches/numsims"
+if(!dir.exists(file.path("results", "rl", "nocatches"))){dir.create(file.path("results", "rl", "nocatches"))}
+if(!dir.exists(file.path("results", "rl", "nocatches", "numsims"))){dir.create(file.path("results", "rl", "nocatches", "numsims"))}
+resultsdir <- file.path("results", "rl", "nocatches", "numsims")
 
 
 #### Prepare simulations ####
@@ -43,7 +44,7 @@ models = getmodels()
 models=lapply(models,function(x) x[models$name %in% c("arl.fixed", "dbn1.fixed", "vsn1.fixed")] )
 
 # Load ARL model fit for the alone condition
-fit = readRDS(paste(resultsdir, "../../alone/modelcomp/m4.1.fit.rds", sep = "/"))
+fit = readRDS(file.path(resultsdir, "..", "..", "alone", "modelcomp", "m4.1.fit.rds"))
 
 # Get ARL parameter estimates
 draws = fit %>%
@@ -63,7 +64,7 @@ srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .01)) %>%
 rl.pars.nocatches = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>%
   cbind(t(arl.pars.nocatches)) %>% cbind(srl.pars)
 
-log.txt = paste(resultsdir, "log.txt", sep="/")
+log.txt = file.path(resultsdir, "log.txt")
 if(!file.exists(log.txt)){file.create(log.txt)}
 
 #### Run numerical simulations
@@ -71,7 +72,7 @@ if(!file.exists(log.txt)){file.create(log.txt)}
 
 
 # Add caching
-if(!file.exists(paste(resultsdir, "numsims.rds", sep = "/"))){
+if(!file.exists(file.path(resultsdir, "numsims.rds"))){
 
   sink(log.txt, append = T)
 
@@ -167,21 +168,20 @@ if(!file.exists(paste(resultsdir, "numsims.rds", sep = "/"))){
     }
   }
   results = lapply(results, function(x) bind_rows(x))
-  saveRDS(results, file =
-            paste(resultsdir, "numsims.rds", sep = "/"))
+  saveRDS(results, file = file.path(resultsdir, "numsims.rds"))
 
   sink()
 
 }else{
   print("Results from numerical simulations already exist. Skipping simulations.")
-  results = readRDS(file = paste(resultsdir, "numsims.rds", sep = "/"))
+  results = readRDS(file = file.path(resultsdir, "numsims.rds"))
 }
 
 
 #### Plot results ####
 
 # Only run if results do not already exist
-if(!file.exists(paste(resultsdir, "accdiff.csv", sep = "/")) & !file.exists(paste(resultsdir, "acctimediff.csv", sep = "/")) & !file.exists(paste(resultsdir, "switchtimediff.csv", sep = "/"))){
+if(!file.exists(file.path(resultsdir, "accdiff.csv")) & !file.exists(file.path(resultsdir, "acctimediff.csv")) & !file.exists(file.path(resultsdir, "switchtimediff.csv"))){
 
   # List to save plots to
   plot.list = list()
@@ -222,7 +222,7 @@ if(!file.exists(paste(resultsdir, "accdiff.csv", sep = "/")) & !file.exists(past
     ) %>%
     select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise))
 
-  write.csv(plot.data, file = paste(resultsdir, "accdiff.csv", sep = "/"))
+  write.csv(plot.data, file = file.path(resultsdir, "accdiff.csv"))
 
   # Decision-based DB vs. VS
   p = plot.data %>% filter(model %in% c("dbn1.fixed", "vsn1.fixed")) %>%
@@ -253,8 +253,8 @@ if(!file.exists(paste(resultsdir, "accdiff.csv", sep = "/")) & !file.exists(past
     facet_grid(ratio ~ max, labeller = facet.labeller)
   p
   #plot.list =  append(plot.list, list(p))
-  ggexport(p, width = 2800, height = 1440,
-          filename = paste(resultsdir, "accdiff.jpeg", sep = "/"))
+    ggexport(p, width = 2800, height = 1440,
+      filename = file.path(resultsdir, "accdiff.jpeg"))
 
   # Individual Accuracy over time
   plot.data = results$acc.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
@@ -279,7 +279,7 @@ if(!file.exists(paste(resultsdir, "accdiff.csv", sep = "/")) & !file.exists(past
   #   group_by(model, ratio, max, time) %>%
   #   mutate(delta.mean = frac.corr.mean - frac.corr.mean[which(alphaS == 0)])
 
-  write.csv(plot.data, file = paste(resultsdir, "acctimediff.csv", sep = "/"))
+  write.csv(plot.data, file = file.path(resultsdir, "acctimediff.csv"))
 
   # Decision-based DB vs. VS
   p1=plot.data %>% filter(model == "dbn1.fixed") %>%
@@ -338,8 +338,8 @@ if(!file.exists(paste(resultsdir, "accdiff.csv", sep = "/")) & !file.exists(past
   p2
   p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
                 labels = c("a", "b"), font.label = list(size=rel(30)))
-  ggexport(p, width = 2800, height = 1440,
-          filename = paste(resultsdir, "acctimediff.jpeg", sep = "/"))
+    ggexport(p, width = 2800, height = 1440,
+      filename = file.path(resultsdir, "acctimediff.jpeg"))
 
   # Switch-rate over time
   # plot.data = results$switches.time %>%
@@ -372,7 +372,7 @@ if(!file.exists(paste(resultsdir, "accdiff.csv", sep = "/")) & !file.exists(past
   #   group_by(ratio, max, time) %>%
   #   mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
 
-  write.csv(plot.data, file = paste(resultsdir, "switchtimediff.csv", sep = "/"))
+  write.csv(plot.data, file = file.path(resultsdir, "switchtimediff.csv"))
 
   # Decision-based DB vs. VS
   p1 = plot.data %>% filter(model == "dbn1.fixed") %>%
@@ -423,8 +423,8 @@ if(!file.exists(paste(resultsdir, "accdiff.csv", sep = "/")) & !file.exists(past
 
   p = ggarrange(p1, p2, ncol = 2, common.legend = T, legend = "right",
                 labels = c("a", "b"), font.label = list(size=rel(30)))
-  ggexport(p, width = 2800, height = 1440,
-          filename = paste(resultsdir, "switchtimediff.jpeg", sep = "/"))
+    ggexport(p, width = 2800, height = 1440,
+      filename = file.path(resultsdir, "switchtimediff.jpeg"))
 
 }else{
   print("Plots from numerical simulations already exist. Skipping.")

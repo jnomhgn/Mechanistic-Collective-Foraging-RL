@@ -1,16 +1,16 @@
 #### Setup ####
 
 # Create directories
-resultsdir = "results/behavioral"
-if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = T)}
+resultsdir <- file.path("results", "behavioral")
+if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = TRUE)}
 
 
 #### Run analysis #### 
-if(!file.exists(paste(resultsdir, "acc.rds", sep = "/"))){
+if(!file.exists(file.path(resultsdir, "acc.rds"))){
 
   # Read data
-  path = paste("data/processed/data_discrete_1s.csv", sep = "/")
-  d = read.csv(path,colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
+  path <- file.path("data", "processed", "data_discrete_1s.csv")
+  d = read.csv(path, colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
 
   # Set player id unique across sessions
   d = d %>% mutate(id = (session - 1) * 5  + player) %>%
@@ -55,28 +55,28 @@ if(!file.exists(paste(resultsdir, "acc.rds", sep = "/"))){
   })
   
   # Save diagnostics
-  write.csv(diagnostics, paste(resultsdir, "diagnostics.csv", sep = "/"), row.names = TRUE)
+  write.csv(diagnostics, file.path(resultsdir, "diagnostics.csv"), row.names = TRUE)
   
   prior_summary(acc)
   acc
   
   # Save fit
-  saveRDS(acc, paste(resultsdir, "acc.rds", sep="/"))
+  saveRDS(acc, file.path(resultsdir, "acc.rds"))
 
 }else{
   print("Model fit for behavioral analysis already exists. Skipping model fitting.")
-  acc =  readRDS(paste(resultsdir, "acc.rds", sep="/"))
+  acc =  readRDS(file.path(resultsdir, "acc.rds"))
 }
 
 
 #### Posterior predictions ####
 
 # Only run if predictions do not already exist
-if(!file.exists(paste(resultsdir, "acc.csv", sep = "/"))){
+if(!file.exists(file.path(resultsdir, "acc.csv"))){
 
   # Save draws in wide format
   acc.draws = tidy_draws(acc)
-  write.csv(acc.draws, row.names = F, file = paste(resultsdir, "acc_draws_wide.csv", sep = "/"))
+  write.csv(acc.draws, row.names = F, file = file.path(resultsdir, "acc_draws_wide.csv"))
 
   # Save draws in long format
   acc.draws = acc.draws %>% dplyr::select(contains(c("b"))) %>%
@@ -90,7 +90,7 @@ if(!file.exists(paste(resultsdir, "acc.csv", sep = "/"))){
     mutate(cond = gsub("b_cond", "", cond)) %>%
     separate(cond, into = c("max.fac", "ratio.fac", "social.fac"))
 
-  write.csv(acc.draws, row.names = F, file = paste(resultsdir, "acc_draws_long.csv", sep = "/"))
+  write.csv(acc.draws, row.names = F, file = file.path(resultsdir, "acc_draws_long.csv"))
 
   # Plot posterior means + hdis 
   ratio.labs = paste("Catch Ratio:", sort(unique(d$ratio)))
@@ -116,7 +116,7 @@ if(!file.exists(paste(resultsdir, "acc.csv", sep = "/"))){
     pivot_wider(names_from = id, names_prefix = "id", values_from = acc)
 
   plot.data = left_join(acc.draws, d.plot, by = join_by(max.fac, ratio.fac, social.fac))
-  write.csv(plot.data, file = paste(resultsdir, "acc.csv", sep = "/"))
+  write.csv(plot.data, file = file.path(resultsdir, "acc.csv"))
 
 
   # Save plot
@@ -144,8 +144,8 @@ if(!file.exists(paste(resultsdir, "acc.csv", sep = "/"))){
     theme(legend.position = "none") +
     facet_grid(ratio.fac ~ max.fac, labeller = facet.labeller)
   p
-  ggsave(plot = p, dpi=300, width = 6.5, height = 6.5, units = "in",
-        filename = paste(resultsdir, "acc.png", sep = "/"))
+    ggsave(plot = p, dpi=300, width = 6.5, height = 6.5, units = "in",
+      filename = file.path(resultsdir, "acc.png"))
 }else{
 
   print("Draws and predictions from posterior already exist. Skipping.")

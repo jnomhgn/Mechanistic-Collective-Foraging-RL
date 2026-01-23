@@ -1,20 +1,23 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("code/rl/nocatches/functions/", list.files("code/rl/nocatches/functions"))
+dir_functions <- file.path("code", "rl", "nocatches", "functions")
+function.list = file.path(dir_functions, list.files(dir_functions))
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
-if(!dir.exists("results/rl/nocatches/modelrecov/diagnostics/detailed")){dir.create("results/rl/nocatches/modelrecov/diagnostics/detailed", recursive = TRUE)}
+if(!dir.exists(file.path("results", "rl", "nocatches", "modelrecov", "diagnostics", "detailed"))){
+  dir.create(file.path("results", "rl", "nocatches", "modelrecov", "diagnostics", "detailed"), recursive = TRUE)
+}
 
 
-resultsdir = "results/rl/nocatches/modelrecov"
+resultsdir <- file.path("results", "rl", "nocatches", "modelrecov")
 
 
 #### Prepare model recovery ####
 
 # Read data
-path = "data/processed/data_discrete_1s.csv"
+path = file.path("data", "processed", "data_discrete_1s.csv")
 d = read.csv(path,colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
 
 # Rename and add player id that is unique across sessions
@@ -95,7 +98,7 @@ env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 modelfit <- function(msim, mfit, sim, models, stan.data, chains, cores, iter, warmup, refresh){
 
   # Create log file for each model
-  log.file = paste(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "log", sep = "."), sep = "/")
+  log.file = file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "log", sep = "."))
   if(!file.exists(log.file)){file.create(log.file)}
 
   # Print progress to log.txt
@@ -108,7 +111,7 @@ modelfit <- function(msim, mfit, sim, models, stan.data, chains, cores, iter, wa
   fit = sampling(object = models$compiled[[mfit]], data = stan.data,
                   chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
   sink()
-  saveRDS(fit, paste(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = "."), sep = "/"))
+  saveRDS(fit, file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = ".")))
 
 }
 
@@ -121,11 +124,11 @@ computeloo <- function(msim, sim, models, stan.data){
    for(mfit in 1:length(models$stan.loglik)){
      
     # Create log file for each model or append to it
-    log.file = paste(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "log", sep="."), sep = "/")
+    log.file = file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "log", sep="."))
     if(!file.exists(log.file)){file.create(log.file)}
      
     # Load model fit
-    fit = readRDS(paste(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = "."), sep = "/"))
+    fit = readRDS(file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = ".")))
      
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
@@ -144,8 +147,8 @@ computeloo <- function(msim, sim, models, stan.data){
     remove(ll)
 
     # Save diagnostics
-    jpeg(paste(resultsdir, "diagnostics", paste(models$name[[msim]], models$name[[mfit]], sim, "paretok", "jpeg", sep = "."), sep = "/"),
-         width = 2550, height = 1440, units = "px")
+        jpeg(file.path(resultsdir, "diagnostics", paste(models$name[[msim]], models$name[[mfit]], sim, "paretok", "jpeg", sep = ".")),
+          width = 2550, height = 1440, units = "px")
     plot(get(loo.model))
     dev.off()
 
@@ -171,7 +174,7 @@ computeloo <- function(msim, sim, models, stan.data){
   winner = comparison %>% filter(row_number() == 1 & elpd_diff == 0) %>% rownames() %>% unlist()
   
   # Save Variables
-  saveRDS(list(results = results, comparison = comparison, winner = winner), file = paste(resultsdir, paste(models$name[[msim]], "mcomp", sim, "rds", sep = "."), sep = "/"))
+  saveRDS(list(results = results, comparison = comparison, winner = winner), file = file.path(resultsdir, paste(models$name[[msim]], "mcomp", sim, "rds", sep = ".")))
   
   # Return comparison and winner individually
   return(list(comparison = comparison, winner = winner))
@@ -190,7 +193,7 @@ models= lapply(models, function(x) x[which(models$name %in% c("arl.fixed", "dbn1
 # Compile models to avoid recompiling
 models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
 
-if(!file.exists(paste(resultsdir, "modelrecov.rds", sep = "/"))){
+if(!file.exists(file.path(resultsdir, "modelrecov.rds"))){
 
   # Run model recovery
 
@@ -206,7 +209,7 @@ if(!file.exists(paste(resultsdir, "modelrecov.rds", sep = "/"))){
                        iter = iter, warmup = warmup, refresh = 0)
     
     # Save fit
-    saveRDS(fit.exp, file = paste(resultsdir, paste(models$name[[msim]], "fit", "rds", sep = "."), sep = "/"))
+    saveRDS(fit.exp, file = file.path(resultsdir, paste(models$name[[msim]], "fit", "rds", sep = ".")))
 
     # Get parameters to simulate from
     draws = tidy_draws(fit.exp)
@@ -301,7 +304,7 @@ if(!file.exists(paste(resultsdir, "modelrecov.rds", sep = "/"))){
       modelcomp = computeloo(msim, sim, models, stan.data= stan.data.sim)
 
       # Save local model comparison results
-      # saveRDS(modelcomp, file = paste(resultsdir, paste(models$name[[msim]], "mcomp", sim, "rds", sep = "."), sep = "/"))
+      # saveRDS(modelcomp, file = file.path(resultsdir, paste(models$name[[msim]], "mcomp", sim, "rds", sep = ".")))
 
       # Add to results
       win = rep(0, length(models$name))
@@ -316,22 +319,22 @@ if(!file.exists(paste(resultsdir, "modelrecov.rds", sep = "/"))){
   }
 
   # Save model recovery results
-  saveRDS(results, paste(resultsdir, "modelrecov.rds", sep = "/"))
+  saveRDS(results, file.path(resultsdir, "modelrecov.rds"))
 
   # Convert results to data frame
   results = as.data.frame(results)
 
   # Save model recovery results as csv
-  write.csv(results, paste(resultsdir, "modelrecov.csv", sep = "/"), row.names = F)
+  write.csv(results, file.path(resultsdir, "modelrecov.csv"), row.names = F)
 
 }else{
   print("Loading. Model recovery results already exist." )
   # Load model recovery results
-  results = read.csv(paste(resultsdir, "modelrecov.csv", sep = "/"))
+  results = read.csv(file.path(resultsdir, "modelrecov.csv"))
 }
 
 #### Plot model recovery results ####
-if(!file.exists(paste(resultsdir, "modelrecov.jpeg", sep= "/"))){
+if(!file.exists(file.path(resultsdir, "modelrecov.jpeg"))){
 
   # For each simulated model, count how often the other models won the comparison
   comp = results %>%
@@ -349,8 +352,8 @@ if(!file.exists(paste(resultsdir, "modelrecov.jpeg", sep= "/"))){
     labs(x="Fitted Model", y="Simulated Model", fill="p(fit|sim) \n") +
     scale_fill_viridis()+
     theme_gray(base_size = 11)
-  ggexport(p, width = 2560, height = 1440, 
-          filename = paste(resultsdir, "modelrecov.jpeg", sep = "/"))
+    ggexport(p, width = 2560, height = 1440, 
+      filename = file.path(resultsdir, "modelrecov.jpeg"))
 
 }else{
   print("Skipping. Model recovery plot already exists." )

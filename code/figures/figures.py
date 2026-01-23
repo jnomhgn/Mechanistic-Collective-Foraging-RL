@@ -10,7 +10,7 @@ import scipy as sc
 import os
 
 # Set results directory
-resultsdir = os.path.join(os.getcwd(), 'results/figures')
+resultsdir = os.path.join(os.getcwd(), 'results', 'figures')
 if not os.path.exists(resultsdir):
     os.makedirs(resultsdir)
 
@@ -36,8 +36,8 @@ Lratio = [0.5,0.65,0.8,0.95]
 # Load experimental data
 Aexp = np.empty((len(Lc), len(Lp1), len(Lratio), 90, Ld))
 for i in range(len(Lc)):
-    arr = np.load('data/processed/MQexp1sAll' + str(Lc[i]) + '.npy')
-    Aexp[i, :, :, :, :] = arr
+        arr = np.load(os.path.join('data', 'processed', 'MQexp1sAll' + str(Lc[i]) + '.npy'))
+        Aexp[i, :, :, :, :] = arr
 
 # Individual-Level Accuracy
 Aexp = np.mean(Aexp,axis=-1) # Average over time
@@ -46,10 +46,10 @@ Aexp = np.mean(Aexp,axis=-1) # Average over time
 Mexp = np.mean(Aexp,axis=-1) # Experimental data means
 
 # RL
-df = pandas.read_csv('results/rl/catches/modelcomp/nonadaptive/postpredict_acc.csv') # Reinforcement learning model. Check
+df = pandas.read_csv(os.path.join('results','rl','catches','modelcomp','nonadaptive','postpredict_acc.csv')) # Reinforcement learning model. Check
 Mrl = np.zeros((3,len(Lp1),len(Lratio))) 
 
-Bay = np.load('results/bayesianforager/mean_accuracies.npy') # Bayesian agents models. Check
+Bay = np.load(os.path.join('results','bayesianforager','mean_accuracies.npy')) # Bayesian agents models. Check
 
 fig, ax = plt.subplots(4,3,figsize=(7.5,10),sharex=True,sharey=True)
 
@@ -163,12 +163,12 @@ for i, method in enumerate(['Exp', 'Bayes', 'RL']):
                         lt = range(0,int(75*1e3))
                         lt1s = np.arange(1,76,1)
                         
-                        LQin = np.load('data/processed/LQinexp'+str(Lc[i])+'.npy')
+                        LQin = np.load(os.path.join('data','processed', 'LQinexp'+str(Lc[i])+'.npy'))
                         LQ = 0
                         MQ = np.zeros((len(Lm),len(Lr),18*5,len(lt1s)))
                         for D in range(len(Ld)):
                                 # MQ0 = np.load('ddm/data_analysis/files/MQexp1sAll'+str(Lc[i])+'_'+str(D)+'.npy')
-                                MQ0 = np.load('data/processed/MQexp1'+ 's' + str(Lc[i])+'.npy')
+                                MQ0 = np.load(os.path.join('data','processed','MQexp1s' + str(Lc[i])+'.npy'))
                                 LQ += np.mean(MQ0[:,:,:,0:75],axis=2)
                                 MQ += MQ0[:,:,:,0:75]
 
@@ -206,7 +206,7 @@ for i, method in enumerate(['Exp', 'Bayes', 'RL']):
         
         elif method == 'Bayes':
 
-                A = np.load('results/bayesianforager/accuracies_time.npy')
+                A = np.load(os.path.join('results','bayesianforager','accuracies_time.npy'))
                 lt1s = np.arange(1,76,1)
                 #fig, ax = plt.subplots(1,4,figsize=(15,3),sharey=True)
 
@@ -235,7 +235,7 @@ for i, method in enumerate(['Exp', 'Bayes', 'RL']):
                 Mean = np.zeros((3,len(Lm),len(Lr)))
                 lt1s = np.arange(1,76,1)
 
-                df = pandas.read_csv('results/rl/alone/modelcomp/postpredict_acctime.csv')
+                df = pandas.read_csv(os.path.join('results','rl','alone','modelcomp','postpredict_acctime.csv'))
                 for M in range(len(Lm)):
                         for R in range(len(Lr)):
                                 Max = Lm[M]; Ratio = Lr[R]
@@ -321,12 +321,12 @@ for i, method in enumerate(['Exp', 'ARL', 'SRL']):
                         lt = range(0,int(75*1e3))
                         lt1s = np.arange(1,76,1)
                         
-                        LQin = np.load('data/processed/LQinexp'+str(Lc[i])+'.npy')
+                        LQin = np.load(os.path.join('data','processed', 'LQinexp'+str(Lc[i])+'.npy'))
                         LQ = 0
                         MQ = np.zeros((len(Lm),len(Lr),18*5,len(lt1s)))
                         for D in range(len(Ld)):
                                 # MQ0 = np.load('ddm/data_analysis/files/MQexp1sAll'+str(Lc[i])+'_'+str(D)+'.npy')
-                                MQ0 = np.load('data/processed/MQexp1'+ 's' + str(Lc[i])+'.npy')
+                                MQ0 = np.load(os.path.join('data','processed','MQexp1s' + str(Lc[i])+'.npy'))
                                 LQ += np.mean(MQ0[:,:,:,0:75],axis=2)
                                 MQ += MQ0[:,:,:,0:75]
 
@@ -366,7 +366,7 @@ for i, method in enumerate(['Exp', 'ARL', 'SRL']):
                 Mean = np.zeros((3,len(Lm),len(Lr)))
                 lt1s = np.arange(1,76,1)
 
-                df = pandas.read_csv('results/rl/nocatches/modelcomp/nonadaptive/postpredict_acctime.csv')
+                df = pandas.read_csv(os.path.join('results','rl','nocatches','modelcomp','nonadaptive','postpredict_acctime.csv'))
                 for M in range(len(Lm)):
                         for R in range(len(Lr)):
                                 Max = Lm[M]; Ratio = Lr[R]
@@ -401,7 +401,7 @@ for i, method in enumerate(['Exp', 'ARL', 'SRL']):
                 Mean = np.zeros((3,len(Lm),len(Lr)))
                 lt1s = np.arange(1,76,1)
 
-                df = pandas.read_csv('results/rl/nocatches/modelcomp/adaptive/postpredict_acctime.csv')
+                df = pandas.read_csv(os.path.join('results','rl','nocatches','modelcomp','adaptive','postpredict_acctime.csv'))
                 for M in range(len(Lm)):
                         for R in range(len(Lr)):
                                 Max = Lm[M]; Ratio = Lr[R]
@@ -512,12 +512,12 @@ fig.savefig(os.path.join(resultsdir, 'Fig5.pdf'),bbox_inches='tight')
 #                         lt = range(0,int(75*1e3))
 #                         lt1s = np.arange(1,76,1)
                         
-#                         LQin = np.load('data/processed/LQinexp'+str(Lc[i])+'.npy')
+#                         LQin = np.load(os.path.join('data','processed','LQinexp'+str(Lc[i])+'.npy'))
 #                         LQ = 0
 #                         MQ = np.zeros((len(Lm),len(Lr),18*5,len(lt1s)))
 #                         for D in range(len(Ld)):
 #                                 # MQ0 = np.load('ddm/data_analysis/files/MQexp1sAll'+str(Lc[i])+'_'+str(D)+'.npy')
-#                                 MQ0 = np.load('data/processed/MQexp1'+ 's' + str(Lc[i])+'.npy')
+#                                 MQ0 = np.load(os.path.join('data','processed','MQexp1s' + str(Lc[i])+'.npy'))
 #                                 LQ += np.mean(MQ0[:,:,:,0:75],axis=2)
 #                                 MQ += MQ0[:,:,:,0:75]
 
@@ -557,7 +557,7 @@ fig.savefig(os.path.join(resultsdir, 'Fig5.pdf'),bbox_inches='tight')
 #                 Mean = np.zeros((3,len(Lm),len(Lr)))
 #                 lt1s = np.arange(1,76,1)
 
-#                 df = pandas.read_csv('results/rl/catches/modelcomp/postpredict_acctime.csv')
+#                 df = pandas.read_csv(os.path.join('results','rl','catches','modelcomp','postpredict_acctime.csv'))
 #                 for M in range(len(Lm)):
 #                         for R in range(len(Lr)):
 #                                 Max = Lm[M]; Ratio = Lr[R]
@@ -634,7 +634,7 @@ Lp1 = [0.5,0.7,0.9]
 Lratio = [0.5,0.65,0.8,0.95]
 
 for icond in range(1, 3):
-        df = pandas.read_csv('results/rl/catches/numsims/accdiff.csv')
+        df = pandas.read_csv(os.path.join('results','rl','catches','numsims','accdiff.csv'))
         indca = np.where(df['model']=='arl.fixed')[0]
         Lkd = np.arange(0,1+0.01,0.01)
         name = ['DB','VS']

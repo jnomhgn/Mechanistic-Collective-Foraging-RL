@@ -1,21 +1,22 @@
 #### Setup ####
 
 # Source functions
-function.list = paste0("code/rl/alone/functions/", list.files("code/rl/alone/functions/"))
+dir_functions <- file.path("code", "rl", "alone", "functions")
+function.list = file.path(dir_functions, list.files(dir_functions))
 sapply(function.list, source, .GlobalEnv)
 
 # Create results directories
-if(!dir.exists("results/rl")){dir.create("results/rl")}
-if(!dir.exists("results/rl/alone")){dir.create("results/rl/alone")}
-if(!dir.exists("results/rl/alone/modelcomp")){dir.create("results/rl/alone/modelcomp")}
-if(!dir.exists("results/rl/alone/modelcomp/diagnostics")){dir.create("results/rl/alone/modelcomp/diagnostics")}
-if(!dir.exists("results/rl/alone/modelcomp/diagnostics/detailed")){dir.create("results/rl/alone/modelcomp/diagnostics/detailed", recursive = T)}
+if(!dir.exists(file.path("results", "rl"))){dir.create(file.path("results", "rl"))}
+if(!dir.exists(file.path("results", "rl", "alone"))){dir.create(file.path("results", "rl", "alone"))}
+if(!dir.exists(file.path("results", "rl", "alone", "modelcomp"))){dir.create(file.path("results", "rl", "alone", "modelcomp"))}
+if(!dir.exists(file.path("results", "rl", "alone", "modelcomp", "diagnostics"))){dir.create(file.path("results", "rl", "alone", "modelcomp", "diagnostics"))}
+if(!dir.exists(file.path("results", "rl", "alone", "modelcomp", "diagnostics", "detailed"))){dir.create(file.path("results", "rl", "alone", "modelcomp", "diagnostics", "detailed"), recursive = TRUE)}
 
 
 #### Load experimental data ####
 
 # Read data
-path = "data/processed/data_discrete_1s.csv"
+path = file.path("data", "processed", "data_discrete_1s.csv")
 d = read.csv(path,colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
 
 # Set player id unique across sessions
@@ -61,7 +62,7 @@ refresh = 100
 modelfit <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh){
 
   # Create log file for each model
-  log.file = paste("results/rl/alone/modelcomp", paste("log", models$name[[mfit]], "txt", sep="."), sep = "/")
+  log.file = file.path("results", "rl", "alone", "modelcomp", paste("log", models$name[[mfit]], "txt", sep = "."))
   if(!file.exists(log.file)){file.create(log.file)}
 
   # Print progress to log.txt
@@ -74,18 +75,17 @@ modelfit <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, ref
   fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
                   chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
   sink()
-  saveRDS(fit, paste("results/rl/alone/modelcomp", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
+  saveRDS(fit, file.path("results", "rl", "alone", "modelcomp", paste(models$name[[mfit]], "fit", "rds", sep = ".")))
 
   # Plot some diagnostics for population means
   diagnostics.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
   ggexport(plotlist = diagnostics.list, width = 1920, height = 1080,
-                  filename = paste("results/rl/alone/modelcomp/diagnostics",
-                                  paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = "."), sep = "/"))
+                  filename = file.path("results", "rl", "alone", "modelcomp", "diagnostics",
+                                  paste(models$name[[mfit]], "diagnostics", "jpeg",  sep = ".")))
 
   # Plot detailed traceplots
-  if(!dir.exists(
-    paste("results/rl/alone/modelcomp/diagnostics/detailed",models$name[[mfit]] , sep = "/"))){
-    dir.create(paste("results/rl/alone/modelcomp/diagnostics/detailed",models$name[[mfit]] , sep = "/"))
+  if(!dir.exists(file.path("results", "rl", "alone", "modelcomp", "diagnostics", "detailed", models$name[[mfit]]))){
+    dir.create(file.path("results", "rl", "alone", "modelcomp", "diagnostics", "detailed", models$name[[mfit]]), recursive = TRUE)
     }
   draws = tidy_draws(fit)
   par.names = names(draws)
@@ -95,13 +95,13 @@ modelfit <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, ref
   par.names = par.names[!grepl("log_lik", par.names)]
   for (param in par.names) {
     tplot <- traceplot(fit, pars = param) + ggtitle(paste("Trace plot for", param))
-    ggsave(paste("results/rl/alone/modelcomp/diagnostics/detailed",models$name[[mfit]],  paste0("traceplot_", param, ".png"), sep = "/"), tplot)
+    ggsave(file.path("results", "rl", "alone", "modelcomp", "diagnostics", "detailed", models$name[[mfit]],  paste0("traceplot_", param, ".png")), tplot)
   }
 
   # Save diagnostics for all parameters
   fit.summary = summary(fit)$summary
-  write.csv(fit.summary, file = paste("results/rl/alone/modelcomp/diagnostics",
-                                  paste(models$name[[mfit]], "diagnostics", "csv",  sep = "."), sep = "/"))
+  write.csv(fit.summary, file = file.path("results", "rl", "alone", "modelcomp", "diagnostics",
+                                  paste(models$name[[mfit]], "diagnostics", "csv",  sep = ".")))
 
   # Print core diagnostics to log.txt
   # Extract effective sample size (ESS) and R-hat values
@@ -134,11 +134,11 @@ computeloo <- function(models, stan.data){
    for(mfit in 1:length(models$stan.loglik)){
      
     # Create log file for each model or append to it
-    log.file = paste("results/rl/alone/modelcomp", paste("log", models$name[[mfit]], "txt", sep="."), sep = "/")
+    log.file = file.path("results", "rl", "alone", "modelcomp", paste("log", models$name[[mfit]], "txt", sep = "."))
     if(!file.exists(log.file)){file.create(log.file)}
      
     # Load model fit
-    fit = readRDS(paste("results/rl/alone/modelcomp", paste(models$name[[mfit]], "fit", "rds", sep = "."), sep = "/"))
+    fit = readRDS(file.path("results", "rl", "alone", "modelcomp", paste(models$name[[mfit]], "fit", "rds", sep = ".")))
      
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
@@ -157,8 +157,8 @@ computeloo <- function(models, stan.data){
     remove(ll)
 
     # Save diagnostics
-    jpeg(paste("results/rl/alone/modelcomp/diagnostics", paste(models$name[[mfit]], "paretok", "jpeg", sep = "."), sep = "/"),
-         width = 2550, height = 1440, units = "px")
+        jpeg(file.path("results", "rl", "alone", "modelcomp", "diagnostics", paste(models$name[[mfit]], "paretok", "jpeg", sep = ".")),
+          width = 2550, height = 1440, units = "px")
     plot(get(loo.model))
     dev.off()
 
@@ -184,10 +184,10 @@ computeloo <- function(models, stan.data){
   winner = comparison %>% filter(row_number() == 1 & elpd_diff == 0) %>% rownames() %>% unlist()
   
   # Save Variables
-  save(list=c("results", "comparison", "winner"), file = paste("results/rl/alone/modelcomp", "modelcomp.Rdata", sep = "/"))
+  save(list=c("results", "comparison", "winner"), file = file.path("results", "rl", "alone", "modelcomp", "modelcomp.Rdata"))
 
   # Save and print comparison
-  write.csv(x = comparison, file = paste("results/rl/alone/modelcomp", "modelcomp.csv", sep = "/"))
+  write.csv(x = comparison, file = file.path("results", "rl", "alone", "modelcomp", "modelcomp.csv"))
   
   # Return comparison and winner individually
   return(list(comparison = comparison, winner = winner))
@@ -196,7 +196,7 @@ computeloo <- function(models, stan.data){
 
 
 # Run model comparison in parallel if results do not exist
-if(!file.exists("results/rl/alone/modelcomp/modelcomp.Rdata")){
+if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "modelcomp.Rdata"))){
 
   models = getmodels(hierarch = T)
 
@@ -226,7 +226,7 @@ if(!file.exists("results/rl/alone/modelcomp/modelcomp.Rdata")){
   print("Results for model comparison already exist. Skipping computation.")
 
   # Load results
-  load(file = paste("results/rl/alone/modelcomp", "modelcomp.Rdata", sep = "/"))
+  load(file = file.path("results", "rl", "alone", "modelcomp", "modelcomp.Rdata"))
 }
 
 # print(comparison[, ])
@@ -235,8 +235,8 @@ if(!file.exists("results/rl/alone/modelcomp/modelcomp.Rdata")){
 #### Posterior predictions ####
 
 # Only run if they do not already exist
-if(!file.exists(paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", sep = "/")) &
-   !file.exists(paste("results/rl/alone/modelcomp", "postpredict_acc.csv", sep = "/"))){
+if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_acctime.csv")) &
+  !file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_acc.csv"))){
 
   # Posterior predictions for Accuracy over time
 
@@ -267,7 +267,7 @@ if(!file.exists(paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", s
   winner = "m4.1"
 
   # Load fit
-  fit = readRDS(paste("results/rl/alone/modelcomp", paste(winner, "fit", "rds", sep = "."), sep = "/"))
+  fit = readRDS(file.path("results", "rl", "alone", "modelcomp", paste(winner, "fit", "rds", sep = ".")))
 
   # Get and index winning model in fixed effects model lsit (used for simulation)
   winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
@@ -302,8 +302,8 @@ if(!file.exists(paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", s
     reframe(mu =mean(acc), se = sd(acc) / sqrt(nsim)) %>%
     mutate(lower = mu - se, upper = mu + se)
 
-  write.csv(plot.data, file = paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", sep = "/"))
-  write.csv(plot.data, file = paste("results/rl/alone/modelcomp", "postpredict_alone.csv", sep = "/"))
+  write.csv(plot.data, file = file.path("results", "rl", "alone", "modelcomp", "postpredict_acctime.csv"))
+  write.csv(plot.data, file = file.path("results", "rl", "alone", "modelcomp", "postpredict_alone.csv"))
 
   # Plot posterior means + hdis
   ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
@@ -338,8 +338,8 @@ if(!file.exists(paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", s
         col="Probability Maximum") +
     facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
 
-  ggexport(p, width=1920, height=1080,
-        filename = paste("results/rl/alone/modelcomp","postpredict_acctime.jpeg", sep="/"))
+    ggexport(p, width=1920, height=1080,
+      filename = file.path("results", "rl", "alone", "modelcomp", "postpredict_acctime.jpeg"))
 
 
 
@@ -364,7 +364,7 @@ if(!file.exists(paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", s
   winner = "m4.1"
 
   # Load fit
-  fit = readRDS(paste("results/rl/alone/modelcomp", paste(winner, "fit", "rds", sep = "."), sep = "/"))
+  fit = readRDS(file.path("results", "rl", "alone", "modelcomp", paste(winner, "fit", "rds", sep = ".")))
 
   # Get and index winning model in fixed effects model lsit (used for simulation)
   winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
@@ -400,7 +400,7 @@ if(!file.exists(paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", s
     mutate(social.fac=1, social="alone") %>%
     relocate(c(social.fac, social))
 
-  write.csv(plot.data, file = paste("results/rl/alone/modelcomp", "postpredict_acc.csv", sep = "/"), row.names = F)
+  write.csv(plot.data, file = file.path("results", "rl", "alone", "modelcomp", "postpredict_acc.csv"), row.names = F)
 
   # Plot posterior means + hdis
   ratio.labs = paste("Catch Ratio:", sort(unique(plot.data$ratio)))
@@ -434,8 +434,8 @@ if(!file.exists(paste("results/rl/alone/modelcomp", "postpredict_acctime.csv", s
         col="Probability Maximum") +
     facet_wrap( ~ ratio, ncol=4, labeller = facet.labeller)
   p
-  ggexport(p, width=1920, height=1080,
-        filename = paste("results/rl/alone/modelcomp","postpredict_acc.jpeg", sep="/"))
+    ggexport(p, width=1920, height=1080,
+      filename = file.path("results", "rl", "alone", "modelcomp", "postpredict_acc.jpeg"))
 
 }else{
   print("Posterior predictions already exist. Skipping computation.")

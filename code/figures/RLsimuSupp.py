@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math as math
-folder='rl/results/figures/'
+import os
+folder = os.path.join('rl','results','figures')
 import csv
 import pandas
 import scipy as sc
@@ -18,7 +19,7 @@ Lp1 = [0.5,0.7,0.9]
 Lratio = [0.5,0.65,0.8,0.95]
 
 for icond in range(1, 3):
-  df = pandas.read_csv('rl/results/figures/expec_acctimediff.csv')
+  df = pandas.read_csv(os.path.join('rl','results','figures','expec_acctimediff.csv'))
   Lkd = np.arange(0,0.1,0.02)
   Lkd = np.concatenate([Lkd,np.arange(0.1,1+0.1,0.1)])
   name = ['DB','VS']
@@ -102,14 +103,14 @@ for icond in range(1, 3):
                                   ax[iratio,ip1].set_ylim(-0.5,0.25)
                                   ax[iratio,ip1].set_yticks([-0.3,-0.05,0.2])
   fig.subplots_adjust(wspace=0,hspace=0)
-  fig.savefig('rl/results/figures/RLSimuSuppAcc'+str(Lc[icond])+name[ic]+'.pdf',bbox_inches='tight')
+  fig.savefig(os.path.join(folder, 'RLSimuSuppAcc'+str(Lc[icond])+name[ic]+'.pdf'),bbox_inches='tight')
 
 
 
 
 
   ###### Switch
-  df = pandas.read_csv('rl/results/figures/expec_switchtimediff.csv')
+  df = pandas.read_csv(os.path.join('rl','results','figures','expec_switchtimediff.csv'))
   M = np.zeros((len(Lp1),len(Lratio),len(Lkd),len(Lt)))
   fig, ax = plt.subplots(4,3,figsize=(7.5,5),sharex=True,sharey=True)
   fig.supxlabel(r't (s)')
@@ -161,7 +162,7 @@ for icond in range(1, 3):
                                   ax[iratio,ip1].set_ylim(-0.25,0.25)
                                   ax[iratio,ip1].set_yticks([-0.2,0,0.2])
   fig.subplots_adjust(wspace=0,hspace=0)
-  fig.savefig('rl/results/figures/RLSimuSuppSwitch'+str(Lc[icond])+name[ic]+'.pdf',bbox_inches='tight')
+  fig.savefig(os.path.join(folder, 'RLSimuSuppSwitch'+str(Lc[icond])+name[ic]+'.pdf'),bbox_inches='tight')
   
    
   plt.show()

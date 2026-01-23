@@ -1,7 +1,7 @@
 #### Setup #### 
-datadir = "data/raw"
-resultsdir = "data/processed"
-if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = T)}
+datadir <- file.path("data", "raw")
+resultsdir <- file.path("data", "processed")
+if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = TRUE)}
 
 library(stringr)
 library(dplyr)
@@ -21,21 +21,21 @@ session_number <- function(x){
 #### Data Processing ####
 
 # Process data only if directory does not contain processed data yet
-if(!file.exists(paste(resultsdir, 'data_wide.csv', sep = "/")) & !file.exists(paste(resultsdir, 'data_long.csv', sep = "/")) & !file.exists(paste(resultsdir, 'data_discrete_1s.csv', sep = "/"))){
+if(!file.exists(file.path(resultsdir, 'data_wide.csv')) & !file.exists(file.path(resultsdir, 'data_long.csv')) & !file.exists(file.path(resultsdir, 'data_discrete_1s.csv'))){
 
   # Create wide format dataset from log files
   #First, load all data and create combined data frame
 
   #Get all file names
-  files <- list.files(path = paste(datadir, "data", sep = "/"), pattern = "session")
+  files <- list.files(path = file.path(datadir, "data"), pattern = "session")
 
   counter <- 1
   for (file in files) {
     
     session <- session_number(file)
-    trial_list <- read.csv2(paste(datadir, paste0("sessions/session",session,".csv"), sep = "/"))
+    trial_list <- read.csv2(file.path(datadir, "sessions", paste0("session", session, ".csv")))
     
-    trials <- list.files(path = paste(datadir, paste0("data/",file), sep = "/"), pattern = "trial")
+    trials <- list.files(path = file.path(datadir, "data", file), pattern = "trial")
     
     for (trial in trials) {
       
@@ -45,7 +45,7 @@ if(!file.exists(paste(resultsdir, 'data_wide.csv', sep = "/")) & !file.exists(pa
       left  <- as.numeric(as.character(trial_list$leftPondChance[trial_n]))
       right <- as.numeric(as.character(trial_list$rightPondChance[trial_n]))
       
-      dat_new <- read.csv2(paste(datadir, paste0("data/", file,"/",trial), sep = "/")  )
+      dat_new <- read.csv2(file.path(datadir, "data", file, trial))
       dat_new$session <- session
       dat_new$trial <- trial_n
       dat_new$duration <- duration
@@ -67,7 +67,7 @@ if(!file.exists(paste(resultsdir, 'data_wide.csv', sep = "/")) & !file.exists(pa
   dat <- dat[order(dat$session, dat$trial),]
 
   # Save in wide format
-  write.csv(dat, file = paste(resultsdir, 'data_wide.csv', sep = "/"))
+  write.csv(dat, file = file.path(resultsdir, 'data_wide.csv'))
 
   # Create long format dataset
   # Note: As far as I can tell, catches and switches are logged separately even
@@ -117,7 +117,7 @@ if(!file.exists(paste(resultsdir, 'data_wide.csv', sep = "/")) & !file.exists(pa
   dat = merge(dat, prt, by = intersect(names(dat), names(prt)), all = T)
 
   # Save
-  write.csv(dat, file = paste(resultsdir, 'data_long.csv', sep = "/"))
+  write.csv(dat, file = file.path(resultsdir, 'data_long.csv'))
 
   # Conditions: 1 <-  catchesObserved == NA, 2 <-  catchesObserved == FALSE, 3 <-  catchesObserved == TRUE
   # Better: 1 <- left > right, 2 <- left <= right
@@ -229,7 +229,7 @@ if(!file.exists(paste(resultsdir, 'data_wide.csv', sep = "/")) & !file.exists(pa
                             ifelse(max == "0.7", 2, 3)))
 
   # Save discrete timeseries
-  write.csv(dat.discrete, file = paste(resultsdir, 'data_discrete_1s.csv', sep = "/"))
+  write.csv(dat.discrete, file = file.path(resultsdir, 'data_discrete_1s.csv'))
 
 }else{
   print("Skipping preprocessing as processed data already exists.")
