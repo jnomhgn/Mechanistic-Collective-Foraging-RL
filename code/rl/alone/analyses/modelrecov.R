@@ -118,7 +118,11 @@ computeloo <- function(msim, sim, models, stan.data){
     ll = ll[, , indx]
 
     # Compute relative effect sample sizes
-    r_eff = relative_eff(exp(ll), cores = 1)
+    if(length(dim(ll)) == 2){
+      r_eff = relative_eff(exp(ll), cores = 1, chain_id=rep(1L, nrow(ll)))
+      } else {
+      r_eff = relative_eff(exp(ll), cores = 1)
+    }
     
     # Compute psis loo
     loo.model = paste("loo", mfit, sep = ".")
@@ -126,8 +130,8 @@ computeloo <- function(msim, sim, models, stan.data){
     remove(ll)
 
     # Save diagnostics
-        jpeg(file.path(resultsdir, "diagnostics", paste(models$name[[msim]], models$name[[mfit]], sim, "paretok", "jpeg", sep = ".")),
-          width = 2550, height = 1440, units = "px")
+    jpeg(file.path(resultsdir, "diagnostics", paste(models$name[[msim]], models$name[[mfit]], sim, "paretok", "jpeg", sep = ".")),
+      width = 2550, height = 1440, units = "px")
     plot(get(loo.model))
     dev.off()
 

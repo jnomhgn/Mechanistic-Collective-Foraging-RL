@@ -33,71 +33,71 @@ options(future.globals.maxSize = 1.0 * 1e9)
 
 # Python integration setup
 library(reticulate)
-# use_virtualenv(virtualenv = file.path(getwd(), "venv"), required = TRUE)
+use_virtualenv(virtualenv = file.path(getwd(), "venv"), required = TRUE)
 
 # Add seed for reproducibility
 set.seed(42)
 
 
-# #### Data Pre-Processing ####
+#### Data Pre-Processing ####
 
-# # Pre process data from raw data to formatted data for analyses
-# print("Preprocessing data...")
-# source(file.path("code", "preprocessing", "preprocessing.R"))
+# Pre process data from raw data to formatted data for analyses
+print("Preprocessing data...")
+source(file.path("code", "preprocessing", "preprocessing.R"))
 
-# # Convert preprocessed data to numpy arrays.
-# print("Converting data to numpy arrays...")
-# source_python(file.path("code", "preprocessing", "numpy_conversion.py"))
+# Convert preprocessed data to numpy arrays.
+print("Converting data to numpy arrays...")
+source_python(file.path("code", "preprocessing", "numpy_conversion.py"))
 
-# #### Run Behavioral Analyses ####
-# print("Running behavioral analyses...")
-# source(file.path("code", "behavioral", "behavioral.R"))
+#### Run Behavioral Analyses ####
+print("Running behavioral analyses...")
+source(file.path("code", "behavioral", "behavioral.R"))
 
-# #### Run Bayesian Agent Analysis ####
-# print("Running Bayesian Forager analyses...")
-# source(file.path("code", "bayesianforager", "BayesianForager.R"))
+#### Run Bayesian Agent Analysis ####
+print("Running Bayesian Forager analyses...")
+source(file.path("code", "bayesianforager", "BayesianForager.R"))
 
-# #### Alone condition ####
+#### Alone condition ####
 
-# # Run model comparison
-# print("Running model comparison for alone condition...")
-# source(file.path("code", "rl", "alone", "analyses", "modelcomp.R"))
-# rm(list = ls())
+# Run model comparison
+print("Running model comparison for alone condition...")
+source(file.path("code", "rl", "alone", "analyses", "modelcomp.R"))
+rm(list = ls())
 
-# # Run parameter recovery
-# print("Running parameter recovery for alone condition...")
-# source(file.path("code", "rl", "alone", "analyses", "parrecov.R"))
-# rm(list = ls())
+# Run parameter recovery
+print("Running parameter recovery for alone condition...")
+source(file.path("code", "rl", "alone", "analyses", "parrecov.R"))
+rm(list = ls())
 
-# #### No catches condition ####
+#### No catches condition ####
 
-# # Run numerical simulations
-# print("Running numerical simulations for no catches condition...")
-# source(file.path("code", "rl", "nocatches", "analyses", "numsims.R"))
-# rm(list = ls())
+# Run numerical simulations
+print("Running numerical simulations for no catches condition...")
+source(file.path("code", "rl", "nocatches", "analyses", "numsims.R"))
+rm(list = ls())
 
-# # Run model comparison
-# print("Running model comparison for no catches condition...")
-# source(file.path("code", "rl", "nocatches", "analyses", "modelcomp.R"))
-# rm(list = ls())
+# Run model comparison
+print("Running model comparison for no catches condition...")
+source(file.path("code", "rl", "nocatches", "analyses", "modelcomp.R"))
+rm(list = ls())
 
 
-# #### Catches condition ####
+#### Catches condition ####
 
-# # Run numerical simulations
-# print("Running numerical simulations for catches condition...")
-# source(file.path("code", "rl", "catches", "analyses", "numsims.R"))
-# rm(list = ls())
+# Run numerical simulations
+print("Running numerical simulations for catches condition...")
+source(file.path("code", "rl", "catches", "analyses", "numsims.R"))
+rm(list = ls())
 
-# # Run model comparison
-# print("Running model comparison for catches condition...")
-# source(file.path("code", "rl", "catches", "analyses", "modelcomp.R"))
-# rm(list = ls())
+# Run model comparison
+print("Running model comparison for catches condition...")
+source(file.path("code", "rl", "catches", "analyses", "modelcomp.R"))
+rm(list = ls())
 
-# # Run parameter recovery
-# print("Running parameter recovery for catches condition...")
-# source(file.path("code", "rl", "catches", "analyses", "parrecov.R"))
-# rm(list = ls())
+# Run parameter recovery
+print("Running parameter recovery for catches condition...")
+source(file.path("code", "rl", "catches", "analyses", "parrecov.R"))
+rm(list = ls())
 
 # #### Create figures ####
 

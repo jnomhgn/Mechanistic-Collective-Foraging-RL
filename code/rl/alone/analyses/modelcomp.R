@@ -157,8 +157,8 @@ computeloo <- function(models, stan.data){
     remove(ll)
 
     # Save diagnostics
-        jpeg(file.path("results", "rl", "alone", "modelcomp", "diagnostics", paste(models$name[[mfit]], "paretok", "jpeg", sep = ".")),
-          width = 2550, height = 1440, units = "px")
+    jpeg(file.path("results", "rl", "alone", "modelcomp", "diagnostics", paste(models$name[[mfit]], "paretok", "jpeg", sep = ".")),
+      width = 2550, height = 1440, units = "px")
     plot(get(loo.model))
     dev.off()
 

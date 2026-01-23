@@ -103,7 +103,7 @@ if(!file.exists(file.path(resultsdir, "numsims_v1.rds"))){
   rl.pars = list()
 
   # Load ARL model fit for the no catches condition
-  fit = readRDS(file.path(resultsdir, "..", "..", "nocatches", "modelcomp", "nonadaptive", "arl.hierarch.fit.rds"))
+  fit = readRDS(file.path(resultsdir, "..", "..", "nocatches", "modelcomp", "adaptive", "arl.hierarch.fit.rds"))
 
   # Get ARL parameter estimates
   draws = fit %>%

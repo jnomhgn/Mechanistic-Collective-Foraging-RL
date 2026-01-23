@@ -444,7 +444,7 @@ if(!file.exists(file.path(resultsdir, "postpredict_acctime.csv")) &
     mutate(social.fac=3, social="catches") %>%
     relocate(c(social.fac, social))
 
-  plot.data.nocatch = read.csv(file = file.path(resultsdir, "..", "..", "nocatches", "modelcomp", "nonadaptive", "postpredict_acc.csv"))
+  plot.data.nocatch = read.csv(file = file.path(resultsdir, "..", "..", "nocatches", "modelcomp", "adaptive", "postpredict_acc.csv"))
 
   plot.data = bind_rows(plot.data.nocatch, plot.data.catch)
 
