@@ -1,5 +1,18 @@
 #### Setup ####
 
+source(file.path("code", "pipeline_config.R"))
+
+chains = get_pipeline_value("rl", "catches", "modelcomp", "chains", default = 4)
+cores = get_pipeline_value("rl", "catches", "modelcomp", "cores", default = 4)
+iter = get_pipeline_value("rl", "catches", "modelcomp", "iter", default = 4000)
+warmup = get_pipeline_value("rl", "catches", "modelcomp", "warmup", default = 2000)
+refresh = get_pipeline_value("rl", "catches", "modelcomp", "refresh", default = 100)
+postpredict_nsim = get_pipeline_value("rl", "catches", "modelcomp", "postpredict_nsim", default = 100)
+exp_sessions = get_pipeline_value("rl", "catches", "modelcomp", "sessions", default = 18)
+exp_trials = get_pipeline_value("rl", "catches", "modelcomp", "trials", default = 12)
+exp_nplayers = get_pipeline_value("rl", "catches", "modelcomp", "nplayers", default = 5)
+exp_durations = get_pipeline_value("rl", "catches", "modelcomp", "durations_vec", default = c(75))
+
 # Source functions
 function.list <- file.path("code", "rl", "catches", "functions",
                           list.files(file.path("code", "rl", "catches", "functions")))
@@ -19,6 +32,7 @@ resultsdir <- file.path("results", "rl", "catches", "modelcomp")
 # Read data
 path <- file.path("data", "processed", "data_discrete_1s.csv")
 d = read.csv(path, colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
+d = apply_pipeline_data_filter(d)
 
 # Rename and add player id that is unique across sessions
 d = d %>% mutate(decision = correct) %>% mutate(reward = catch) %>% mutate(nplayers = 5) %>%
@@ -78,12 +92,7 @@ stan.data.d = with(d, list(
 
 
 # MCMC Settings
-# MCMC 
-chains = 4
-cores = 4
-iter = 4000
-warmup = 2000
-refresh = 100
+# Values are loaded from pipeline_config.R
 
 # Clear any leftover output sinks from earlier failed runs before compiling Stan models
 while (sink.number() > 0) sink()
@@ -288,16 +297,16 @@ if(!file.exists(file.path(resultsdir, "postpredict_acctime.csv")) &
   decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision, duration)
 
   # Number of times experiments were simulated from each model
-  nsim=100
+  nsim = postpredict_nsim
 
   # Simulations for accuracy over time
 
   # Experimental parameters (identical for all simulations)
   exp.pars = list(
-    sessions = 18,
-    trials = 12,
-    nplayers = 5, # number of players per session
-    durations.vec = c(75)  # The simulation functions sample trial lengths from this vector (equally) 
+    sessions = exp_sessions,
+    trials = exp_trials,
+    nplayers = exp_nplayers, # number of players per session
+    durations.vec = exp_durations  # The simulation functions sample trial lengths from this vector (equally) 
     # and randomly assigns them to the different environments
   )
   # Add unique ids for players (rows are sessions)
@@ -422,9 +431,9 @@ if(!file.exists(file.path(resultsdir, "postpredict_acctime.csv")) &
 
   # Experimental parameters (identical for all simulations)
   exp.pars = list(
-    sessions = 18,
-    trials = 12,
-    nplayers = 5 # number of players per session
+    sessions = exp_sessions,
+    trials = exp_trials,
+    nplayers = exp_nplayers # number of players per session
   )
   # Add unique ids for players (rows are sessions)
   exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))

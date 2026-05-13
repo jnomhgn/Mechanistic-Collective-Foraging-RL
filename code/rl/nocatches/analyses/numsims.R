@@ -1,5 +1,13 @@
 #### Setup ####
 
+source(file.path("code", "pipeline_config.R"))
+
+nsim = get_pipeline_value("rl", "nocatches", "numsims", "nsim", default = 100)
+exp_sessions = get_pipeline_value("rl", "nocatches", "numsims", "sessions", default = 18)
+exp_trials = get_pipeline_value("rl", "nocatches", "numsims", "trials", default = 12)
+exp_nplayers = get_pipeline_value("rl", "nocatches", "numsims", "nplayers", default = 5)
+exp_durations = get_pipeline_value("rl", "nocatches", "numsims", "durations_vec", default = c(75))
+
 # Source functions
 dir_functions <- file.path("code", "rl", "nocatches", "functions")
 function.list = file.path(dir_functions, list.files(dir_functions))
@@ -14,15 +22,12 @@ resultsdir <- file.path("results", "rl", "nocatches", "numsims")
 
 #### Prepare simulations ####
 
-# Number of simulated experiments
-nsim = 100
-
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
-  sessions = 18,
-  trials = 12,
-  nplayers = 5, # number of players per session
-  durations.vec = c(75)  # The simulation functions sample trial lengths from this vector (equally)
+  sessions = exp_sessions,
+  trials = exp_trials,
+  nplayers = exp_nplayers, # number of players per session
+  durations.vec = exp_durations  # The simulation functions sample trial lengths from this vector (equally)
   # and randomly assigns them to the different environments
 )
 # Add unique ids for players (rows are sessions)

@@ -1,5 +1,18 @@
 #### Setup ####
 
+source(file.path("code", "pipeline_config.R"))
+
+nsim = get_pipeline_value("rl", "catches", "parrecov", "nsim", default = 10)
+chains = get_pipeline_value("rl", "catches", "parrecov", "chains", default = 4)
+cores = get_pipeline_value("rl", "catches", "parrecov", "cores", default = 4)
+iter = get_pipeline_value("rl", "catches", "parrecov", "iter", default = 2000)
+warmup = get_pipeline_value("rl", "catches", "parrecov", "warmup", default = 1000)
+refresh = get_pipeline_value("rl", "catches", "parrecov", "refresh", default = 100)
+exp_sessions = get_pipeline_value("rl", "catches", "parrecov", "sessions", default = 18)
+exp_trials = get_pipeline_value("rl", "catches", "parrecov", "trials", default = 12)
+exp_nplayers = get_pipeline_value("rl", "catches", "parrecov", "nplayers", default = 5)
+exp_durations = get_pipeline_value("rl", "catches", "parrecov", "durations_vec", default = c(75, 90, 105))
+
 # Source functions
 dir_functions <- file.path("code", "rl", "catches", "functions")
 function.list = file.path(dir_functions, list.files(dir_functions))
@@ -11,15 +24,12 @@ if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = TRUE)}
 
 #### Prepare parameter recovery ####
 
-# Number of simulated experiments
-nsim=10
-
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
-  sessions = 18,
-  trials = 12,
-  nplayers = 5, # number of players per session
-  durations.vec = c(75, 90, 105)  # The simulation functions sample trial lengths from this vector (equally) 
+  sessions = exp_sessions,
+  trials = exp_trials,
+  nplayers = exp_nplayers, # number of players per session
+  durations.vec = exp_durations  # The simulation functions sample trial lengths from this vector (equally) 
   # and randomly assigns them to the different environments
 )
 # Add unique ids for players (rows are sessions)
@@ -31,12 +41,7 @@ ratio = c(.5, .65, .8, .95)
 env.pars = expand.grid(max=max, ratio=ratio)
 env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 
-# MCMC
-chains = 4
-cores = 4
-iter = 2000
-warmup = 1000
-refresh = 100
+# MCMC values are loaded from pipeline_config.R
 
 # Load winning model
 load(file = file.path(resultsdir, "..", "modelcomp", "modelcomp.Rdata"))

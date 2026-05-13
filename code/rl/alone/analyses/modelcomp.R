@@ -1,5 +1,18 @@
 #### Setup ####
 
+source(file.path("code", "pipeline_config.R"))
+
+chains = get_pipeline_value("rl", "alone", "modelcomp", "chains", default = 4)
+cores = get_pipeline_value("rl", "alone", "modelcomp", "cores", default = 4)
+iter = get_pipeline_value("rl", "alone", "modelcomp", "iter", default = 4000)
+warmup = get_pipeline_value("rl", "alone", "modelcomp", "warmup", default = 2000)
+refresh = get_pipeline_value("rl", "alone", "modelcomp", "refresh", default = 100)
+postpredict_nsim = get_pipeline_value("rl", "alone", "modelcomp", "postpredict_nsim", default = 100)
+exp_sessions = get_pipeline_value("rl", "alone", "modelcomp", "sessions", default = 18)
+exp_trials = get_pipeline_value("rl", "alone", "modelcomp", "trials", default = 12)
+exp_nplayers = get_pipeline_value("rl", "alone", "modelcomp", "nplayers", default = 5)
+exp_durations = get_pipeline_value("rl", "alone", "modelcomp", "durations_vec", default = c(75))
+
 # Source functions
 dir_functions <- file.path("code", "rl", "alone", "functions")
 function.list = file.path(dir_functions, list.files(dir_functions))
@@ -18,6 +31,7 @@ if(!dir.exists(file.path("results", "rl", "alone", "modelcomp", "diagnostics", "
 # Read data
 path = file.path("data", "processed", "data_discrete_1s.csv")
 d = read.csv(path,colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
+d = apply_pipeline_data_filter(d)
 
 # Set player id unique across sessions
 d = d %>% mutate(id = (session - 1) * 5  + player) %>% select(-player)
@@ -46,13 +60,6 @@ stan.data.d = with(d, list(
   DECISIONS=length(unique(decision)), decision=decision,
   REWARDS=length(unique(reward)), reward=reward
 ))
-
-# MCMC Settings
-chains = 4
-cores = 4
-iter = 4000
-warmup = 2000
-refresh = 100
 
 # Clear any leftover output sinks from earlier failed runs before compiling Stan models
 while (sink.number() > 0) sink()
@@ -251,14 +258,14 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_ac
   decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision)
 
   # Number of times experiments are simulated from each model
-  nsim=100
+  nsim=postpredict_nsim
 
   # Experimental parameters (identical for all simulations)
   exp.pars = list(
-    sessions = 18,
-    trials = 12,
-    nplayers = 5, # number of players per session
-    durations.vec = c(75)  # The simulation functions sample trial lengths from this vector (equally)
+    sessions = exp_sessions,
+    trials = exp_trials,
+    nplayers = exp_nplayers, # number of players per session
+    durations.vec = exp_durations  # The simulation functions sample trial lengths from this vector (equally)
                                     # and randomly assigns them to the different environments
   )
   # Add unique ids for players (rows are sessions)
@@ -356,13 +363,13 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_ac
   decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, session, max, max.fac, ratio, ratio.fac, decision, duration)
 
   # Number of times experiments were simulated from each model
-  nsim=100
+  nsim=postpredict_nsim
 
   # Experimental parameters (identical for all simulations)
   exp.pars = list(
-    sessions = 18,
-    trials = 12,
-    nplayers = 5 # number of players per session
+    sessions = exp_sessions,
+    trials = exp_trials,
+    nplayers = exp_nplayers # number of players per session
   )
   # Add unique ids for players (rows are sessions)
   exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))

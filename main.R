@@ -31,6 +31,14 @@ library(future)
 library(future.apply)
 options(future.globals.maxSize = 1.0 * 1e9)
 
+# Pipeline configuration
+source(file.path("code", "pipeline_config.R"))
+pipeline_mode <- "test" # "full" or "test"
+options(
+	pipeline_mode = pipeline_mode,
+	pipeline_config = make_pipeline_config(pipeline_mode)
+)
+
 # Python integration setup
 library(reticulate)
 use_virtualenv(virtualenv = file.path(getwd(), "venv"), required = TRUE)

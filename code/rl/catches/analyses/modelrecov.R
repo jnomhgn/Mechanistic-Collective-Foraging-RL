@@ -1,5 +1,18 @@
 #### Setup ####
 
+source(file.path("code", "pipeline_config.R"))
+
+chains = get_pipeline_value("rl", "catches", "modelrecov", "chains", default = 1)
+cores = get_pipeline_value("rl", "catches", "modelrecov", "cores", default = 1)
+iter = get_pipeline_value("rl", "catches", "modelrecov", "iter", default = 2000)
+warmup = get_pipeline_value("rl", "catches", "modelrecov", "warmup", default = 1000)
+refresh = get_pipeline_value("rl", "catches", "modelrecov", "refresh", default = 100)
+nsim = get_pipeline_value("rl", "catches", "modelrecov", "nsim", default = 10)
+exp_sessions = get_pipeline_value("rl", "catches", "modelrecov", "sessions", default = 18)
+exp_trials = get_pipeline_value("rl", "catches", "modelrecov", "trials", default = 12)
+exp_nplayers = get_pipeline_value("rl", "catches", "modelrecov", "nplayers", default = 5)
+exp_durations = get_pipeline_value("rl", "catches", "modelrecov", "durations_vec", default = c(75, 90, 105))
+
 # Source functions
 dir_functions <- file.path("code", "rl", "catches", "functions")
 function.list = file.path(dir_functions, list.files(dir_functions))
@@ -16,6 +29,7 @@ resultsdir <- file.path("results", "rl", "catches", "modelrecov")
 # Read data
 path = file.path("data", "processed", "data_discrete_1s.csv")
 d = read.csv(path,colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
+d = apply_pipeline_data_filter(d)
 
 # Rename and add player id that is unique across sessions
 d = d %>% mutate(decision = correct) %>% mutate(reward = catch) %>% mutate(nplayers = 5) %>%
@@ -74,27 +88,19 @@ stan.data.d = with(d, list(
 ))
 
 
-# MCMC Settings
-chains = 1
-cores = 1
-iter = 2000
-warmup = 1000
-refresh = 100
+# MCMC Settings are loaded from pipeline_config.R
 
 # Clear any leftover output sinks from earlier failed runs before compiling Stan models
 while (sink.number() > 0) sink()
 
 #### Simulation Setup ####
 
-# Number of simulations
-nsim=10
-
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
-  sessions = 18,
-  trials = 12,
-  nplayers = 5, # number of players per session
-  durations.vec = c(75, 90, 105)  # The simulation functions sample trial lengths from this vector (equally)
+  sessions = exp_sessions,
+  trials = exp_trials,
+  nplayers = exp_nplayers, # number of players per session
+  durations.vec = exp_durations  # The simulation functions sample trial lengths from this vector (equally)
   # and randomly assigns them to the different environments
 )
 # Add unique ids for players (rows are sessions)

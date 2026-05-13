@@ -1,6 +1,11 @@
 
 #Optimal Asocial foraging: Bayesian Inference simulations
 
+source(file.path("code", "pipeline_config.R"))
+
+analysis_nsim <- get_pipeline_value("bayesianforager", "nsim", default = 100)
+analysis_workers <- get_pipeline_value("bayesianforager", "workers", default = max(1L, floor(parallel::detectCores() / 2)))
+
 # Create results directories
 resultsdir <- file.path("results", "bayesianforager")
 if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = TRUE)}
@@ -111,13 +116,14 @@ if (!file.exists(file.path(resultsdir, "mean_accuracies.npy")) &
 
   #Get correct initial conditions from empirical data
   data_long = read.csv(file.path("data", "processed", "data_long.csv"))
+  data_long = apply_pipeline_data_filter(data_long)
   d <- data_long[which(data_long$cond == 1 & data_long$time==0),]
 
   #Pass to mclapply; it makes sense to select as many cores as there are parameter combinations in case you have access to a computer cluster ("mc.cores" argument)
 
-  plan(multisession, workers = max(1L, floor(parallel::detectCores() / 2)))
+  plan(multisession, workers = analysis_workers)
   result <- future_lapply(1:nrow(d), 
-    function(i) Sim_fct(100, d$duration[i], 1, 2, d$max[i], d$ratio[i], 2, d$correct[i]),
+    function(i) Sim_fct(analysis_nsim, d$duration[i], 1, 2, d$max[i], d$ratio[i], 2, d$correct[i]),
     future.seed = T
   )
   plan(sequential)
@@ -130,7 +136,7 @@ if (!file.exists(file.path(resultsdir, "mean_accuracies.npy")) &
       indices <- which(d$max == i & d$ratio == j)
       accuracies <- c()
       for (ind in indices) {
-        for (sim in 1:100) {
+        for (sim in 1:analysis_nsim) {
         accuracies <- c(accuracies, ifelse( result[[ind]][[sim]]$Patch == 1, 1,0  ) )
         }
       }
@@ -144,10 +150,10 @@ if (!file.exists(file.path(resultsdir, "mean_accuracies.npy")) &
   for (i in seq(0.5,0.9,0.2)) {
     for (j in seq(0.5,0.95,0.15)) {
       indices <- which(d$max == i & d$ratio == j)
-      accuracies <- matrix(NA, 100 * length(indices), 105)
+      accuracies <- matrix(NA, analysis_nsim * length(indices), 105)
       counter = 1
       for (ind in indices) {
-        for (sim in 1:100) {
+        for (sim in 1:analysis_nsim) {
           duration <- length(result[[ind]][[sim]]$Patch)
           accuracies[counter,1:duration] <-  ifelse( result[[ind]][[sim]]$Patch == 1, 1,0  ) 
           counter <- counter + 1

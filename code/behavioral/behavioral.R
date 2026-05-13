@@ -1,5 +1,13 @@
 #### Setup ####
 
+source(file.path("code", "pipeline_config.R"))
+
+chains <- get_pipeline_value("behavioral", "chains", default = 4)
+cores <- get_pipeline_value("behavioral", "cores", default = 4)
+iter <- get_pipeline_value("behavioral", "iter", default = 3000)
+warmup <- get_pipeline_value("behavioral", "warmup", default = 2000)
+refresh <- get_pipeline_value("behavioral", "refresh", default = 10)
+
 # Create directories
 resultsdir <- file.path("results", "behavioral")
 if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = TRUE)}
@@ -11,6 +19,7 @@ if(!file.exists(file.path(resultsdir, "acc.rds"))){
   # Read data
   path <- file.path("data", "processed", "data_discrete_1s.csv")
   d = read.csv(path, colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
+  d = apply_pipeline_data_filter(d)
 
   # Set player id unique across sessions
   d = d %>% mutate(id = (session - 1) * 5  + player) %>%
@@ -36,8 +45,8 @@ if(!file.exists(file.path(resultsdir, "acc.rds"))){
   # Fit model
   acc = brm(formula = formula, prior = priors,
             data = d, family = bernoulli(link = logit),
-            chains = 4, cores = 4,
-            iter=3000, warmup=2000, refresh=10)
+            chains = chains, cores = cores,
+            iter = iter, warmup = warmup, refresh = refresh)
   
   # Get draws
   acc.draws = as_draws_df(acc)
