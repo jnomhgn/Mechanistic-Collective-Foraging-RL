@@ -72,7 +72,9 @@ if(!file.exists(file.path(resultsdir, "numsims.rds"))){
   log.txt = file.path(resultsdir, "log.txt")
   if(!file.exists(log.txt)){file.create(log.txt)}
 
-  sink(log.txt, append = T)
+  log_line = function(text, path = log.txt) {
+    write(text, path, append = TRUE, ncolumns = 1)
+  }
 
   # Results list
   results = list(
@@ -82,9 +84,12 @@ if(!file.exists(file.path(resultsdir, "numsims.rds"))){
   )
 
   # Simulation function
-  sim_fun = function(sim, sim.pars, rl.pars, f, models, mod, parcomb) {
+  sim_fun = function(sim, sim.pars, rl.pars, f, models, mod, parcomb, log.path) {
 
-    print(paste("Model:", models$name[[mod]], " Parcomb:", parcomb, " Sim:", sim))
+    log_line(
+      paste("Model:", models$name[[mod]], " Parcomb:", parcomb, " Sim:", sim),
+      path = log.path
+    )
 
     # Simulate data
     sim.data = f(sim.parameters = sim.pars)
@@ -146,7 +151,7 @@ if(!file.exists(file.path(resultsdir, "numsims.rds"))){
       sim.pars = c(exp.pars, env.pars, rl.pars[parcomb, ])
 
       # Simulate in parallel
-      plan(multisession, workers = parallel::detectCores()-1)
+      plan(multisession, workers = max(1L, parallel::detectCores() - 1L))
       sim_results = future.apply::future_lapply(
         1:nsim,
         sim_fun,
@@ -156,6 +161,7 @@ if(!file.exists(file.path(resultsdir, "numsims.rds"))){
         models=models,
         mod=mod,
         parcomb=parcomb,
+        log.path=log.txt,
         future.seed = TRUE
       )
 
@@ -168,8 +174,6 @@ if(!file.exists(file.path(resultsdir, "numsims.rds"))){
   }
   results = lapply(results, function(x) bind_rows(x))
   saveRDS(results, file = file.path(resultsdir, "numsims.rds"))
-
-  sink()
 
 }else{
   print("Results from numerical simulations already exist. Skipping simulations.")

@@ -71,6 +71,9 @@ iter = 2000
 warmup = 1000
 refresh = 100
 
+# Clear any leftover output sinks from earlier failed runs before compiling Stan models
+while (sink.number() > 0) sink()
+
 #### Simulation Setup ####
 
 # Number of simulations
@@ -107,10 +110,12 @@ modelfit <- function(msim, mfit, sim, models, stan.data, chains, cores, iter, wa
   write(prgrss, log.file, append = TRUE, ncolumns = 1)
 
   # Fit model
+  sink.depth = sink.number()
   sink(log.file, append = T)
+  on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
   fit = sampling(object = models$compiled[[mfit]], data = stan.data,
                   chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
-  sink()
+  while (sink.number() > sink.depth) sink()
   saveRDS(fit, file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = ".")))
 
 }
@@ -157,9 +162,11 @@ computeloo <- function(msim, sim, models, stan.data){
     dev.off()
 
     # Print model comp info to log.txt
+    sink.depth = sink.number()
     sink(log.file, append = T)
+    on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
     print(get(loo.model))
-    sink()
+    while (sink.number() > sink.depth) sink()
 
 
     # Save to results

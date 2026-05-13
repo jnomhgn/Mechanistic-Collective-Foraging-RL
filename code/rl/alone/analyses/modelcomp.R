@@ -54,6 +54,9 @@ iter = 4000
 warmup = 2000
 refresh = 100
 
+# Clear any leftover output sinks from earlier failed runs before compiling Stan models
+while (sink.number() > 0) sink()
+
 
 #### Model comparison ####
 
@@ -71,10 +74,12 @@ modelfit <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, ref
   write(prgrss, log.file, append = TRUE, ncolumns = 1)
 
   # Fit model
+  sink.depth = sink.number()
   sink(log.file, append = T)
+  on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
   fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
                   chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
-  sink()
+  while (sink.number() > sink.depth) sink()
   saveRDS(fit, file.path("results", "rl", "alone", "modelcomp", paste(models$name[[mfit]], "fit", "rds", sep = ".")))
 
   # Plot some diagnostics for population means
@@ -163,9 +168,11 @@ computeloo <- function(models, stan.data){
     dev.off()
 
     # Print model comp info to log.txt
+    sink.depth = sink.number()
     sink(log.file, append = T)
+    on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
     print(get(loo.model))
-    sink()
+    while (sink.number() > sink.depth) sink()
 
 
     # Save to results

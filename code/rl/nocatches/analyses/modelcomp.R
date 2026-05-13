@@ -77,6 +77,9 @@ iter = 4000
 warmup = 2000
 refresh = 100
 
+# Clear any leftover output sinks from earlier failed runs before compiling Stan models
+while (sink.number() > 0) sink()
+
 
 #### Functions for model fitting and loo computation ####
 
@@ -94,10 +97,12 @@ fitmodel <- function(mfit, models, stan.data.d, adaptivity, chains, cores, iter,
   write(prgrss, log.file, append = TRUE, ncolumns = 1)
 
   # Fit model
+  sink.depth = sink.number()
   sink(log.file, append = T)
+  on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
   fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
                   chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
-  sink()
+  while (sink.number() > sink.depth) sink()
   saveRDS(fit, file.path(resultsdir, adaptivity, paste(models$name[[mfit]], "fit", "rds", sep = ".")))
   
   # Plot some diagnostics for population means
@@ -195,9 +200,11 @@ computeloo <-function(models, adaptivity, stan.data){
     plot(get(loo.model))    
     dev.off()
     
+    sink.depth = sink.number()
     sink(log.file, append = T)
+    on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
     print(get(loo.model))
-    sink()
+    while (sink.number() > sink.depth) sink()
     
     
     # Save to results

@@ -85,10 +85,13 @@ iter = 4000
 warmup = 2000
 refresh = 100
 
+# Clear any leftover output sinks from earlier failed runs before compiling Stan models
+while (sink.number() > 0) sink()
+
 #### Functions For Model Comparison ####
 
 # Function that runs model comparison in parallel
-fitmodel <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh, log.file){
+fitmodel <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh){
 
   # Create log file
   log.file = file.path(resultsdir, paste("log", models$name[[mfit]], "txt", sep = "."))
@@ -100,10 +103,12 @@ fitmodel <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, ref
   write(prgrss, log.file, append = TRUE, ncolumns = 1)
 
   # Fit model
+  sink.depth = sink.number()
   sink(log.file, append = T)
+  on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
   fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
                   chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
-  sink()
+  while (sink.number() > sink.depth) sink()
   saveRDS(fit, file.path(resultsdir, paste(models$name[[mfit]], "fit", "rds", sep = ".")))
   
   # Plot some diagnostics for population means
@@ -164,7 +169,7 @@ fitmodel <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, ref
 
 
 # Function to compute PSIS-LOO for each model fit sequentially
-computeloo <-function(models, adaptivity, log.file, stan.data){
+computeloo <-function(models, stan.data){
 
   # Results list
   results = list()
@@ -201,9 +206,11 @@ computeloo <-function(models, adaptivity, log.file, stan.data){
     plot(get(loo.model))    
     dev.off()
     
+    sink.depth = sink.number()
     sink(log.file, append = T)
+    on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
     print(get(loo.model))
-    sink()
+    while (sink.number() > sink.depth) sink()
     
     
     # Save to results
@@ -249,16 +256,16 @@ if(!file.exists(file.path(resultsdir, "modelcomp.Rdata"))){
   # Compile models to avoid recompiling 
   models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
 
-  plan(multisession, workers = min(length(models$stan.loglik) * cores, (parallel::detectCores()-1) / cores))
+  plan(multisession, workers = max(1L, min(length(models$stan.loglik), floor((max(1L, parallel::detectCores() - 1L)) / max(1L, cores)))))
 
   # Fit models in parallel
   future_lapply(1:length(models$stan.loglik), function(mfit) {
-    fitmodel(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh, log.file)
+    fitmodel(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh)
   }, future.seed = TRUE)
   plan(sequential)
 
   # Compute PSIS-LOO sequentially
-  results = computeloo(models, adaptivity, log.file, stan.data=stan.data.d)
+  results = computeloo(models, stan.data=stan.data.d)
 
   # Extract results from list
   list2env(results, globalenv())
