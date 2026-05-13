@@ -158,7 +158,8 @@ if(!file.exists(file.path(resultsdir, "numsims_v1.rds"))){
         f = f,
         models = models,
         mod = mod,
-        parcomb = parcomb
+        parcomb = parcomb,
+        future.seed = TRUE
       )
 
       # Extract results
@@ -582,14 +583,14 @@ if(!file.exists(file.path(resultsdir, "numsims_v2.rds"))){
   sink()
   
 }else{
-  print("Results from numerical simulations for v2 already exist. Skipping simulations.")
+  print("Results from numerical simulations for v2 already exist. Loading results.")
   results = readRDS(file = file.path(resultsdir, "numsims_v2.rds"))
 }
 
 #### Plot Results For v2 ####
 
 # Run only if results do not already exist
-if(!file.exists(file.path(resultsdir, "accdiff_v2.csv"))){
+if(!file.exists(file.path(resultsdir, "accdiff_v2_vsndbr.jpeg")) & !file.exists(file.path(resultsdir, "accdiff_v2_vsnvsr.jpeg"))){
 
   # List to save plots to
   plot.list = list()

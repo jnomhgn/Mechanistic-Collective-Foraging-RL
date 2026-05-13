@@ -115,13 +115,12 @@ if (!file.exists(file.path(resultsdir, "mean_accuracies.npy")) &
 
   #Pass to mclapply; it makes sense to select as many cores as there are parameter combinations in case you have access to a computer cluster ("mc.cores" argument)
 
-  library(parallel)
-
-  result <- mclapply(
-    1:nrow(d) ,
+  plan(multisession, workers = max(1L, detectCores()/2))
+  result <- future_lapply(1:nrow(d), 
     function(i) Sim_fct(100, d$duration[i], 1, 2, d$max[i], d$ratio[i], 2, d$correct[i]),
-    mc.cores=detectCores()/2
+    future.seed = T
   )
+  plan(sequential)
 
   #Calculate mean accuracies for each environment
   mean_accuracies <- array(NA, c(3,4))

@@ -313,7 +313,7 @@ if(!file.exists(file.path(resultsdir, "modelrecov.rds"))){
       plan(multisession, workers = max(1L, min(length(models$stan.loglik), floor((max(1L, parallel::detectCores() - 1L)) / max(1L, cores)))))
       future_lapply(1:length(models$stan.loglik), function(mfit) {
         modelfit(msim, mfit, sim, models, stan.data.sim, chains, cores, iter, warmup, refresh)
-      })
+      }, future.seed = TRUE)
       plan(sequential)
 
       # Compute PSIS-LOO for each model fit sequentially

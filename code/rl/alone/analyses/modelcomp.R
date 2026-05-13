@@ -211,7 +211,7 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "modelcomp.Rdat
   # Fit models in parallel
   future_lapply(1:length(models$stan.loglik), function(mfit) {
     modelfit(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh)
-  })
+  }, future.seed = TRUE)
   plan(sequential)
 
   # Compute PSIS-LOO sequentially

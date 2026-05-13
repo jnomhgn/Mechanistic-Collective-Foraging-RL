@@ -34,45 +34,43 @@ ratio = round(c(.5, .65, .8, .95), digits = 2)
 env.pars = expand.grid(max=max, ratio=ratio)
 env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 
-# Get model list
-models = getmodels()
-
-# Drop versions with adaptive social learning weights
-# models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] )
-
-# Select models with single social learning parameter (and arl model)
-models=lapply(models,function(x) x[models$name %in% c("arl.fixed", "dbn1.fixed", "vsn1.fixed")] )
-
-# Load ARL model fit for the alone condition
-fit = readRDS(file.path(resultsdir, "..", "..", "alone", "modelcomp", "m4.1.fit.rds"))
-
-# Get ARL parameter estimates
-draws = fit %>%
-  tidy_draws() %>%
-  select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]]))
-arl.pars.nocatches = apply(draws, 2, mean)
-
-# Remove fit
-remove(fit)
-
-# Set social learning weights for decision- and reward- based DB and VS
-srl.pars = c("alphaDBD", "alphaVSD")
-srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .01)) %>%
-  `colnames<-`(srl.pars)
-
-# Merge
-rl.pars.nocatches = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>%
-  cbind(t(arl.pars.nocatches)) %>% cbind(srl.pars)
-
-log.txt = file.path(resultsdir, "log.txt")
-if(!file.exists(log.txt)){file.create(log.txt)}
-
 #### Run numerical simulations
-
-
 
 # Add caching
 if(!file.exists(file.path(resultsdir, "numsims.rds"))){
+
+  # Get model list
+  models = getmodels()
+
+  # Drop versions with adaptive social learning weights
+  # models=lapply(models,function(x) x[!grepl(pattern = "2", models$name)] )
+
+  # Select models with single social learning parameter (and arl model)
+  models=lapply(models,function(x) x[models$name %in% c("arl.fixed", "dbn1.fixed", "vsn1.fixed")] )
+
+  # Load ARL model fit for the alone condition
+  fit = readRDS(file.path(resultsdir, "..", "..", "alone", "modelcomp", "m4.1.fit.rds"))
+
+  # Get ARL parameter estimates
+  draws = fit %>%
+    tidy_draws() %>%
+    select(names(models$free.pars.pop[[which(models$name %in% c("arl.fixed"))]]))
+  arl.pars.nocatches = apply(draws, 2, mean)
+
+  # Remove fit
+  remove(fit)
+
+  # Set social learning weights for decision- and reward- based DB and VS
+  srl.pars = c("alphaDBD", "alphaVSD")
+  srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .01)) %>%
+    `colnames<-`(srl.pars)
+
+  # Merge
+  rl.pars.nocatches = models$fixed.par[[which(models$name %in% c("arl.fixed"))]] %>% as.data.frame() %>%
+    cbind(t(arl.pars.nocatches)) %>% cbind(srl.pars)
+
+  log.txt = file.path(resultsdir, "log.txt")
+  if(!file.exists(log.txt)){file.create(log.txt)}
 
   sink(log.txt, append = T)
 
@@ -157,7 +155,8 @@ if(!file.exists(file.path(resultsdir, "numsims.rds"))){
         f=f,
         models=models,
         mod=mod,
-        parcomb=parcomb
+        parcomb=parcomb,
+        future.seed = TRUE
       )
 
       # Extract results
