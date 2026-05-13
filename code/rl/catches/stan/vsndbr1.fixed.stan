@@ -1,132 +1,78 @@
-// Data
-data{
-  int<lower = 1> OBSERVATIONS; // number of observations
-  
-  int<lower = 1> MAXIMUM; // Number of levels for maximum catch probability, i.e. levels of resource abundance
-  int<lower = 1, upper = MAXIMUM> maximum[OBSERVATIONS]; // Vector of maximum catch probabilities for each observation
-  
-  int<lower = 1> RATIO; // Number of levels for catch probability ratio, i.e. levels of discriminability
-  int<lower = 1, upper = RATIO> ratio[OBSERVATIONS]; // Vector of catch probability ratios for each observation
-  
-  int<lower = 1> PLAYERS; // Number of players in each trial, i.e. group size
-  
-  int<lower = 1> ID; // Number of players across all trials, i.e. max uniqe id
-  int<lower = 1, upper = ID> id[OBSERVATIONS]; // Vector of unique ids
-  
-  int<lower = 0> TIMES; // Max trial length
-  int<lower = 0, upper = TIMES> time[OBSERVATIONS]; // vector of time steps
-
-  int<lower = 1> DECISIONS; // Number of decision outcomes [2]
-  int<lower = 0, upper = DECISIONS> decision[OBSERVATIONS]; // Vector of observed decisions coded as 1 / 2 for softmax indexing
-  
-  real<lower = 0> obsdec[OBSERVATIONS, DECISIONS]; // matrix of decision frequencies
-  real<lower = 0> obsrew[OBSERVATIONS]; // vector of observed rewards
-
- 
-  int<lower = 1> REWARDS; // Number of reward outcomes
-  int<lower = 0, upper = REWARDS-1> reward[OBSERVATIONS]; // Vector of observed rewards coded as 0 / 1
+data {
+  int<lower=1> OBSERVATIONS;
+  int<lower=1> MAXIMUM;
+  array[OBSERVATIONS] int<lower=1, upper=MAXIMUM> maximum;
+  int<lower=1> RATIO;
+  array[OBSERVATIONS] int<lower=1, upper=RATIO> ratio;
+  int<lower=1> PLAYERS;
+  int<lower=1> ID;
+  array[OBSERVATIONS] int<lower=1, upper=ID> id;
+  int<lower=0> TIMES;
+  array[OBSERVATIONS] int<lower=0, upper=TIMES> time;
+  int<lower=1> DECISIONS;
+  array[OBSERVATIONS] int<lower=0, upper=DECISIONS> decision;
+  array[OBSERVATIONS, DECISIONS] real<lower=0> obsdec;
+  array[OBSERVATIONS] real<lower=0> obsrew;
+  int<lower=1> REWARDS;
+  array[OBSERVATIONS] int<lower=0, upper=REWARDS - 1> reward;
 }
-
-// Parameters to estimate
-parameters{
-    
-  // Asocial reinforcement learning parameters
-  real logit_alphaQN; // Different asocial learning weights for negative reward prediction errors 
-  real logit_alphaQP; // Different asocial learning weights for position rpes
-  real log_betaQ; // Inverse temperature
-  real betaC;     // Autocorrelation strength
-  
-  // Social reinforcement learning parameters
-  real logit_alphaVSD; // Social learning weight for decision-based value shaping
-  real logit_alphaDBR; // Social learning weight for reward-based decision biasing
-  
+parameters {
+  real logit_alphaQN;
+  real logit_alphaQP;
+  real log_betaQ;
+  real betaC;
+  real logit_alphaVSD;
+  real logit_alphaDBR;
 }
-
-// Model
-model{
-  
-  // Assign priors
-    
-  // Asocial reinforcement learning
-  logit_alphaQN ~ normal(0, 1.5); 
-  logit_alphaQP ~ normal(0, 1.5); 
-  log_betaQ ~ normal(1.5, .5); 
+model {
+  logit_alphaQN ~ normal(0, 1.5);
+  logit_alphaQP ~ normal(0, 1.5);
+  log_betaQ ~ normal(1.5, .5);
   betaC ~ normal(0, 2);
-  
-  // Social reinforcement learning
   logit_alphaVSD ~ normal(0, 1.5);
   logit_alphaDBR ~ normal(0, 1.5);
-
-  // Declare local variables
-  vector[DECISIONS] Q; // Value of each state
-  vector[DECISIONS] C; // Choice trace for each state
-  vector[DECISIONS] p; // individual policy (that gets updated)
-  vector[DECISIONS] Qsoc; // Social value of each state (used to update)
-  vector[DECISIONS] psoc; // social policy used for updating
-  real alphaQ; 
-  real betaQ; 
-  real alphaVSD; 
-  real alphaDBR; 
-
-  // Loop over observations
-  for (observation in 1:OBSERVATIONS){
-
-      // If new trial, initialize / reset Q values
-      if(time[observation] == 0){
-        Q = [0.5, 0.5]';
-        C = [0, 0]';
-      }else{ // Value shaping
-        // Construct individual-level social learning weight
-        alphaVSD = inv_logit(logit_alphaVSD);
-        // Compute social value of choice
-        Qsoc = to_vector(obsdec[observation, ]); // Computed outside of stan so that obsdec[observation, ] are the observed decisions for each option from the timestep observation-1
-        // Shape values
-        Q = Q + alphaVSD * (Qsoc - Q);
-      }
-      
-      // Construct id specific inverse temp and autocorrelation
-      betaQ = exp(log_betaQ);
-      
-      // Compute choice probabilities
-      p = softmax(betaQ * Q + betaC * C);
-
-      // Decision biasing
-      if(time[observation] != 0){ // No social info at first time step
-
-        // Construct id specific social learning weight.
-        alphaDBR = inv_logit(logit_alphaDBR);
-        
-        // Update individual policy using social policy (only if someone else was at patch)
-        if(obsrew[observation] != 100){
-          // obsrew[observation] as computed in Rmd represents observed rewards for timestep observation - 1  
-          // decision[observation-1] represents decition made at timestep observation - 1
-          // Thus, asocial choice probability for decision[observation-1] is updated with social
-          // choice probability based on obsrew[observation]
-          psoc[decision[observation-1]] = obsrew[observation];
-          psoc[3 - decision[observation-1]] = 1 - obsrew[observation];
-        
-		      p = p + alphaDBR * (psoc - p);
-        	
-        }
-      }
-
-      // Sample decision
-      decision[observation] ~ categorical(p);
-
-      // Construct id specific learning rate
-      if((reward[observation] - Q[decision[observation]]) < 0){
-        alphaQ = inv_logit(logit_alphaQN);
-      }else{
-        alphaQ = inv_logit(logit_alphaQP);
-      }
-      
-      // Update Q-values
-      Q[decision[observation]] = Q[decision[observation]] + alphaQ *(reward[observation] - Q[decision[observation]]); 
-
-
-      // Update choice trace. Considers previous decision only
+  vector[DECISIONS] Q;
+  vector[DECISIONS] C;
+  vector[DECISIONS] p;
+  vector[DECISIONS] Qsoc;
+  vector[DECISIONS] psoc;
+  real alphaQ;
+  real betaQ;
+  real alphaVSD;
+  real alphaDBR;
+  for (observation in 1 : OBSERVATIONS) {
+    if (time[observation] == 0) {
+      Q = [0.5, 0.5]';
       C = [0, 0]';
-      C[decision[observation]] = 1;
-      
+    }
+    else {
+      alphaVSD = inv_logit(logit_alphaVSD);
+      Qsoc = to_vector(obsdec[observation,  : ]);
+      Q = Q + alphaVSD * (Qsoc - Q);
+    }
+    betaQ = exp(log_betaQ);
+    p = softmax(betaQ * Q + betaC * C);
+    if (time[observation] != 0) {
+      alphaDBR = inv_logit(logit_alphaDBR);
+      if (obsrew[observation] != 100) {
+        psoc[decision[observation - 1]] = obsrew[observation];
+        psoc[3 - decision[observation - 1]] = 1 - obsrew[observation];
+        p = p + alphaDBR * (psoc - p);
+      }
+    }
+    decision[observation] ~ categorical(p);
+    if ((reward[observation] - Q[decision[observation]]) < 0) {
+      alphaQ = inv_logit(logit_alphaQN);
+    }
+    else {
+      alphaQ = inv_logit(logit_alphaQP);
+    }
+    Q[decision[observation]] = Q[decision[observation]]
+                               + alphaQ
+                                 * (reward[observation]
+                                    - Q[decision[observation]]);
+    C = [0, 0]';
+    C[decision[observation]] = 1;
   }
 }
+

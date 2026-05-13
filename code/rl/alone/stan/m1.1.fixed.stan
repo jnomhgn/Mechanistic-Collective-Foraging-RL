@@ -1,61 +1,36 @@
-// Data
-data{
-  int<lower = 1> OBSERVATIONS; // number of observations
-  
-  int<lower = 1> MAXIMUM; // Number of maximum catch probabilities
-  int<lower = 1, upper = MAXIMUM> maximum[OBSERVATIONS]; // vector of maximum catch probabilities
-  
-  int<lower = 1> RATIO; // Number of maximum catch probabilities
-  int<lower = 1, upper = RATIO> ratio[OBSERVATIONS]; // vector of maximum catch probabilities
-  
-  int<lower = 1> PLAYERS; // number of players
-  
-  int<lower = 0> TIMES; // max trial length
-  int<lower = 0, upper = TIMES> time[OBSERVATIONS]; // vector of time steps
-
-  int<lower = 1> DECISIONS; // number of decision outcomes 
-  int<lower = 0, upper = DECISIONS> decision[OBSERVATIONS]; // vector of observed decisions 
- 
-  int<lower = 1> REWARDS; // number of reward outcomes
-  int<lower = 0, upper = REWARDS-1> reward[OBSERVATIONS]; // vector of observed rewards
+data {
+  int<lower=1> OBSERVATIONS;
+  int<lower=1> MAXIMUM;
+  array[OBSERVATIONS] int<lower=1, upper=MAXIMUM> maximum;
+  int<lower=1> RATIO;
+  array[OBSERVATIONS] int<lower=1, upper=RATIO> ratio;
+  int<lower=1> PLAYERS;
+  int<lower=0> TIMES;
+  array[OBSERVATIONS] int<lower=0, upper=TIMES> time;
+  int<lower=1> DECISIONS;
+  array[OBSERVATIONS] int<lower=0, upper=DECISIONS> decision;
+  int<lower=1> REWARDS;
+  array[OBSERVATIONS] int<lower=0, upper=REWARDS - 1> reward;
 }
-
-// Parameters to estimate
-parameters{
-  
-  real<lower = 0, upper = 1> alphaQ;
-  real<lower = 0> betaQ;
-
+parameters {
+  real<lower=0, upper=1> alphaQ;
+  real<lower=0> betaQ;
 }
-
-// Model
-model{
-  
-  // Assign priors
-  alphaQ ~ beta(2, 2); 
+model {
+  alphaQ ~ beta(2, 2);
   betaQ ~ lognormal(1.5, .5);
-
-  // Declare local variables
-  vector[DECISIONS] Q; // Value of each state
-  vector[DECISIONS] p; // policy
-
-  // Loop over observations
-  for (observation in 1:OBSERVATIONS){
-
-      // If new trial, initialize / reset Q values
-      if(time[observation] == 0){
-        Q = [0.5, 0.5]';
-      }
-      
-      // Compute choice probabilities
-      p = softmax(betaQ * Q);
-
-      // Sample decision
-      decision[observation] ~ categorical(p);
-
-      // Update Q-values. 
-      Q[decision[observation]] = Q[decision[observation]] + alphaQ *(reward[observation] - Q[decision[observation]]); 
-
-      
+  vector[DECISIONS] Q;
+  vector[DECISIONS] p;
+  for (observation in 1 : OBSERVATIONS) {
+    if (time[observation] == 0) {
+      Q = [0.5, 0.5]';
+    }
+    p = softmax(betaQ * Q);
+    decision[observation] ~ categorical(p);
+    Q[decision[observation]] = Q[decision[observation]]
+                               + alphaQ
+                                 * (reward[observation]
+                                    - Q[decision[observation]]);
   }
 }
+
