@@ -3,6 +3,22 @@ This repository contains the full data and scripts to reproduce all analyses and
 
 **Marienhagen, J, Blum Moyse, L., Schakowski, A., Kahl, B., Davidson, J., El Hady, A., Kurvers, R. & Deffner, D. (2025). *Bridging drift-diffusion and reinforcement-learning modeling to uncover the cognitive processes underlying collective foraging.* [Manuscript submitted for publication].**
 
+## Code Execution
+
+### With Docker
+
+To run the code via Docker, run the following commands from the project root directory to build the Docker image and run the Docker container
+
+```
+docker build -t rlforaging .
+docker run --rm `
+  -v "${PWD}\data:/rlforaging/data" `
+  -v "${PWD}\results:/rlforaging/results" `
+  rlforaging
+```
+
+## Code Overview
+
 ## Data Processing
 "preprocessing.R" reads in the raw data collected during the experiment and creates a discrete time series with a 1s resolution.
 
