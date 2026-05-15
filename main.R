@@ -20,6 +20,7 @@ library(viridis)
 library(ggdist)
 
 library(rstan)
+library(cmdstanr)
 library(brms)
 library(loo)
 library(tidybayes)

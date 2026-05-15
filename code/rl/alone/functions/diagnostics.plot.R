@@ -4,31 +4,40 @@ diagnostics.plot <- function(model.fit, plot.pars){
   diag.list = list()
   
   # Info for plotting 
-  posterior <- as.array(model.fit)
-  posterior = posterior[, , plot.pars]
-  lp <- log_posterior(model.fit)
-  np <- nuts_params(model.fit)
+  posterior <- draws_array_cmd(model.fit, variables = plot.pars)
+  np <- nuts_params_cmd(model.fit)
   
   # Plots taken from from https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html
   
   
   # Global plot
   color_scheme_set("darkgray")
-  global = mcmc_parcoord(posterior, np = np)
+  if(is.null(np)){
+    global = mcmc_parcoord(posterior)
+  }else{
+    global = mcmc_parcoord(posterior, np = np)
+  }
   diag.list = append(diag.list, list(global))
   
   # Pairs plot
-  pairs.plot = mcmc_pairs(posterior, np = np, pars = plot.pars, off_diag_args = list(size = 0.75))
+  if(is.null(np)){
+    pairs.plot = mcmc_pairs(posterior, pars = plot.pars, off_diag_args = list(size = 0.75))
+  }else{
+    pairs.plot = mcmc_pairs(posterior, np = np, pars = plot.pars, off_diag_args = list(size = 0.75))
+  }
   diag.list = append(diag.list, list(pairs.plot))
   
   # Traceplot
   color_scheme_set("mix-brightblue-gray")
-  trace.plot = mcmc_trace(model.fit, np=np,
-                          pars = plot.pars)
+  if(is.null(np)){
+    trace.plot = mcmc_trace(posterior, pars = plot.pars)
+  }else{
+    trace.plot = mcmc_trace(posterior, np = np, pars = plot.pars)
+  }
   diag.list = append(diag.list, list(trace.plot))
   
   # Rhat plot
-  rhats = rhat(model.fit, pars = plot.pars)
+  rhats = rhat_cmd(model.fit, pars = plot.pars)
   color_scheme_set("brightblue") # see help("color_scheme_set")
   if(length(plot.pars) <= 20){
     rhat.plot = mcmc_rhat(rhats) + yaxis_text(hjust = 0) +
@@ -40,7 +49,7 @@ diagnostics.plot <- function(model.fit, plot.pars){
   diag.list = append(diag.list, list(rhat.plot))
   
   # Effective sample size ratio
-  neff.ratios <- neff_ratio(model.fit, pars = plot.pars)
+  neff.ratios <- neff_ratio_cmd(model.fit, pars = plot.pars)
   if(length(plot.pars)<20){
     neff.plot = mcmc_neff(neff.ratios, size = 2) + yaxis_text(hjust = 0)
   }else{

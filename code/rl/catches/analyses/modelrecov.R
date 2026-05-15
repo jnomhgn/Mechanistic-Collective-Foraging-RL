@@ -128,10 +128,10 @@ modelfit <- function(msim, mfit, sim, models, stan.data, chains, cores, iter, wa
   sink.depth = sink.number()
   sink(log.file, append = T)
   on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
-  fit = sampling(object = models$compiled[[mfit]], data = stan.data,
-                  chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+  fit = models$compiled[[mfit]]$sample(data = stan.data,
+                  chains = chains, parallel_chains = cores, iter_sampling = iter - warmup, iter_warmup = warmup, refresh = refresh)
   while (sink.number() > sink.depth) sink()
-  saveRDS(fit, file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = ".")))
+  fit$save_object(file = file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = ".")))
 
 }
 
@@ -152,7 +152,7 @@ computeloo <- function(msim, sim, models, stan.data){
      
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
-    ll = extract_log_lik(fit, parameter_name = "log_lik", merge_chains = FALSE)
+    ll = extract_log_lik_cmd(fit, parameter_name = "log_lik", merge_chains = FALSE)
 
     # Drop log likelihood of observations where time == 0
     indx = which(stan.data$time != 0, arr.ind = T)
@@ -160,14 +160,14 @@ computeloo <- function(msim, sim, models, stan.data){
 
     # Compute relative effect sample sizes
     if(length(dim(ll)) == 2){
-      r_eff = relative_eff(exp(ll), cores = 1, chain_id=rep(1L, nrow(ll)))
+      r_eff = loo::relative_eff(exp(ll), cores = 1, chain_id=rep(1L, nrow(ll)))
       } else {
-      r_eff = relative_eff(exp(ll), cores = 1)
+      r_eff = loo::relative_eff(exp(ll), cores = 1)
     }
     
     # Compute psis loo
     loo.model = paste("loo", mfit, sep = ".")
-    assign(loo.model, loo(ll, r_eff = r_eff, cores = 1))
+    assign(loo.model, loo::loo(ll, r_eff = r_eff, cores = 1))
     remove(ll)
 
     # Save diagnostics
@@ -191,7 +191,7 @@ computeloo <- function(msim, sim, models, stan.data){
    }
   
   # Compare models
-  comparison = loo_compare(results)
+  comparison = loo::loo_compare(results)
 
   # Add model name
   comparison = as.data.frame(comparison)
@@ -216,7 +216,7 @@ models = getmodels(hierarch = F)
 models = lapply(models, function(x) x[!grepl("2.", models$name)])
 
 # Compile models to avoid recompiling
-models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
+models$compiled = sapply(1:length(models$stan.loglik), function(x) cmdstan_model(stan_file = models$stan.loglik[[x]]))
 
 if(!file.exists(file.path(resultsdir, "modelrecov.rds"))){
 
@@ -229,12 +229,12 @@ if(!file.exists(file.path(resultsdir, "modelrecov.rds"))){
   for(msim in 1:length(models$name)){
 
     # Fit model to experimental data
-    fit.exp = sampling(models$compiled[[msim]], data = stan.data.d,
-                       chains = chains, cores = cores,
-                       iter = iter, warmup = warmup, refresh = 0)
+    fit.exp = models$compiled[[msim]]$sample(data = stan.data.d,
+               chains = chains, parallel_chains = cores,
+               iter_sampling = iter - warmup, iter_warmup = warmup, refresh = 0)
     
     # Save fit
-    saveRDS(fit.exp, file = file.path(resultsdir, paste(models$name[[msim]], "fit", "rds", sep = ".")))
+    fit.exp$save_object(file = file.path(resultsdir, paste(models$name[[msim]], "fit", "rds", sep = ".")))
 
     # Get parameters to simulate from
     draws = tidy_draws(fit.exp)

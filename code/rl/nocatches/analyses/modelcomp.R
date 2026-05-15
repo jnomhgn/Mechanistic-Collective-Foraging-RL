@@ -110,10 +110,10 @@ fitmodel <- function(mfit, models, stan.data.d, adaptivity, chains, cores, iter,
   sink.depth = sink.number()
   sink(log.file, append = T)
   on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
-  fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
-                  chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+  fit = models$compiled[[mfit]]$sample(data = stan.data.d,
+                  chains = chains, parallel_chains = cores, iter_sampling = iter - warmup, iter_warmup = warmup, refresh = refresh)
   while (sink.number() > sink.depth) sink()
-  saveRDS(fit, file.path(resultsdir, adaptivity, paste(models$name[[mfit]], "fit", "rds", sep = ".")))
+  fit$save_object(file = file.path(resultsdir, adaptivity, paste(models$name[[mfit]], "fit", "rds", sep = ".")))
   
   # Plot some diagnostics for population means
   diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
@@ -132,12 +132,12 @@ fitmodel <- function(mfit, models, stan.data.d, adaptivity, chains, cores, iter,
                                                     "divergent__",   "energy__"))]
   par.names = par.names[!grepl("log_lik", par.names)] 
   for (param in par.names) {
-    tplot <- traceplot(fit, pars = param) + ggtitle(paste("Trace plot for", param))
+    tplot <- traceplot_cmd(fit, pars = param) + ggplot2::ggtitle(paste("Trace plot for", param))
     ggsave(file.path(resultsdir, adaptivity, "diagnostics", "detailed", models$name[[mfit]], paste0("traceplot_", param, ".png")), tplot)
   }
   
   # Save diagnostics for all parameters
-  fit.summary = summary(fit)$summary
+  fit.summary = fit_summary_cmd(fit)
   write.csv(fit.summary, file = file.path(resultsdir, adaptivity, "diagnostics",
                                       paste(models$name[[mfit]], "diagnostics", "csv",  sep = ".")))
   
@@ -190,7 +190,7 @@ computeloo <-function(models, adaptivity, stan.data){
      
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
-    ll = extract_log_lik(fit, parameter_name = "log_lik", merge_chains = FALSE)
+    ll = extract_log_lik_cmd(fit, parameter_name = "log_lik", merge_chains = FALSE)
     remove(fit)
 
     # Drop log likelihood of observations where time == 0
@@ -198,11 +198,15 @@ computeloo <-function(models, adaptivity, stan.data){
     ll = ll[, , indx]
 
     # Compute relative effect sample sizes
-    r_eff = relative_eff(exp(ll), cores = 1)
+    if(length(dim(ll)) == 2){
+      r_eff = loo::relative_eff(exp(ll), cores = 1, chain_id = rep(1L, nrow(ll)))
+    }else{
+      r_eff = loo::relative_eff(exp(ll), cores = 1)
+    }
     
     # Compute psis loo
     loo.model = paste("loo", mfit, sep = ".")
-    assign(loo.model, loo(ll, r_eff = r_eff, cores = 1))
+    assign(loo.model, loo::loo(ll, r_eff = r_eff, cores = 1))
     remove(ll)
     
     # Save diagnostics
@@ -225,7 +229,7 @@ computeloo <-function(models, adaptivity, stan.data){
   }
 
   # Compare models
-  comparison = loo_compare(results)
+  comparison = loo::loo_compare(results)
   
   # Add model name
   comparison = as.data.frame(comparison)
@@ -520,7 +524,7 @@ if(!file.exists(file.path(resultsdir, adaptivity, "modelcomp.Rdata"))){
   models= lapply(models, function(x) x[which(models$name %in% c("arl.hierarch", "dbn1.hierarch", "vsn1.hierarch", "dbn2.hierarch", "vsn2.hierarch"))])
 
   # Compile models to avoid recompiling 
-  models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
+  models$compiled = sapply(1:length(models$stan.loglik), function(x) cmdstan_model(stan_file = models$stan.loglik[[x]]))
 
   plan(multisession, workers = max(1L, min(length(models$stan.loglik), floor((max(1L, parallel::detectCores() - 1L)) / max(1L, cores)))))
 

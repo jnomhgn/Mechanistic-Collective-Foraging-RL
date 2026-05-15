@@ -58,7 +58,7 @@ models = lapply(models, function(x) x[grepl(winner, models$name)])
 
 # Compile 
 models$compiled = sapply(1:length(models$name), function(x)
-  stan_model(file = models$stan[[x]], model_name = models$name[[x]]))
+  cmdstan_model(stan_file = models$stan[[x]]))
 
 
 #### Run parameter recovery ####
@@ -154,8 +154,8 @@ for(mod in 1:length(models$name)){
       ))
       
       # Fit model
-      fit = sampling(object = models$compiled[[mod]], data = stan.data,
-                     chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+      fit = models$compiled[[mod]]$sample(data = stan.data,
+             chains = chains, parallel_chains = cores, iter_sampling = iter - warmup, iter_warmup = warmup, refresh = refresh)
       
       # # Plot and save some diagnostics
       # diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars[[mod]]))
