@@ -55,6 +55,9 @@ RUN R -e 'install.packages("StanHeaders")'
 COPY renv.lock ./renv.lock
 RUN R -s -e "renv::restore()"
 
+# Install cmdstan
+RUN R -e 'cmdstanr::install_cmdstan()'
+
 # Copy remaining project files
 COPY main.R ./main.R
 COPY code ./code
