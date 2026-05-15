@@ -11,10 +11,7 @@ To run the code via Docker, run the following commands from the project root dir
 
 ```
 docker build -t rlforaging .
-docker run --rm `
-  -v "${PWD}\data:/rlforaging/data" `
-  -v "${PWD}\results:/rlforaging/results" `
-  rlforaging
+docker run -v "${PWD}/data:/rlforaging/data" -v "${PWD}/results:/rlforaging/results" rlforaging
 ```
 
 ## Code Overview
