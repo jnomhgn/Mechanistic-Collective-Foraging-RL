@@ -99,7 +99,8 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           sessions = 18,
           trials = 12,
           nplayers = 5,
-          durations_vec = c(75)
+          durations_vec = c(75),
+          grid_step = 0.01
         ),
         modelcomp = list(
           chains = 4,
@@ -132,7 +133,8 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           sessions = 18,
           trials = 12,
           nplayers = 5,
-          durations_vec = c(75)
+          durations_vec = c(75),
+          grid_step = 0.01
         ),
         modelcomp = list(
           chains = 4,
@@ -235,7 +237,8 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           sessions = 2,
           trials = 2,
           nplayers = 5,
-          durations_vec = c(75)
+          durations_vec = c(75),
+          grid_step = 0.5
         ),
         modelcomp = list(
           chains = 2,
@@ -268,7 +271,8 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           sessions = 2,
           trials = 2,
           nplayers = 5,
-          durations_vec = c(75)
+          durations_vec = c(75),
+          grid_step = 0.5
         ),
         modelcomp = list(
           chains = 2,
