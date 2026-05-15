@@ -177,7 +177,7 @@ make_pipeline_config <- function(mode = c("full", "test")) {
   test <- list(
     data = list(
       session_max = 2,
-      trial_max = 18
+      trial_max = 36
     ),
     behavioral = list(
       chains = 2,
