@@ -1,5 +1,5 @@
-# Base image with R 4.4.1
-FROM r-base:4.4.1
+# Base image with R 4.5.2
+FROM r-base:4.5.2
 
 # Set working directory
 WORKDIR /rlforaging
