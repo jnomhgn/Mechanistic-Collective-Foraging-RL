@@ -7,11 +7,49 @@ This repository contains the full data and scripts to reproduce all analyses and
 
 ### With Docker
 
-To run the code via Docker, run the following commands from the project root directory to build the Docker image and run the Docker container
+Build the image from the project root and run the container. The container runs `Rscript main.R` by default and expects `data/` and `results/` to be mounted.
+
+
+\
+Build:
 
 ```
 docker build -t rlforaging .
-docker run -v "${PWD}/data:/rlforaging/data" -v "${PWD}/results:/rlforaging/results" rlforaging
+```
+
+\
+Run:
+
+```
+docker run --rm -v "${PWD}/data:/rlforaging/data" -v "${PWD}/results:/rlforaging/results" rlforaging
+```
+
+### Without Docker
+Prerequisites: Python 3.13.9 and R 4.5.2.
+
+\ Set up Python:
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+\ Set up R:
+```
+# Install and initialize renv
+R -e "install.packages('renv', repos = 'https://cran.rstudio.com')"
+R -s -e "renv::init(bare=TRUE)"  
+R -e 'install.packages(c("RcppParallel", "RcppEigen"))'
+R -e 'install.packages("StanHeaders")'
+R -s -e "renv::restore()"
+R -e 'cmdstanr::install_cmdstan()'
+```
+
+\ Run the analyses:
+```
+Rscript main.R
+# or run main.R from your IDE
 ```
 
 ## Code Overview
