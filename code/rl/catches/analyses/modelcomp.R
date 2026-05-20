@@ -269,7 +269,7 @@ if(!file.exists(file.path(resultsdir, "modelcomp.Rdata"))){
   # Compile models to avoid recompiling 
   models$compiled = sapply(1:length(models$stan.loglik), function(x) cmdstan_model(stan_file = models$stan.loglik[[x]]))
 
-  plan(multisession, workers = max(1L, min(length(models$stan.loglik), floor((max(1L, parallel::detectCores() - 1L)) / max(1L, cores)))))
+  plan(multisession, workers = max(1L, 5L))
 
   # Fit models in parallel
   future_lapply(1:length(models$stan.loglik), function(mfit) {
