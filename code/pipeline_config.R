@@ -99,7 +99,8 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           sessions = 18,
           trials = 12,
           nplayers = 5,
-          durations_vec = c(75)
+          durations_vec = c(75),
+          grid_step = 0.01
         ),
         modelcomp = list(
           chains = 4,
@@ -132,7 +133,8 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           sessions = 18,
           trials = 12,
           nplayers = 5,
-          durations_vec = c(75)
+          durations_vec = c(75),
+          grid_step = 0.01
         ),
         modelcomp = list(
           chains = 4,
@@ -177,7 +179,7 @@ make_pipeline_config <- function(mode = c("full", "test")) {
   test <- list(
     data = list(
       session_max = 2,
-      trial_max = 18
+      trial_max = 36
     ),
     behavioral = list(
       chains = 2,
@@ -200,19 +202,19 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           refresh = 10,
           postpredict_nsim = 5,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
           durations_vec = c(75)
         ),
         parrecov = list(
-          nsim = 2,
+          nsim = 3,
           chains = 2,
           cores = 2,
           iter = 50,
           warmup = 25,
           refresh = 10,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
           durations_vec = c(75)
         ),
@@ -224,7 +226,7 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           warmup = 25,
           refresh = 10,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
           durations_vec = c(75)
         )
@@ -233,9 +235,10 @@ make_pipeline_config <- function(mode = c("full", "test")) {
         numsims = list(
           nsim = 5,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
-          durations_vec = c(75)
+          durations_vec = c(75),
+          grid_step = 0.5
         ),
         modelcomp = list(
           chains = 2,
@@ -245,7 +248,7 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           refresh = 10,
           postpredict_nsim = 5,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
           durations_vec = c(75)
         ),
@@ -257,7 +260,7 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           warmup = 25,
           refresh = 10,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
           durations_vec = c(75)
         )
@@ -266,9 +269,10 @@ make_pipeline_config <- function(mode = c("full", "test")) {
         numsims = list(
           nsim = 5,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
-          durations_vec = c(75)
+          durations_vec = c(75),
+          grid_step = 0.5
         ),
         modelcomp = list(
           chains = 2,
@@ -278,19 +282,19 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           refresh = 10,
           postpredict_nsim = 5,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
           durations_vec = c(75)
         ),
         parrecov = list(
-          nsim = 2,
+          nsim = 3,
           chains = 2,
           cores = 2,
           iter = 50,
           warmup = 25,
           refresh = 10,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
           durations_vec = c(75)
         ),
@@ -302,7 +306,7 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           warmup = 25,
           refresh = 10,
           sessions = 2,
-          trials = 2,
+          trials = 12,
           nplayers = 5,
           durations_vec = c(75)
         )

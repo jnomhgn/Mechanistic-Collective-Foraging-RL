@@ -58,7 +58,63 @@ models = lapply(models, function(x) x[grepl(winner, models$name)])
 
 # Compile 
 models$compiled = sapply(1:length(models$name), function(x)
-  stan_model(file = models$stan[[x]], model_name = models$name[[x]]))
+  cmdstan_model(stan_file = models$stan[[x]]))
+
+collapse_nested_pars <- function(pars) {
+  par.names <- grep("^[^\\[]+\\[[^]]+\\]$", names(pars), value = TRUE)
+  par.bases <- unique(sub("\\[.*$", "", par.names))
+
+  for (base in par.bases) {
+    base_names <- grep(paste0("^", base, "\\[[^]]+\\]$"), par.names, value = TRUE)
+    if (length(base_names) == 0) next
+
+    idx_str <- sub("^.*\\[([^]]+)\\].*$", "\\1", base_names)
+    idx_split <- strsplit(idx_str, ",")
+    is_matrix <- any(lengths(idx_split) > 1)
+
+    if (!is_matrix) {
+      idx <- as.integer(unlist(idx_split))
+      ord <- order(idx)
+      vec <- unlist(pars[base_names], use.names = FALSE)[ord]
+
+      pars[base_names] <- NULL
+      pars[[base]] <- vec
+    } else {
+      rc <- t(sapply(idx_split, function(x) as.integer(x)))
+      nrow <- max(rc[, 1])
+      ncol <- max(rc[, 2])
+
+      mat <- matrix(NA_real_, nrow = nrow, ncol = ncol)
+      vals <- unlist(pars[base_names], use.names = FALSE)
+
+      for (i in seq_along(vals)) {
+        mat[rc[i, 1], rc[i, 2]] <- vals[i]
+      }
+
+      pars[base_names] <- NULL
+      pars[[base]] <- mat
+    }
+  }
+
+  pars
+}
+
+transform_parrecov_draws <- function(draws) {
+  logit_cols <- grep("^logit_", names(draws), value = TRUE)
+
+  for (logit_nm in logit_cols) {
+    nm <- sub("^logit_", "", logit_nm)
+    if (!nm %in% names(draws)) {
+      draws[[nm]] <- plogis(draws[[logit_nm]])
+    }
+  }
+
+  if ("log_betaQ" %in% names(draws) && !"betaQ" %in% names(draws)) {
+    draws$betaQ <- exp(draws$log_betaQ)
+  }
+
+  draws
+}
 
 
 #### Run parameter recovery ####
@@ -100,33 +156,8 @@ for(mod in 1:length(models$name)){
       if(!file.exists(log.file)){file.create(log.file)}
       write(prgrss, log.file, append = TRUE, ncolumns = 1)
       
-      # Check if there are any nested parameters (Shouldn't be the case for non-adaptive models)
-      if(any(sapply(models$free.pars.struct[[mod]], function(x) is.list(x)))){
-        
-        # Get nested lists in models free pars (pars with offsets)
-        indx = sapply(models$free.pars.struct[[mod]], function(x) is.list(x))
-        indx = indx[indx == TRUE]
-        
-        # "Unpack" nested list index to index rl.pars data frame
-        indx.df = lapply(names(indx), function(x) grepl(x, names(rl.pars)))
-        names(indx.df) = names(indx)
-        
-        
-        # Get rl.pars and add to sim pars
-        sim.pars = c(exp.pars, env.pars,
-                     lapply(indx.df, function(x) matrix(data = rl.pars[sim, x], nrow = length(unique(max)))), # nested pars
-                     rl.pars[sim, which(!apply(as.data.frame(indx.df), 1, any))] # non-nested pars
-        )
-        
-        # Unlist individual learning rates
-        if(models$name[[mod]] != "m4.3"){
-          sim.pars$alphaQN = unlist(sim.pars$alphaQN)
-          sim.pars$alphaQP = unlist(sim.pars$alphaQP)
-        }
-      }else{
-        # Get rl.pars and add to sim pars
-        sim.pars = c(exp.pars, env.pars, rl.pars[sim, ])
-      }
+      sim.rl.pars = rl.pars[sim, ] %>% as.list() %>% collapse_nested_pars()
+      sim.pars = c(exp.pars, env.pars, sim.rl.pars)
       
       # Simulate data
       sim.data = f(sim.parameters = sim.pars, postpredict = F, duration.actual = F)
@@ -154,8 +185,8 @@ for(mod in 1:length(models$name)){
       ))
       
       # Fit model
-      fit = sampling(object = models$compiled[[mod]], data = stan.data,
-                     chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+      fit = models$compiled[[mod]]$sample(data = stan.data,
+             chains = chains, parallel_chains = cores, iter_sampling = iter - warmup, iter_warmup = warmup, refresh = refresh)
       
       # # Plot and save some diagnostics
       # diag.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars[[mod]]))
@@ -170,11 +201,8 @@ for(mod in 1:length(models$name)){
       
       fit.sum = fit %>% 
         tidy_draws() %>%
-        reframe(alphaQN = inv_logit_scaled(logit_alphaQN), alphaQP = logit_alphaQP,
-                betaQ = exp(log_betaQ), betaC=betaC,
-                alphaVSDR = inv_logit_scaled(logit_alphaVSDR),
-                sigmaVSDR = inv_logit_scaled(logit_sigmaVSDR)) %>%
-        select(names(models$free.pars.pop[[mod]])) %>%
+        transform_parrecov_draws() %>%
+        select(all_of(names(models$free.pars.pop[[mod]]))) %>%
         pivot_longer(everything(), names_to = "par", values_to = ".mean") %>%
         group_by(par) %>%
         mean_hdci() %>%
@@ -205,20 +233,10 @@ for(mod in 1:length(models$name)){
 
   # Plot only if results do not already exist
   if(!file.exists(file.path(resultsdir, paste(models$name[[mod]], "jpeg", sep = ".")))){
-  
-    labels = c(
-      expression(alpha["Q,-"]),
-      expression(alpha["Q,+"]),
-      expression(beta["Q"]), 
-      expression(beta["C"]),
-      expression(alpha["VSDR"]), 
-      expression(sigma["VSDR"])
-    )
     
     results = results %>%
       mutate(par = factor(par, 
-                          levels = sort(unique(results$par)),
-                          labels = labels)
+                          levels = sort(unique(results$par)))
       )  
     
     p = results %>%
@@ -227,23 +245,12 @@ for(mod in 1:length(models$name)){
       stat_cor(aes(y=.mean, label = after_stat(r.label)), method = "pearson", size=rel(7)) +
       labs(x="\n Generating Parameter Value", y="Estimated Parameter Value \n") +
       theme_linedraw(base_size = 11) +
-      theme(text = element_text(size=rel(5)),
-            strip.text.x = element_text(size=rel(10)),
-            strip.text.y = element_text(size=rel(10)), 
-            axis.text.x = element_text(size=rel(7)),
-            axis.title.x = element_text(size=rel(10)),
-            axis.text.y = element_text(size=rel(7)),
-            axis.title.y = element_text(size=rel(10)),
-            legend.text = element_text(size=rel(7)), 
-            legend.title = element_text(size=rel(7)),
-            plot.title = element_text(hjust = 0.5, size = rel(8)),
-            plot.margin = margin(1,1,1,1, "cm")) +
-      facet_wrap(~ par, scales = "free", , labeller = label_parsed) 
+      facet_wrap(~ par, scales = "free") 
     p
     
     
-        ggexport(p, width = 2560, height = 1440,
-          filename = file.path(resultsdir, paste(models$name[[mod]], "jpeg", sep = ".")))
+    ggexport(p, width = 2560, height = 1440,
+      filename = file.path(resultsdir, paste(models$name[[mod]], "jpeg", sep = ".")))
     print(p)
 
   }else{

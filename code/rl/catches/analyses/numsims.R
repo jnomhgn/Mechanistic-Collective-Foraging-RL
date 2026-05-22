@@ -7,6 +7,8 @@ exp_sessions = get_pipeline_value("rl", "catches", "numsims", "sessions", defaul
 exp_trials = get_pipeline_value("rl", "catches", "numsims", "trials", default = 12)
 exp_nplayers = get_pipeline_value("rl", "catches", "numsims", "nplayers", default = 5)
 exp_durations = get_pipeline_value("rl", "catches", "numsims", "durations_vec", default = c(75))
+grid_step = get_pipeline_value("rl", "catches", "numsims", "grid_step", default = 0.01)
+social_grid = seq(0, 1, by = grid_step)
 
 # Source functions
 dir_functions <- file.path("code", "rl", "catches", "functions")
@@ -128,7 +130,7 @@ if(!file.exists(file.path(resultsdir, "numsims_v1.rds"))){
 
   # Set social learning weights for decision- and reward- based DB and VS 
   srl.pars = c("alphaDBR", "alphaVSR", "alphaVSD", "alphaVSDR", "sigmaVSDR") 
-  srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = 0.01)) %>%
+  srl.pars = sapply(srl.pars, function(x) social_grid) %>%
     `colnames<-`(srl.pars)
   srl.pars[, c("alphaVSD", "alphaVSDR", "sigmaVSDR")] = NA
 
@@ -542,14 +544,14 @@ if(!file.exists(file.path(resultsdir, "numsims_v2.rds"))){
         dplyr::mutate(alphaVSD = list(srl.pars.nocatches$alphaVSD))
       rl.pars.catches[c("alphaDBR", "alphaVSR", "alphaVSDR", "sigmaVSDR")] = NA
     }else if(models$name[[mod]] == "vsndbr2.fixed"){
-      alphaDBR.seq = seq(0, 1, by = .01)
+      alphaDBR.seq = social_grid
       vsndbr.pars.catches = tibble(sapply(alphaDBR.seq, function(x) list(matrix(x, nrow = length(unique(max)), ncol = length(unique(ratio)))))) %>% `colnames<-`("alphaDBR")
       rl.pars.catches = as_tibble(lapply(srl.pars.nocatches[-which(names(srl.pars.nocatches) %in% c("alphaVSD"))], function(x) x[1])) %>%
         dplyr::mutate(alphaVSD = list(srl.pars.nocatches$alphaVSD)) %>%
         bind_cols(vsndbr.pars.catches)
       rl.pars.catches[c("alphaVSR", "alphaVSDR", "sigmaVSDR")] = NA
     }else{
-      vsnvsr.pars.catches = expand.grid(alphaVSDR = seq(0, 1, by = .01), sigmaVSDR = seq(0, 1, by = .01))
+      vsnvsr.pars.catches = expand.grid(alphaVSDR = social_grid, sigmaVSDR = social_grid)
       rl.pars.catches = as_tibble(lapply(srl.pars.nocatches[-which(names(srl.pars.nocatches) %in% c("alphaVSD"))], function(x) x[1])) %>%
         bind_cols(vsnvsr.pars.catches)
       rl.pars.catches[c("alphaDBR", "alphaVSR", "alphaVSD")] = NA

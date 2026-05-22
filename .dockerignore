@@ -1,0 +1,15 @@
+# Ignore renv project libraries and cache
+renv/library
+renv/library/**
+renv/cache
+
+# Project workspace cruft
+.Rproj.user
+.Rhistory
+.RData
+.Renviron
+.Rprofile
+
+# Ignore local result/data mounts (handle at runtime instead)
+results
+data
