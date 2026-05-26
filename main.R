@@ -34,7 +34,7 @@ options(future.globals.maxSize = 1.0 * 1e9)
 
 # Pipeline configuration
 source(file.path("code", "pipeline_config.R"))
-pipeline_mode <- "test" # "full" or "test"
+pipeline_mode <- "full" # "full" or "test"
 options(
 	pipeline_mode = pipeline_mode,
 	pipeline_config = make_pipeline_config(pipeline_mode)
