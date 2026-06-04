@@ -102,11 +102,6 @@ generated quantities {
   array[ID] real<lower=0, upper=1> idalphaDBDR;
   real<lower=0, upper=1> sigmaDBDR;
   array[ID] real<lower=0, upper=1> idsigmaDBDR;
-  betaQ = exp(log_betaQ);
-  alphaQN = inv_logit(logit_alphaQN);
-  alphaQP = inv_logit(logit_alphaQP);
-  alphaDBDR = inv_logit(logit_alphaDBDR);
-  sigmaDBDR = inv_logit(logit_sigmaDBDR);
   for (i in 1 : ID) {
     idalphaQN[i] = inv_logit(logit_alphaQN + idoffset[i, 1]);
     idalphaQP[i] = inv_logit(logit_alphaQP + idoffset[i, 2]);
@@ -115,6 +110,11 @@ generated quantities {
     idalphaDBDR[i] = inv_logit(logit_alphaDBDR + idoffset[i, 5]);
     idsigmaDBDR[i] = inv_logit(logit_sigmaDBDR + idoffset[i, 6]);
   }
+  alphaQN = mean(idalphaQN);
+  alphaQP = mean(idalphaQP);
+  betaQ = mean(idbetaQ);
+  alphaDBDR = mean(idalphaDBDR);
+  sigmaDBDR = mean(idsigmaDBDR);
   Rho = cholesky * cholesky';
   vector[OBSERVATIONS] log_lik;
   vector[DECISIONS] Q;

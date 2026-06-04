@@ -106,15 +106,6 @@ generated quantities {
   array[ID] matrix[MAXIMUM, RATIO] idalphaVSD;
   array[MAXIMUM, RATIO] real<lower=0, upper=1> alphaDBR;
   array[ID] matrix<lower=0, upper=1>[MAXIMUM, RATIO] idalphaDBR;
-  betaQ = exp(log_betaQ);
-  alphaQN = inv_logit(logit_alphaQN);
-  alphaQP = inv_logit(logit_alphaQP);
-  for (m in 1 : MAXIMUM) {
-    for (r in 1 : RATIO) {
-      alphaVSD[m, r] = inv_logit(logit_alphaVSD[m, r]);
-      alphaDBR[m, r] = inv_logit(logit_alphaDBR[m, r]);
-    }
-  }
   for (i in 1 : ID) {
     idalphaQN[i] = inv_logit(logit_alphaQN + idoffset[i, 1]);
     idalphaQP[i] = inv_logit(logit_alphaQP + idoffset[i, 2]);
@@ -125,6 +116,21 @@ generated quantities {
         idalphaVSD[i, m, r] = inv_logit(logit_alphaVSD[m, r] + idoffset[i, 5]);
         idalphaDBR[i, m, r] = inv_logit(logit_alphaDBR[m, r] + idoffset[i, 6]);
       }
+    }
+  }
+  alphaQN = mean(idalphaQN);
+  alphaQP = mean(idalphaQP);
+  betaQ = mean(idbetaQ);
+  for (m in 1 : MAXIMUM) {
+    for (r in 1 : RATIO) {
+      real accumulatedVSD = 0;
+      real accumulatedDBR = 0;
+      for (i in 1 : ID) {
+        accumulatedVSD += idalphaVSD[i, m, r];
+        accumulatedDBR += idalphaDBR[i, m, r];
+      }
+      alphaVSD[m, r] = accumulatedVSD / ID;
+      alphaDBR[m, r] = accumulatedDBR / ID;
     }
   }
   Rho = cholesky * cholesky';

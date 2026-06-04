@@ -64,13 +64,13 @@ generated quantities {
   real<lower=0> betaQ;
   array[ID] real<lower=0> idbetaQ;
   array[ID] real idbetaC;
-  alphaQ = inv_logit(logit_alphaQ);
-  betaQ = exp(log_betaQ);
   for (i in 1 : ID) {
     idalphaQ[i] = inv_logit(logit_alphaQ + idoffset[i, 1]);
     idbetaQ[i] = exp(log_betaQ + idoffset[i, 2]);
     idbetaC[i] = betaC + idoffset[i, 3];
   }
+  alphaQ = mean(idalphaQ);
+  betaQ = mean(idbetaQ);
   Rho = cholesky * cholesky';
   vector[OBSERVATIONS] log_lik;
   vector[DECISIONS] Q;

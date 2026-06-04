@@ -255,13 +255,46 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "modelcomp.Rdat
 if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_acctime.csv")) &
   !file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_acc.csv"))){
 
+  # Number of times each experiment is simulated
+  nsim = postpredict_nsim
+
+  # Winning model (shared by both prediction blocks below). Edit if needed
+  winner = "m4.1"
+
+  # Load fit
+  fit = readRDS(file.path("results", "rl", "alone", "modelcomp", paste(winner, "fit", "rds", sep = ".")))
+
+  # Index winning model in the fixed-effects model list (used for simulation)
+  winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
+  models = getmodels(hierarch = F)
+  winnerindx = grep(paste0("^", winner), unlist(models$name))
+
+  # Extract draws and population means (mean of back-transformed individual-level estimates)
+  draws = tidy_draws(fit)
+  vn = colnames(draws)
+  pop.names = names(models$free.pars[winnerindx][[1]])
+  extract.mean = function(popname){
+    base  = sub("\\[.*$", "", popname)     # e.g. "alphaVSD"
+    inner = sub("^[^\\[]*", "", popname)    # ""  or  "[m,r]"
+    idcols = if (inner == "") {
+      grep(paste0("^id", base, "\\["), vn, value = TRUE)                       # idX[i]
+    } else {
+      inner = gsub("\\[|\\]", "", inner)                                       # "m,r"
+      grep(sprintf("^id%s\\[[0-9]+,%s\\]$", base, inner), vn, value = TRUE)    # idX[i,m,r]
+    }
+    if (length(idcols) == 0) return(mean(draws[[popname]]))   # no random effect: fall back to scalar
+    mean(as.matrix(draws[, idcols]))
+  }
+  rl.pars = vapply(pop.names, extract.mean, numeric(1))
+  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
+
+  # Simulation function (shared by both prediction blocks below)
+  f = get(models$sim[[winnerindx]])
+
   # Posterior predictions for Accuracy over time
 
   # Get initial distribution of players from data
   decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision)
-
-  # Number of times experiments are simulated from each model
-  nsim=postpredict_nsim
 
   # Experimental parameters (identical for all simulations)
   exp.pars = list(
@@ -280,25 +313,7 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_ac
   env.pars = expand.grid(max=max, ratio=ratio)
   env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 
-  # Set the winning model / the best, simplest model. Edit if needed
-  winner = "m4.1"
-
-  # Load fit
-  fit = readRDS(file.path("results", "rl", "alone", "modelcomp", paste(winner, "fit", "rds", sep = ".")))
-
-  # Get and index winning model in fixed effects model lsit (used for simulation)
-  winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
-  models = getmodels(hierarch = F)
-  winnerindx = grep(paste0("^", winner), unlist(models$name))
-
-  # Extract draws
-  draws = tidy_draws(fit)
-  rl.pars = draws[, names(draws) %in% names(models$free.pars[winnerindx][[1]])] 
-  rl.pars = apply(rl.pars, 2, mean)
-  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
-
   # Prep simulation
-  f = get(models$sim[[winnerindx]])
   sim.pars = c(exp.pars, env.pars, rl.pars, decfreq.init=list(decfreq.init))
 
   # Simulate
@@ -365,9 +380,6 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_ac
   # Get initial distribution of players from data and actual duration - environment combination
   decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, session, max, max.fac, ratio, ratio.fac, decision, duration)
 
-  # Number of times experiments were simulated from each model
-  nsim=postpredict_nsim
-
   # Experimental parameters (identical for all simulations)
   exp.pars = list(
     sessions = exp_sessions,
@@ -377,25 +389,7 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_ac
   # Add unique ids for players (rows are sessions)
   exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
 
-  # Set the winning model / the best, simplest model
-  winner = "m4.1"
-
-  # Load fit
-  fit = readRDS(file.path("results", "rl", "alone", "modelcomp", paste(winner, "fit", "rds", sep = ".")))
-
-  # Get and index winning model in fixed effects model lsit (used for simulation)
-  winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
-  models = getmodels(hierarch = F)
-  winnerindx = grep(paste0("^", winner), unlist(models$name))
-
-  # Extract draws
-  draws = tidy_draws(fit)
-  rl.pars = draws[, names(draws) %in% names(models$free.pars[winnerindx][[1]])] 
-  rl.pars = apply(rl.pars, 2, mean)
-  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
-
   # Prep simulation
-  f = get(models$sim[[winnerindx]])
   sim.pars = c(exp.pars, rl.pars, decfreq.init= list(decfreq.init))
 
   # Simulate

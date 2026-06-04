@@ -335,8 +335,23 @@ if(!file.exists(file.path(resultsdir, "postpredict_acctime.csv")) &
 
   # Extract draws
   draws = tidy_draws(fit)
-  rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[winnerindx][[1]])] 
-  rl.pars = apply(rl.pars, 2, mean)
+  vn = colnames(draws)
+  pop.names = names(models$free.pars.pop[winnerindx][[1]])
+
+  # Extract mean of the back-transformed (native-scale) individual-level estimates
+  extract.mean = function(popname){
+    base  = sub("\\[.*$", "", popname)     # e.g. "alphaVSD"
+    inner = sub("^[^\\[]*", "", popname)    # ""  or  "[m,r]"
+    idcols = if (inner == "") {
+      grep(paste0("^id", base, "\\["), vn, value = TRUE)                       # idX[i]
+    } else {
+      inner = gsub("\\[|\\]", "", inner)                                       # "m,r"
+      grep(sprintf("^id%s\\[[0-9]+,%s\\]$", base, inner), vn, value = TRUE)    # idX[i,m,r]
+    }
+    if (length(idcols) == 0) return(mean(draws[[popname]]))   # no random effect: fall back to scalar
+    mean(as.matrix(draws[, idcols]))
+  }
+  rl.pars = vapply(pop.names, extract.mean, numeric(1))
   rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
 
   # Extract columns with environment-specific social learning weights and put in matrix.
@@ -361,7 +376,7 @@ if(!file.exists(file.path(resultsdir, "postpredict_acctime.csv")) &
         par.mat[row, col] <- rl.pars[par.names.subset[i]][[1]]
       }
 
-      # Remove alphaVSD entries from rl.pars and rename matrix
+      # Remove environment-varying entries from rl.pars and rename matrix
       rl.pars = rl.pars[!names(rl.pars) %in% par.names.subset]
       par.name = unique(sub("\\[.*$", "", par.names.subset))
 
