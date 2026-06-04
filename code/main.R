@@ -107,11 +107,11 @@ print("Running parameter recovery for catches condition...")
 source(file.path("code", "rl", "catches", "analyses", "parrecov.R"))
 rm(list = ls())
 
-# #### Create figures ####
+#### Create figures ####
 
-# # Plot figures
-# print("Creating figures...")
-# source_python(file.path("figures", "code", "figures.py"))
+# Plot figures
+print("Creating figures...")
+source_python(file.path("code", "figures", "figures.py"))
 
 #### Run model recovery for all conditions at the end due to computation time ####
 
