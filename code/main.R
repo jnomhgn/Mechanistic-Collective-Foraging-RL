@@ -1,7 +1,6 @@
 #### Setup #####
 
-# Set path to project root if necessary
-getwd() 
+setwd(here::here())
 
 # Load libraries
 library(knitr)

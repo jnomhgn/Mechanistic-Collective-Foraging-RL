@@ -59,11 +59,11 @@ RUN R -s -e "renv::restore()"
 RUN R -e 'cmdstanr::install_cmdstan()'
 
 # Copy remaining project files
-COPY main.R ./main.R
+COPY .here ./.here
 COPY code ./code
 
 # Remove any precompiled CmdStan model executables that may have been copied from the host.
 RUN find code -type f -path '*/stan/*' ! -name '*.stan' -exec rm -f {} + || true
 
 # Run the main.R script
-CMD ["Rscript", "main.R"]
+CMD ["Rscript", "code/main.R"]
