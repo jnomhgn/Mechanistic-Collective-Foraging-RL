@@ -3,6 +3,8 @@ This repository contains the full data and scripts to reproduce all analyses and
 
 **Marienhagen, J, Blum Moyse, L., Schakowski, A., Kahl, B., Davidson, J., El Hady, A., Kurvers, R. & Deffner, D. (2025). *Bridging drift-diffusion and reinforcement-learning modeling to uncover the cognitive processes underlying collective foraging.* [Manuscript submitted for publication].**
 
+Previous versions of the code are available under [Releases](https://github.com/jnomhgn/Mechanistic-Collective-Foraging-DDM-RLM/releases).
+
 ## Code Execution
 
 ### With Docker
