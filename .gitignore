@@ -2,17 +2,17 @@
 .Rhistory
 .RData
 .Ruserdata
+.Rprofile
+Rplots.pdf
+
+renv
+activate.R
+
+results/
 
 
-behavioral/results
-rl/results
-bayesianforager/results
-
-asocial/results
-social/results
 
 **/__pycache__
-/ddm/**/*.csv
 
 *.rds
 *png
@@ -20,3 +20,11 @@ social/results
 *db
 *.DS_Store
 *.npy
+
+# Ignore cmdstanr executables
+code/rl/alone/stan/*
+!code/rl/alone/stan/*.stan
+code/rl/nocatches/stan/*
+!code/rl/nocatches/stan/*.stan
+code/rl/catches/stan/*
+!code/rl/catches/stan/*.stan
