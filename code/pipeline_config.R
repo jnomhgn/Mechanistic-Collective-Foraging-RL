@@ -252,6 +252,18 @@ make_pipeline_config <- function(mode = c("full", "test")) {
           nplayers = 5,
           durations_vec = c(75)
         ),
+        parrecov = list(
+          nsim = 3,
+          chains = 2,
+          cores = 2,
+          iter = 50,
+          warmup = 25,
+          refresh = 10,
+          sessions = 2,
+          trials = 12,
+          nplayers = 5,
+          durations_vec = c(75)
+        ),
         modelrecov = list(
           nsim = 2,
           chains = 1,

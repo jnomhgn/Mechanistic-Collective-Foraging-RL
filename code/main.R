@@ -89,6 +89,10 @@ print("Running model comparison for no catches condition...")
 source(file.path("code", "rl", "nocatches", "analyses", "modelcomp.R"))
 rm(list = ls())
 
+# Run parameter recovery
+print("Running parameter recovery for no catches condition...")
+source(file.path("code", "rl", "nocatches", "analyses", "parrecov.R"))
+rm(list = ls())
 
 #### Catches condition ####
 
