@@ -269,11 +269,17 @@ if(!file.exists(file.path(resultsdir, "modelcomp.Rdata"))){
   # Compile models to avoid recompiling 
   models$compiled = sapply(1:length(models$stan.loglik), function(x) cmdstan_model(stan_file = models$stan.loglik[[x]]))
 
+  plan(sequential)
   plan(multisession, workers = max(1L, 5L))
 
-  # Fit models in parallel
+  # Fit models in parallel, skipping any that already have a saved fit
   future_lapply(1:length(models$stan.loglik), function(mfit) {
-    fitmodel(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh)
+    fit.file = file.path(resultsdir, paste(models$name[[mfit]], "fit", "rds", sep = "."))
+    if (!file.exists(fit.file)) {
+      fitmodel(mfit, models, stan.data.d, chains, cores, iter, warmup, refresh)
+    } else {
+      print(paste("Fit already exists for", models$name[[mfit]], "- skipping."))
+    }
   }, future.seed = TRUE)
   plan(sequential)
 
