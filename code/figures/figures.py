@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from matplotlib.legend_handler import HandlerTuple
@@ -614,3 +615,102 @@ cbar.ax.tick_params(labelsize=10)
 cbar.ax.set_title('Mean\nAccuracy\nDifference', fontsize=10)
 fig.set_size_inches(15, 8)
 fig.savefig(os.path.join(resultsdir, 'Fig6.pdf'), bbox_inches='tight')
+
+
+
+
+####
+#### FigS2. -- Simulated accuracy and switch rate differences over time, no catches (DB and VS models) ####
+####
+
+df_acctime_nc    = pandas.read_csv(os.path.join('results', 'rl', 'nocatches', 'numsims', 'acctimediff.csv'))
+df_switchtime_nc = pandas.read_csv(os.path.join('results', 'rl', 'nocatches', 'numsims', 'switchtimediff.csv'))
+
+alpha_levels = np.sort(df_acctime_nc['alphaS'].unique())
+time_bins    = np.arange(0, 76, 1)
+
+norm   = mcolors.Normalize(vmin=np.min(alpha_levels), vmax=np.max(alpha_levels))
+colors = cmap_fig6(np.linspace(0, 1, len(alpha_levels)))
+s_map  = plt.cm.ScalarMappable(norm=norm, cmap=cmap_fig6)
+
+fig = plt.figure(figsize=(15, 11))
+gs = GridSpec(2, 2, figure=fig, hspace=0.1, wspace=0.1)
+gs_acc_db    = GridSpecFromSubplotSpec(4, 3, subplot_spec=gs[0, 0], hspace=0.05, wspace=0.05)
+gs_acc_vs    = GridSpecFromSubplotSpec(4, 3, subplot_spec=gs[0, 1], hspace=0.05, wspace=0.05)
+gs_switch_db = GridSpecFromSubplotSpec(4, 3, subplot_spec=gs[1, 0], hspace=0.05, wspace=0.05)
+gs_switch_vs = GridSpecFromSubplotSpec(4, 3, subplot_spec=gs[1, 1], hspace=0.05, wspace=0.05)
+ax_acc_db    = np.array([[fig.add_subplot(gs_acc_db[i, j])    for j in range(3)] for i in range(4)])
+ax_acc_vs    = np.array([[fig.add_subplot(gs_acc_vs[i, j])    for j in range(3)] for i in range(4)])
+ax_switch_db = np.array([[fig.add_subplot(gs_switch_db[i, j]) for j in range(3)] for i in range(4)])
+ax_switch_vs = np.array([[fig.add_subplot(gs_switch_vs[i, j]) for j in range(3)] for i in range(4)])
+
+for ax_db, ax_vs, df, col_delta, ylim_val, ytick_vals, is_top in [
+        (ax_acc_db,    ax_acc_vs,    df_acctime_nc,    'acc.delta',    (-0.6, 0.3),   [-0.4, -0.1, 0.2], True),
+        (ax_switch_db, ax_switch_vs, df_switchtime_nc, 'switch.delta', (-0.25, 0.45), [-0.2, 0.0,  0.2], False),
+]:
+        for ax, model in [(ax_db, 'dbn1.fixed'), (ax_vs, 'vsn1.fixed')]:
+                indc = np.where(df['model'] == model)[0]
+
+                for i_max, max_val in enumerate(max):
+                        if is_top:
+                                ax[0, i_max].set_title('Max catch ' + str(max_val), fontsize=7)
+                        indp = np.where(df['max'] == max_val)[0]
+                        ind  = np.intersect1d(indc, indp)
+
+                        for i_ratio, ratio_val in enumerate(ratio):
+                                indr = np.where(df['ratio'] == ratio_val)[0]
+                                ind1 = np.intersect1d(ind, indr)
+
+                                if ax is ax_vs:
+                                        ax[i_ratio, -1].yaxis.set_label_position("right")
+                                        ax[i_ratio, -1].set_ylabel('Catch ratio ' + str(ratio_val), fontsize=7, rotation=270, labelpad=12)
+
+                                for i_alpha, alpha_val in enumerate(alpha_levels):
+                                        indk = np.where(df['alphaS'] == alpha_val)[0]
+                                        ind2 = np.intersect1d(ind1, indk)
+                                        ax[i_ratio, i_max].plot(time_bins, df[col_delta][ind2].to_numpy(), color=colors[i_alpha])
+
+                                ax[i_ratio, i_max].axhline(0, linestyle='--', color='k', alpha=0.7)
+                                ax[i_ratio, i_max].set_ylim(*ylim_val)
+                                ax[i_ratio, i_max].set_yticks(ytick_vals)
+                                ax[i_ratio, i_max].set_xlim(-1, 76)
+                                ax[i_ratio, i_max].set_xticks([0, 20, 40, 60])
+                                ax[i_ratio, i_max].tick_params(labelsize=7)
+
+                                if max_val > 0.5 or ax is ax_vs:
+                                        ax[i_ratio, i_max].tick_params(left=False, labelleft=False)
+                                if i_ratio < 3 or is_top:
+                                        ax[i_ratio, i_max].tick_params(bottom=False, labelbottom=False)
+
+ax_switch_db[3, 1].set_xlabel('t (s)', fontsize=13)
+ax_switch_vs[3, 1].set_xlabel('t (s)', fontsize=13)
+
+fig.canvas.draw()
+
+pos_acc_db_top = ax_acc_db[0, 0].get_position()
+pos_acc_db_bot = ax_acc_db[-1, 0].get_position()
+fig.text(pos_acc_db_bot.x0 - 0.04, (pos_acc_db_top.y1 + pos_acc_db_bot.y0) / 2,
+         'Accuracy Difference', fontsize=13, va='center', ha='right', rotation=90)
+
+pos_switch_db_top = ax_switch_db[0, 0].get_position()
+pos_switch_db_bot = ax_switch_db[-1, 0].get_position()
+fig.text(pos_switch_db_bot.x0 - 0.04, (pos_switch_db_top.y1 + pos_switch_db_bot.y0) / 2,
+         'Switch Rate Difference', fontsize=13, va='center', ha='right', rotation=90)
+
+for ax_top, col_label in [(ax_acc_db, 'DB'), (ax_acc_vs, 'VS')]:
+        pos_tl = ax_top[0, 0].get_position()
+        pos_tr = ax_top[0, -1].get_position()
+        fig.text((pos_tl.x0 + pos_tr.x1) / 2, pos_tr.y1 + 0.04, col_label,
+                 va='bottom', ha='center', fontsize=13)
+
+pos_l_top = ax_acc_db[0, 0].get_position()
+pos_r_top = ax_acc_vs[0, -1].get_position()
+cbar_width = (pos_r_top.x1 - pos_l_top.x0) * 0.3
+cbar_left  = (pos_l_top.x0 + pos_r_top.x1) / 2 - cbar_width / 2
+cbar_ax = fig.add_axes([cbar_left, pos_r_top.y1 + 0.08, cbar_width, 0.015])
+cbar = fig.colorbar(s_map, cax=cbar_ax, orientation='horizontal')
+cbar.ax.tick_params(labelsize=7)
+cbar.ax.set_title(r'$\alpha_{VSl}$ / $\alpha_{DBl}$', fontsize=13)
+
+fig.set_size_inches(15, 11)
+fig.savefig(os.path.join(resultsdir, 'FigS2.pdf'), bbox_inches='tight')
