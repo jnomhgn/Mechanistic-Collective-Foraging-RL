@@ -186,8 +186,8 @@ if(!file.exists(file.path(resultsdir, "numsims_v1.rds"))){
   results = lapply(results, function(x) bind_rows(x))
   saveRDS(results, file = file.path(resultsdir, "numsims_v1.rds"))
   
-}else{
-  print("Results from numerical simulations for v1 already exist. Skipping simulations.")
+}else if(!file.exists(file.path(resultsdir, "accdiff_v1.csv"))){
+  print("Results from numerical simulations for v1 already exist. Loading results.")
   results = readRDS(file = file.path(resultsdir, "numsims_v1.rds"))
 }
 
@@ -590,7 +590,7 @@ if(!file.exists(file.path(resultsdir, "numsims_v2.rds"))){
   results = lapply(results, function(x) bind_rows(x))
   saveRDS(results, file = file.path(resultsdir, "numsims_v2.rds"))
   
-}else{
+}else if(!file.exists(file.path(resultsdir, "accdiff_v2_vsndbr.jpeg")) | !file.exists(file.path(resultsdir, "accdiff_v2_vsnvsr.jpeg"))){
   print("Results from numerical simulations for v2 already exist. Loading results.")
   results = readRDS(file = file.path(resultsdir, "numsims_v2.rds"))
 }
