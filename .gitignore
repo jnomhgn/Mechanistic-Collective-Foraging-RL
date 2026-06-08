@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 .Rprofile
+Rplots.pdf
 
 renv
 activate.R
