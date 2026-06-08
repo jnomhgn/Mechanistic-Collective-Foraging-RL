@@ -58,12 +58,17 @@ RUN R -s -e "renv::restore()"
 # Install cmdstan
 RUN R -e 'cmdstanr::install_cmdstan()'
 
-# Copy remaining project files
-COPY .here ./.here
-COPY code ./code
+# Copy Stan source files and compile in a dedicated layer.
+COPY code/rl/alone/stan ./code/rl/alone/stan
+COPY code/rl/catches/stan ./code/rl/catches/stan
+COPY code/rl/nocatches/stan ./code/rl/nocatches/stan
+COPY code/compile_stan.R ./code/compile_stan.R
+RUN Rscript code/compile_stan.R
 
-# Remove any precompiled CmdStan model executables that may have been copied from the host.
-RUN find code -type f -path '*/stan/*' ! -name '*.stan' -exec rm -f {} + || true
+# Copy remaining project files. 
+COPY .here ./.here
+COPY .renvignore ./.renvignore
+COPY code ./code
 
 # Run the main.R script
 CMD ["Rscript", "code/main.R"]

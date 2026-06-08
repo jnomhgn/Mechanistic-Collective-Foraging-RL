@@ -13,3 +13,6 @@ renv/cache
 # Ignore local result/data mounts (handle at runtime instead)
 results
 data
+
+# Windows-compiled Stan executables (incompatible with Linux image)
+code/**/stan/*.exe
