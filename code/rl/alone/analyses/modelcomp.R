@@ -84,10 +84,9 @@ modelfit <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, ref
   sink.depth = sink.number()
   sink(log.file, append = T)
   on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
-  fit = sampling(object = models$compiled[[mfit]], data = stan.data.d,
-                  chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+  fit = models$compiled[[mfit]]$sample(data = stan.data.d, chains = chains, parallel_chains = cores, iter_sampling = iter - warmup, iter_warmup = warmup, refresh = refresh)
   while (sink.number() > sink.depth) sink()
-  saveRDS(fit, file.path("results", "rl", "alone", "modelcomp", paste(models$name[[mfit]], "fit", "rds", sep = ".")))
+  fit$save_object(file = file.path("results", "rl", "alone", "modelcomp", paste(models$name[[mfit]], "fit", "rds", sep = ".")))
 
   # Plot some diagnostics for population means
   diagnostics.list = diagnostics.plot(model.fit = fit, plot.pars = names(models$free.pars.pop[[mfit]]))
@@ -106,12 +105,12 @@ modelfit <- function(mfit, models, stan.data.d, chains, cores, iter, warmup, ref
                                                     "divergent__",   "energy__"))]
   par.names = par.names[!grepl("log_lik", par.names)]
   for (param in par.names) {
-    tplot <- traceplot(fit, pars = param) + ggtitle(paste("Trace plot for", param))
+    tplot <- traceplot_cmd(fit, pars = param) + ggplot2::ggtitle(paste("Trace plot for", param))
     ggsave(file.path("results", "rl", "alone", "modelcomp", "diagnostics", "detailed", models$name[[mfit]],  paste0("traceplot_", param, ".png")), tplot)
   }
 
   # Save diagnostics for all parameters
-  fit.summary = summary(fit)$summary
+  fit.summary = fit_summary_cmd(fit)
   write.csv(fit.summary, file = file.path("results", "rl", "alone", "modelcomp", "diagnostics",
                                   paste(models$name[[mfit]], "diagnostics", "csv",  sep = ".")))
 
@@ -154,18 +153,22 @@ computeloo <- function(models, stan.data){
      
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
-    ll = extract_log_lik(fit, parameter_name = "log_lik", merge_chains = FALSE) 
+    ll = extract_log_lik_cmd(fit, parameter_name = "log_lik", merge_chains = FALSE) 
      
     # Drop log likelihood of observations where time == 0
     indx = which(stan.data$time != 0, arr.ind = T)
     ll = ll[, , indx]
 
     # Compute relative effect sample sizes
-    r_eff = relative_eff(exp(ll), cores = 1)
+    if(length(dim(ll)) == 2){
+      r_eff = loo::relative_eff(exp(ll), cores = 1, chain_id = rep(1L, nrow(ll)))
+    }else{
+      r_eff = loo::relative_eff(exp(ll), cores = 1)
+    }
 
     # Compute psis loo
     loo.model = paste("loo", mfit, sep = ".")
-    assign(loo.model, loo(ll, r_eff = r_eff, cores = 1))
+    assign(loo.model, loo::loo(ll, r_eff = r_eff, cores = 1))
     remove(ll)
 
     # Save diagnostics
@@ -189,7 +192,7 @@ computeloo <- function(models, stan.data){
    }
   
   # Compare models
-  comparison = loo_compare(results)
+  comparison = loo::loo_compare(results)
 
   # Add model name
   comparison = as.data.frame(comparison)
@@ -215,7 +218,7 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "modelcomp.Rdat
   models = getmodels(hierarch = T)
 
   # Compile models to avoid recompiling
-  models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
+  models$compiled = sapply(1:length(models$stan.loglik), function(x) cmdstan_model(stan_file = models$stan.loglik[[x]]))
 
   # Results list
   results = list()
@@ -252,13 +255,46 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "modelcomp.Rdat
 if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_acctime.csv")) &
   !file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_acc.csv"))){
 
+  # Number of times each experiment is simulated
+  nsim = postpredict_nsim
+
+  # Winning model (shared by both prediction blocks below). Edit if needed
+  winner = "m4.1"
+
+  # Load fit
+  fit = readRDS(file.path("results", "rl", "alone", "modelcomp", paste(winner, "fit", "rds", sep = ".")))
+
+  # Index winning model in the fixed-effects model list (used for simulation)
+  winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
+  models = getmodels(hierarch = F)
+  winnerindx = grep(paste0("^", winner), unlist(models$name))
+
+  # Extract draws and population means (mean of back-transformed individual-level estimates)
+  draws = tidy_draws(fit)
+  vn = colnames(draws)
+  pop.names = names(models$free.pars[winnerindx][[1]])
+  extract.mean = function(popname){
+    base  = sub("\\[.*$", "", popname)     # e.g. "alphaVSD"
+    inner = sub("^[^\\[]*", "", popname)    # ""  or  "[m,r]"
+    idcols = if (inner == "") {
+      grep(paste0("^id", base, "\\["), vn, value = TRUE)                       # idX[i]
+    } else {
+      inner = gsub("\\[|\\]", "", inner)                                       # "m,r"
+      grep(sprintf("^id%s\\[[0-9]+,%s\\]$", base, inner), vn, value = TRUE)    # idX[i,m,r]
+    }
+    if (length(idcols) == 0) return(mean(draws[[popname]]))   # no random effect: fall back to scalar
+    mean(as.matrix(draws[, idcols]))
+  }
+  rl.pars = vapply(pop.names, extract.mean, numeric(1))
+  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
+
+  # Simulation function (shared by both prediction blocks below)
+  f = get(models$sim[[winnerindx]])
+
   # Posterior predictions for Accuracy over time
 
   # Get initial distribution of players from data
   decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, max, max.fac, ratio, ratio.fac, decision)
-
-  # Number of times experiments are simulated from each model
-  nsim=postpredict_nsim
 
   # Experimental parameters (identical for all simulations)
   exp.pars = list(
@@ -277,25 +313,7 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_ac
   env.pars = expand.grid(max=max, ratio=ratio)
   env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 
-  # Set the winning model / the best, simplest model. Edit if needed
-  winner = "m4.1"
-
-  # Load fit
-  fit = readRDS(file.path("results", "rl", "alone", "modelcomp", paste(winner, "fit", "rds", sep = ".")))
-
-  # Get and index winning model in fixed effects model lsit (used for simulation)
-  winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
-  models = getmodels(hierarch = F)
-  winnerindx = grep(paste0("^", winner), unlist(models$name))
-
-  # Extract draws
-  draws = tidy_draws(fit)
-  rl.pars = draws[, names(draws) %in% names(models$free.pars[winnerindx][[1]])] 
-  rl.pars = apply(rl.pars, 2, mean)
-  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
-
   # Prep simulation
-  f = get(models$sim[[winnerindx]])
   sim.pars = c(exp.pars, env.pars, rl.pars, decfreq.init=list(decfreq.init))
 
   # Simulate
@@ -362,9 +380,6 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_ac
   # Get initial distribution of players from data and actual duration - environment combination
   decfreq.init = d %>% filter(time.rounded == 0) %>% select(id, session, max, max.fac, ratio, ratio.fac, decision, duration)
 
-  # Number of times experiments were simulated from each model
-  nsim=postpredict_nsim
-
   # Experimental parameters (identical for all simulations)
   exp.pars = list(
     sessions = exp_sessions,
@@ -374,25 +389,7 @@ if(!file.exists(file.path("results", "rl", "alone", "modelcomp", "postpredict_ac
   # Add unique ids for players (rows are sessions)
   exp.pars$id = with(exp.pars, matrix(1:(sessions*nplayers), ncol=nplayers, byrow = T))
 
-  # Set the winning model / the best, simplest model
-  winner = "m4.1"
-
-  # Load fit
-  fit = readRDS(file.path("results", "rl", "alone", "modelcomp", paste(winner, "fit", "rds", sep = ".")))
-
-  # Get and index winning model in fixed effects model lsit (used for simulation)
-  winner = gsub(pattern = ".hierarch", replacement = "", x = winner)
-  models = getmodels(hierarch = F)
-  winnerindx = grep(paste0("^", winner), unlist(models$name))
-
-  # Extract draws
-  draws = tidy_draws(fit)
-  rl.pars = draws[, names(draws) %in% names(models$free.pars[winnerindx][[1]])] 
-  rl.pars = apply(rl.pars, 2, mean)
-  rl.pars = append(rl.pars, models$fixed.pars[winnerindx][[1]])
-
   # Prep simulation
-  f = get(models$sim[[winnerindx]])
   sim.pars = c(exp.pars, rl.pars, decfreq.init= list(decfreq.init))
 
   # Simulate

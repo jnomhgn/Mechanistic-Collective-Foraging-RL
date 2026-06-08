@@ -44,6 +44,9 @@ models = lapply(models, function(x) x[which(models$name == winner)])
 # Set model index for later
 if(length(models$name) == 1){mod = 1}else{warning("Your list of winning models contains more than one model. Something went wrong!")}
 
+# Compile winning model once for cmdstanr sampling
+models$compiled = sapply(1:length(models$name), function(x) cmdstan_model(stan_file = models$stan[[x]]))
+
 # Experimental parameters (identical for all simulations)
 exp.pars = list(
   sessions = exp_sessions,
@@ -146,8 +149,8 @@ if(!file.exists(file.path("results","rl","alone","parrecov", paste(models$name[[
     ))
 
     # Fit model
-    fit = stan(file = models$stan[[mod]], data = stan.data,
-               chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
+    fit = models$compiled[[mod]]$sample(data = stan.data,
+           chains = chains, parallel_chains = cores, iter_sampling = iter - warmup, iter_warmup = warmup, refresh = refresh)
 
     # Summarise posterior
     # Get generating parameters

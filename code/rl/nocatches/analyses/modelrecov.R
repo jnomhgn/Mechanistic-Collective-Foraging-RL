@@ -19,10 +19,9 @@ function.list = file.path(dir_functions, list.files(dir_functions))
 sapply(function.list, source, .GlobalEnv)
 
 # Setup directories
-if(!dir.exists(file.path("results", "rl", "nocatches", "modelrecov", "diagnostics", "detailed"))){
-  dir.create(file.path("results", "rl", "nocatches", "modelrecov", "diagnostics", "detailed"), recursive = TRUE)
+if(!dir.exists(file.path("results", "rl", "nocatches", "modelrecov"))){
+  dir.create(file.path("results", "rl", "nocatches", "modelrecov"), recursive = TRUE)
 }
-
 
 resultsdir <- file.path("results", "rl", "nocatches", "modelrecov")
 
@@ -105,25 +104,9 @@ env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 
 #### Functions to run local model comparison ####
 modelfit <- function(msim, mfit, sim, models, stan.data, chains, cores, iter, warmup, refresh){
-
-  # Create log file for each model
-  log.file = file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "log", sep = "."))
-  if(!file.exists(log.file)){file.create(log.file)}
-
-  # Print progress to log.txt
-  prgrss = paste("Currently fitting model", models$name[[mfit]])
-  write("", log.file, append = TRUE, ncolumns = 1)
-  write(prgrss, log.file, append = TRUE, ncolumns = 1)
-
-  # Fit model
-  sink.depth = sink.number()
-  sink(log.file, append = T)
-  on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
-  fit = sampling(object = models$compiled[[mfit]], data = stan.data,
-                  chains = chains, cores = cores, iter = iter, warmup = warmup, refresh = refresh)
-  while (sink.number() > sink.depth) sink()
-  saveRDS(fit, file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = ".")))
-
+  fit = models$compiled[[mfit]]$sample(data = stan.data,
+                  chains = chains, parallel_chains = cores, iter_sampling = iter - warmup, iter_warmup = warmup, refresh = refresh)
+  fit$save_object(file = file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = ".")))
 }
 
 # Function to compute PSIS-LOO for each model fit sequentially
@@ -133,17 +116,13 @@ computeloo <- function(msim, sim, models, stan.data){
   results = list()
 
    for(mfit in 1:length(models$stan.loglik)){
-     
-    # Create log file for each model or append to it
-    log.file = file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "log", sep="."))
-    if(!file.exists(log.file)){file.create(log.file)}
-     
+
     # Load model fit
     fit = readRDS(file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = ".")))
-     
+
     # Following is taken from http://mc-stan.org/loo/articles/loo2-with-rstan.html
     # Extract log likelihood values from model fit
-    ll = extract_log_lik(fit, parameter_name = "log_lik", merge_chains = FALSE)
+    ll = extract_log_lik_cmd(fit, parameter_name = "log_lik", merge_chains = FALSE)
 
     # Drop log likelihood of observations where time == 0
     indx = which(stan.data$time != 0, arr.ind = T)
@@ -151,48 +130,31 @@ computeloo <- function(msim, sim, models, stan.data){
 
     # Compute relative effect sample sizes
     if(length(dim(ll)) == 2){
-      r_eff = relative_eff(exp(ll), cores = 1, chain_id=rep(1L, nrow(ll)))
+      r_eff = loo::relative_eff(exp(ll), cores = 1, chain_id=rep(1L, nrow(ll)))
       } else {
-      r_eff = relative_eff(exp(ll), cores = 1)
+      r_eff = loo::relative_eff(exp(ll), cores = 1)
     }
 
     # Compute psis loo
     loo.model = paste("loo", mfit, sep = ".")
-    assign(loo.model, loo(ll, r_eff = r_eff, cores = 1))
+    assign(loo.model, loo::loo(ll, r_eff = r_eff, cores = 1))
     remove(ll)
-
-    # Save diagnostics
-    jpeg(file.path(resultsdir, "diagnostics", paste(models$name[[msim]], models$name[[mfit]], sim, "paretok", "jpeg", sep = ".")),
-      width = 2550, height = 1440, units = "px")
-    plot(get(loo.model))
-    dev.off()
-
-    # Print model comp info to log.txt
-    sink.depth = sink.number()
-    sink(log.file, append = T)
-    on.exit(while (sink.number() > sink.depth) sink(), add = TRUE)
-    print(get(loo.model))
-    while (sink.number() > sink.depth) sink()
-
 
     # Save to results
     results[[models$name[[mfit]]]] = get(loo.model)
     rm(list = loo.model)
-     
+
    }
-  
+
   # Compare models
-  comparison = loo_compare(results)
+  comparison = loo::loo_compare(results)
 
   # Add model name
   comparison = as.data.frame(comparison)
 
   # Note winning model (to reload for parameter recovery)
   winner = comparison %>% filter(row_number() == 1 & elpd_diff == 0) %>% rownames() %>% unlist()
-  
-  # Save Variables
-  saveRDS(list(results = results, comparison = comparison, winner = winner), file = file.path(resultsdir, paste(models$name[[msim]], "mcomp", sim, "rds", sep = ".")))
-  
+
   # Return comparison and winner individually
   return(list(comparison = comparison, winner = winner))
 }
@@ -206,149 +168,167 @@ models = getmodels(hierarch = F)
 # Select subset of models for social condition with observed decisions only
 models= lapply(models, function(x) x[which(models$name %in% c("arl.fixed", "dbn1.fixed", "dbn2.fixed", "vsn1.fixed", "vsn2.fixed"))])
 
-
 # Compile models to avoid recompiling
-models$compiled = sapply(1:length(models$stan.loglik), function(x) stan_model(file = models$stan.loglik[[x]], model_name = models$name[[x]]))
+models$compiled = sapply(1:length(models$stan.loglik), function(x) cmdstan_model(stan_file = models$stan.loglik[[x]]))
 
-if(!file.exists(file.path(resultsdir, "modelrecov.rds"))){
+# Load partial results if they exist, otherwise start fresh
+partial_file = file.path(resultsdir, "modelrecov_partial.csv")
+if(file.exists(partial_file)){
+  results = read.csv(partial_file)
+} else {
+  results = data.frame(msim=integer(), sim=integer(), mfit=integer(), win=integer())
+}
 
-  # Run model recovery
+log_file = file.path(resultsdir, "modelrecov.log")
+log_progress = function(msg) {
+  line = paste0("[", format(Sys.time(), "%H:%M:%S"), "] ", msg, "\n")
+  cat(line)
+  cat(line, file = log_file, append = TRUE)
+}
 
-  # Results list
-  results = list()
+# Loop through models to simulate from
+for(msim in 1:length(models$name)){
 
-  # Loop through models to simulate from
-  for(msim in 1:length(models$name)){
+  done_sims = unique(results$sim[results$msim == msim])
+  if(all(1:nsim %in% done_sims)) next
 
-    # Fit model to experimental data
-    fit.exp = sampling(models$compiled[[msim]], data = stan.data.d,
-                       chains = chains, cores = cores,
-                       iter = iter, warmup = warmup, refresh = 0)
-    
-    # Save fit
-    saveRDS(fit.exp, file = file.path(resultsdir, paste(models$name[[msim]], "fit", "rds", sep = ".")))
-
-    # Get parameters to simulate from
-    draws = tidy_draws(fit.exp)
-    rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[[msim]])]
-    rl.pars = apply(rl.pars, 2, mean)
-    rl.pars = append(rl.pars, models$fixed.pars[[msim]])
-
-    # Extract columns with environment-specific alphas and collapse to vector or matrix
-    if (models$name[[msim]] %in% c("dbn2.fixed", "vsn2.fixed")) {
-
-      # All alpha* entries with bracketed indices
-      par.names <- grep("^alpha[^\\[]*\\[[^]]+\\]$", names(rl.pars), value = TRUE)
-      par.bases <- unique(sub("\\[.*$", "", par.names))
-
-      for (base in par.bases) {
-        base_names <- grep(paste0("^", base, "\\[[^]]+\\]$"), par.names, value = TRUE)
-        if (length(base_names) == 0) next
-
-        # Extract index strings inside brackets, e.g. "1" or "2,3"
-        idx_str <- sub("^.*\\[([^]]+)\\].*$", "\\1", base_names)
-        idx_split <- strsplit(idx_str, ",")
-
-        is_matrix <- any(lengths(idx_split) > 1)
-
-        if (!is_matrix) {
-          # Vector case: order by single index and collapse
-          idx <- as.integer(unlist(idx_split))
-          ord <- order(idx)
-          vec <- unlist(rl.pars[base_names], use.names = FALSE)[ord]
-
-          rl.pars[base_names] <- NULL
-          rl.pars[[base]] <- vec
-        } else {
-          # Matrix case: fill by (row, col) indices
-          rc <- t(sapply(idx_split, function(x) as.integer(x)))
-          nrow <- max(rc[, 1])
-          ncol <- max(rc[, 2])
-
-          mat <- matrix(NA_real_, nrow = nrow, ncol = ncol)
-          vals <- unlist(rl.pars[base_names], use.names = FALSE)
-
-          for (i in seq_along(vals)) {
-            mat[rc[i, 1], rc[i, 2]] <- vals[i]
-          }
-
-          rl.pars[base_names] <- NULL
-          rl.pars[[base]] <- mat
-        }
-      }
-    }
-
-    # Prep simulation
-    f = get(models$sim[[msim]])
-    sim.pars = c(exp.pars, env.pars, rl.pars)
-    print(paste("Simulating from model", models$name[[msim]]))
-    print(sim.pars)
-
-    # Loop through simulations
-    for(sim in 1:nsim){
-
-      # Simulate data
-      sim.data = f(sim.parameters = sim.pars)
-
-      # Account for missing social information for stan
-      sim.data = sim.data %>% 
-        mutate(obs.dec.1.norm = ifelse(is.na(obs.dec.1.norm), 100, obs.dec.1.norm)) %>%
-        mutate(obs.dec.2.norm = ifelse(is.na(obs.dec.2.norm), 100, obs.dec.2.norm))
-
-      # Put in list
-      stan.data.sim = with(sim.data, list(
-        OBSERVATIONS=nrow(sim.data),
-        SESSIONS=max(unique(session)), session=session,
-        TRIALS=max(unique(trial)), trial=trial,
-        MAXIMUM=length(unique(max.fac)), maximum=max.fac,
-        RATIO=length(unique(ratio.fac)), ratio=ratio.fac,
-        PLAYERS=unique(nplayers),
-        ID=max(player), id=player,
-        TIMES=max(unique(time)), time=time,
-        DECISIONS=length(unique(decision)), decision=decision, 
-        obsdec=cbind(obs.dec.1.norm, obs.dec.2.norm),
-        REWARDS=length(unique(reward)), reward=reward
-      ))
-
-      # Run local model comparison in parallel
-      plan(multisession, workers = max(1L, min(length(models$stan.loglik), floor((max(1L, parallel::detectCores() - 1L)) / max(1L, cores)))))
-      future_lapply(1:length(models$stan.loglik), function(mfit) {
-        modelfit(msim, mfit, sim, models, stan.data.sim, chains, cores, iter, warmup, refresh)
-      }, future.seed = TRUE)
-      plan(sequential)
-
-      # Compute PSIS-LOO for each model fit sequentially
-      modelcomp = computeloo(msim, sim, models, stan.data= stan.data.sim)
-
-      # Save local model comparison results
-      # saveRDS(modelcomp, file = file.path(resultsdir, paste(models$name[[msim]], "mcomp", sim, "rds", sep = ".")))
-
-      # Add to results
-      win = rep(0, length(models$name))
-      win[which(models$name == modelcomp$winner)] = 1
-      results$msim = append(results$msim, rep(msim, length(models$name)))
-      results$sim = append(results$sim, rep(sim, length(models$name)))
-      results$mfit = append(results$mfit, 1:length(models$name))
-      results$win = append(results$win, win)
-
-    }
-    
+  # Fit model to experimental data (or load existing fit)
+  exp_fit_file = file.path(resultsdir, paste(models$name[[msim]], "fit", "rds", sep = "."))
+  if(!file.exists(exp_fit_file)){
+    log_progress(paste("Fitting model", models$name[[msim]], "to experimental data"))
+    fit.exp = models$compiled[[msim]]$sample(data = stan.data.d,
+               chains = chains, parallel_chains = cores,
+               iter_sampling = iter - warmup, iter_warmup = warmup, refresh = 0)
+    fit.exp$save_object(file = exp_fit_file)
+  } else {
+    log_progress(paste("Loading existing fit for model", models$name[[msim]]))
+    fit.exp = readRDS(exp_fit_file)
   }
 
-  # Save model recovery results
-  saveRDS(results, file.path(resultsdir, "modelrecov.rds"))
+  # Get parameters to simulate from
+  draws = tidy_draws(fit.exp)
+  rl.pars = draws[, names(draws) %in% names(models$free.pars.pop[[msim]])]
+  rl.pars = apply(rl.pars, 2, mean)
+  rl.pars = append(rl.pars, models$fixed.pars[[msim]])
 
-  # Convert results to data frame
-  results = as.data.frame(results)
+  # Extract columns with environment-specific alphas and collapse to vector or matrix
+  if (models$name[[msim]] %in% c("dbn2.fixed", "vsn2.fixed")) {
 
-  # Save model recovery results as csv
-  write.csv(results, file.path(resultsdir, "modelrecov.csv"), row.names = F)
+    # All alpha* entries with bracketed indices
+    par.names <- grep("^alpha[^\\[]*\\[[^]]+\\]$", names(rl.pars), value = TRUE)
+    par.bases <- unique(sub("\\[.*$", "", par.names))
 
-}else{
-  print("Loading. Model recovery results already exist." )
-  # Load model recovery results
-  results = read.csv(file.path(resultsdir, "modelrecov.csv"))
+    for (base in par.bases) {
+      base_names <- grep(paste0("^", base, "\\[[^]]+\\]$"), par.names, value = TRUE)
+      if (length(base_names) == 0) next
+
+      # Extract index strings inside brackets, e.g. "1" or "2,3"
+      idx_str <- sub("^.*\\[([^]]+)\\].*$", "\\1", base_names)
+      idx_split <- strsplit(idx_str, ",")
+
+      is_matrix <- any(lengths(idx_split) > 1)
+
+      if (!is_matrix) {
+        # Vector case: order by single index and collapse
+        idx <- as.integer(unlist(idx_split))
+        ord <- order(idx)
+        vec <- unlist(rl.pars[base_names], use.names = FALSE)[ord]
+
+        rl.pars[base_names] <- NULL
+        rl.pars[[base]] <- vec
+      } else {
+        # Matrix case: fill by (row, col) indices
+        rc <- t(sapply(idx_split, function(x) as.integer(x)))
+        nrow <- max(rc[, 1])
+        ncol <- max(rc[, 2])
+
+        mat <- matrix(NA_real_, nrow = nrow, ncol = ncol)
+        vals <- unlist(rl.pars[base_names], use.names = FALSE)
+
+        for (i in seq_along(vals)) {
+          mat[rc[i, 1], rc[i, 2]] <- vals[i]
+        }
+
+        rl.pars[base_names] <- NULL
+        rl.pars[[base]] <- mat
+      }
+    }
+  }
+
+  # Prep simulation
+  f = get(models$sim[[msim]])
+  sim.pars = c(exp.pars, env.pars, rl.pars)
+
+  # Loop through simulations
+  for(sim in 1:nsim){
+
+    if(sim %in% done_sims) next
+
+    log_progress(paste0("Model ", models$name[[msim]], " | sim ", sim, "/", nsim, " — simulating and fitting"))
+
+    # Simulate data
+    sim.data = f(sim.parameters = sim.pars)
+
+    # Account for missing social information for stan
+    sim.data = sim.data %>%
+      mutate(obs.dec.1.norm = ifelse(is.na(obs.dec.1.norm), 100, obs.dec.1.norm)) %>%
+      mutate(obs.dec.2.norm = ifelse(is.na(obs.dec.2.norm), 100, obs.dec.2.norm))
+
+    # Put in list
+    stan.data.sim = with(sim.data, list(
+      OBSERVATIONS=nrow(sim.data),
+      SESSIONS=max(unique(session)), session=session,
+      TRIALS=max(unique(trial)), trial=trial,
+      MAXIMUM=length(unique(max.fac)), maximum=max.fac,
+      RATIO=length(unique(ratio.fac)), ratio=ratio.fac,
+      PLAYERS=unique(nplayers),
+      ID=max(player), id=player,
+      TIMES=max(unique(time)), time=time,
+      DECISIONS=length(unique(decision)), decision=decision,
+      obsdec=cbind(obs.dec.1.norm, obs.dec.2.norm),
+      REWARDS=length(unique(reward)), reward=reward
+    ))
+
+    # Run local model comparison in parallel
+    plan(multisession, workers = max(1L, min(length(models$stan.loglik), floor((max(1L, parallel::detectCores() - 1L)) / max(1L, cores)))))
+    future_lapply(1:length(models$stan.loglik), function(mfit) {
+      modelfit(msim, mfit, sim, models, stan.data.sim, chains, cores, iter, warmup, refresh)
+    }, future.seed = TRUE)
+    plan(sequential)
+
+    # Compute PSIS-LOO for each model fit sequentially
+    modelcomp = computeloo(msim, sim, models, stan.data= stan.data.sim)
+
+    log_progress(paste0("Model ", models$name[[msim]], " | sim ", sim, "/", nsim, " — winner: ", modelcomp$winner))
+
+    # Save per-iteration model comparison checkpoint
+    saveRDS(modelcomp, file = file.path(resultsdir, paste(models$name[[msim]], "mcomp", sim, "rds", sep = ".")))
+
+    # Delete temporary fit files
+    for(mfit in 1:length(models$stan.loglik)){
+      tmp_file = file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = "."))
+      if(file.exists(tmp_file)) file.remove(tmp_file)
+    }
+
+    # Append to results and write partial CSV
+    win = rep(0, length(models$name))
+    win[which(models$name == modelcomp$winner)] = 1
+    new_rows = data.frame(
+      msim = rep(msim, length(models$name)),
+      sim  = rep(sim,  length(models$name)),
+      mfit = 1:length(models$name),
+      win  = win
+    )
+    results = rbind(results, new_rows)
+    write.csv(results, partial_file, row.names = FALSE)
+
+  }
+
 }
+
+# Save final results
+saveRDS(results, file.path(resultsdir, "modelrecov.rds"))
+write.csv(results, file.path(resultsdir, "modelrecov.csv"), row.names = FALSE)
 
 #### Plot model recovery results ####
 if(!file.exists(file.path(resultsdir, "modelrecov.jpeg"))){

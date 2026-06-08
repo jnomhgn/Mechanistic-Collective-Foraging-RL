@@ -7,6 +7,8 @@ exp_sessions = get_pipeline_value("rl", "nocatches", "numsims", "sessions", defa
 exp_trials = get_pipeline_value("rl", "nocatches", "numsims", "trials", default = 12)
 exp_nplayers = get_pipeline_value("rl", "nocatches", "numsims", "nplayers", default = 5)
 exp_durations = get_pipeline_value("rl", "nocatches", "numsims", "durations_vec", default = c(75))
+grid_step = get_pipeline_value("rl", "nocatches", "numsims", "grid_step", default = 0.01)
+social_grid = seq(0, 1, by = grid_step)
 
 # Source functions
 dir_functions <- file.path("code", "rl", "nocatches", "functions")
@@ -67,7 +69,7 @@ if(!file.exists(file.path(resultsdir, "numsims.rds"))){
 
   # Set social learning weights for decision- and reward- based DB and VS
   srl.pars = c("alphaDBD", "alphaVSD")
-  srl.pars = sapply(srl.pars, function(x) seq(0, 1, by = .01)) %>%
+  srl.pars = sapply(srl.pars, function(x) social_grid) %>%
     `colnames<-`(srl.pars)
 
   # Merge

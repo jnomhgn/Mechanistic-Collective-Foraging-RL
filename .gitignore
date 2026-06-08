@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 .Rprofile
+Rplots.pdf
 
 renv
 activate.R
@@ -19,3 +20,11 @@ results/
 *db
 *.DS_Store
 *.npy
+
+# Ignore cmdstanr executables
+code/rl/alone/stan/*
+!code/rl/alone/stan/*.stan
+code/rl/nocatches/stan/*
+!code/rl/nocatches/stan/*.stan
+code/rl/catches/stan/*
+!code/rl/catches/stan/*.stan

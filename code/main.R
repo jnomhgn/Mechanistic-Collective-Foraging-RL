@@ -1,7 +1,6 @@
 #### Setup #####
 
-# Set path to project root if necessary
-getwd() 
+setwd(here::here())
 
 # Load libraries
 library(knitr)
@@ -20,6 +19,7 @@ library(viridis)
 library(ggdist)
 
 library(rstan)
+library(cmdstanr)
 library(brms)
 library(loo)
 library(tidybayes)
@@ -33,7 +33,7 @@ options(future.globals.maxSize = 1.0 * 1e9)
 
 # Pipeline configuration
 source(file.path("code", "pipeline_config.R"))
-pipeline_mode <- "test" # "full" or "test"
+pipeline_mode <- "full" # "full" or "test"
 options(
 	pipeline_mode = pipeline_mode,
 	pipeline_config = make_pipeline_config(pipeline_mode)
@@ -89,6 +89,10 @@ print("Running model comparison for no catches condition...")
 source(file.path("code", "rl", "nocatches", "analyses", "modelcomp.R"))
 rm(list = ls())
 
+# Run parameter recovery
+print("Running parameter recovery for no catches condition...")
+source(file.path("code", "rl", "nocatches", "analyses", "parrecov.R"))
+rm(list = ls())
 
 #### Catches condition ####
 
@@ -107,11 +111,11 @@ print("Running parameter recovery for catches condition...")
 source(file.path("code", "rl", "catches", "analyses", "parrecov.R"))
 rm(list = ls())
 
-# #### Create figures ####
+#### Create figures ####
 
-# # Plot figures
-# print("Creating figures...")
-# source_python(file.path("figures", "code", "figures.py"))
+# Plot figures
+print("Creating figures...")
+source_python(file.path("code", "figures", "figures.py"))
 
 #### Run model recovery for all conditions at the end due to computation time ####
 

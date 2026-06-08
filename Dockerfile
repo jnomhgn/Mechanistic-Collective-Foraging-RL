@@ -1,5 +1,5 @@
-# Base image with R 4.4.1
-FROM r-base:4.4.1
+# Base image with R 4.5.2
+FROM r-base:4.5.2
 
 # Set working directory
 WORKDIR /rlforaging
@@ -55,9 +55,20 @@ RUN R -e 'install.packages("StanHeaders")'
 COPY renv.lock ./renv.lock
 RUN R -s -e "renv::restore()"
 
-# Copy remaining project files
-COPY main.R ./main.R
+# Install cmdstan
+RUN R -e 'cmdstanr::install_cmdstan()'
+
+# Copy Stan source files and compile in a dedicated layer.
+COPY code/rl/alone/stan ./code/rl/alone/stan
+COPY code/rl/catches/stan ./code/rl/catches/stan
+COPY code/rl/nocatches/stan ./code/rl/nocatches/stan
+COPY code/compile_stan.R ./code/compile_stan.R
+RUN Rscript code/compile_stan.R
+
+# Copy remaining project files. 
+COPY .here ./.here
+COPY .renvignore ./.renvignore
 COPY code ./code
 
 # Run the main.R script
-CMD ["Rscript", "main.R"]
+CMD ["Rscript", "code/main.R"]
