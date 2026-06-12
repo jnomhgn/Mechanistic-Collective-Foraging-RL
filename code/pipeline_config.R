@@ -82,8 +82,8 @@ make_pipeline_config <- function(mode = c("full", "test")) {
         ),
         modelrecov = list(
           nsim = 10,
-          chains = 1,
-          cores = 1,
+          chains = 4,
+          cores = 4,
           iter = 2000,
           warmup = 1000,
           refresh = 100,
@@ -116,8 +116,8 @@ make_pipeline_config <- function(mode = c("full", "test")) {
         ),
         modelrecov = list(
           nsim = 10,
-          chains = 1,
-          cores = 1,
+          chains = 4,
+          cores = 4,
           iter = 2000,
           warmup = 1000,
           refresh = 100,
@@ -162,8 +162,8 @@ make_pipeline_config <- function(mode = c("full", "test")) {
         ),
         modelrecov = list(
           nsim = 10,
-          chains = 1,
-          cores = 1,
+          chains = 4,
+          cores = 4,
           iter = 2000,
           warmup = 1000,
           refresh = 100,
