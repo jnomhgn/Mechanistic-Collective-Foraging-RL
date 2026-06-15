@@ -182,8 +182,10 @@ if(!file.exists(file.path(resultsdir, "numsims.rds"))){
   results = lapply(results, function(x) bind_rows(x))
   saveRDS(results, file = file.path(resultsdir, "numsims.rds"))
 
-}else{
-  print("Results from numerical simulations already exist. Skipping simulations.")
+}else if(!file.exists(file.path(resultsdir, "accdiff.csv")) | !file.exists(file.path(resultsdir, "accdiff.jpeg")) |
+         !file.exists(file.path(resultsdir, "acctimediff.csv")) | !file.exists(file.path(resultsdir, "acctimediff.jpeg")) |
+         !file.exists(file.path(resultsdir, "switchtimediff.csv")) | !file.exists(file.path(resultsdir, "switchtimediff.jpeg"))){
+  print("Results from numerical simulations already exist. Loading results.")
   results = readRDS(file = file.path(resultsdir, "numsims.rds"))
 }
 
@@ -191,7 +193,9 @@ if(!file.exists(file.path(resultsdir, "numsims.rds"))){
 #### Plot results ####
 
 # Only run if results do not already exist
-if(!file.exists(file.path(resultsdir, "accdiff.csv")) & !file.exists(file.path(resultsdir, "acctimediff.csv")) & !file.exists(file.path(resultsdir, "switchtimediff.csv"))){
+if(!file.exists(file.path(resultsdir, "accdiff.csv")) | !file.exists(file.path(resultsdir, "accdiff.jpeg")) |
+   !file.exists(file.path(resultsdir, "acctimediff.csv")) | !file.exists(file.path(resultsdir, "acctimediff.jpeg")) |
+   !file.exists(file.path(resultsdir, "switchtimediff.csv")) | !file.exists(file.path(resultsdir, "switchtimediff.jpeg"))){
 
   # List to save plots to
   plot.list = list()
@@ -223,14 +227,12 @@ if(!file.exists(file.path(resultsdir, "accdiff.csv")) & !file.exists(file.path(r
       acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
     ) %>%
     ungroup() %>%
-    rowwise() %>%
     mutate(
-      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
-      acc.delta = mean(pairwise),
-      lower = quantile(pairwise, probs = 0.05),
-      upper = quantile(pairwise, probs = 0.95)
+      acc.delta = map2_dbl(acc.mean.vec, acc.mean.vec.arl, ~ mean(.x) - mean(.y)),
+      lower = map2_dbl(acc.mean.vec, acc.mean.vec.arl, ~ quantile(as.vector(outer(.x, .y, "-")), probs = 0.05)),
+      upper = map2_dbl(acc.mean.vec, acc.mean.vec.arl, ~ quantile(as.vector(outer(.x, .y, "-")), probs = 0.95))
     ) %>%
-    select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise))
+    select(-c(acc.mean.vec, acc.mean.vec.arl))
 
   write.csv(plot.data, file = file.path(resultsdir, "accdiff.csv"))
 
@@ -265,29 +267,20 @@ if(!file.exists(file.path(resultsdir, "accdiff.csv")) & !file.exists(file.path(r
   #plot.list =  append(plot.list, list(p))
     ggexport(p, width = 2800, height = 1440,
       filename = file.path(resultsdir, "accdiff.jpeg"))
+  rm(plot.data, p); results$rew.acc <- NULL; gc()
 
   # Individual Accuracy over time
-  plot.data = results$acc.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
-    group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
-    reframe(acc.mean.vec = list(frac.corr[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
-    ungroup() %>%
-    group_by(ratio, max, time) %>%
-    mutate(
-      acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
-    ) %>%
-    ungroup() %>%
-    rowwise() %>%
-    mutate(
-      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
-      acc.delta = mean(pairwise)
-    ) %>%
-    select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise))
+  arl_acc_baseline = results$acc.time %>%
+    filter(model == "arl.fixed", alphaS == 0) %>%
+    select(sim, ratio, max, time, frac.corr.arl = frac.corr)
 
-  # plot.data = results$acc.time %>%
-  #   group_by(model, alphaS, ratio, max, time) %>%
-  #   reframe(frac.corr.mean = mean(frac.corr)) %>%
-  #   group_by(model, ratio, max, time) %>%
-  #   mutate(delta.mean = frac.corr.mean - frac.corr.mean[which(alphaS == 0)])
+  plot.data = results$acc.time %>%
+    filter(model != "arl.fixed") %>%
+    left_join(arl_acc_baseline, by = c("sim", "ratio", "max", "time")) %>%
+    mutate(diff = frac.corr - frac.corr.arl) %>%
+    group_by(model, alphaS, ratio, max, time) %>%
+    reframe(acc.delta = mean(diff))
+  rm(arl_acc_baseline); results$acc.time <- NULL; gc()
 
   write.csv(plot.data, file = file.path(resultsdir, "acctimediff.csv"))
 
@@ -350,6 +343,7 @@ if(!file.exists(file.path(resultsdir, "accdiff.csv")) & !file.exists(file.path(r
                 labels = c("a", "b"), font.label = list(size=rel(30)))
     ggexport(p, width = 2800, height = 1440,
       filename = file.path(resultsdir, "acctimediff.jpeg"))
+  rm(plot.data, p, p1, p2); gc()
 
   # Switch-rate over time
   # plot.data = results$switches.time %>%
@@ -358,29 +352,18 @@ if(!file.exists(file.path(resultsdir, "accdiff.csv")) & !file.exists(file.path(r
   #   group_by(model, ratio, max, time) %>%
   #   mutate(delta.mean = switch.frac.mean - switch.frac.mean[which(alphaS == 0)])
 
-  plot.data = results$switches.time %>% filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
-    group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
-    reframe(switch.mean.vec = list(switch.frac[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
-    ungroup() %>%
-    group_by(ratio, max, time) %>%
-    mutate(
-      switch.mean.vec.arl = list(switch.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
-    ) %>%
-    ungroup() %>%
-    rowwise() %>%
-    mutate(
-      pairwise = list(as.vector(outer(switch.mean.vec, switch.mean.vec.arl, "-"))), # Compute pairwise differences
-      switch.delta = mean(pairwise)
-    ) %>%
-    select(-c(switch.mean.vec, switch.mean.vec.arl, pairwise))
+  # Switch-rate over time
+  arl_switch_baseline = results$switches.time %>%
+    filter(model == "arl.fixed", alphaS == 0) %>%
+    select(sim, ratio, max, time, switch.frac.arl = switch.frac)
 
-
-  # plot.data = results$switches.time %>%
-  #   group_by(model, alphaS, ratio, max, time) %>%
-  #   reframe(switch.mean = mean(switch.frac)) %>%
-  #   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
-  #   group_by(ratio, max, time) %>%
-  #   mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
+  plot.data = results$switches.time %>%
+    filter(model != "arl.fixed") %>%
+    left_join(arl_switch_baseline, by = c("sim", "ratio", "max", "time")) %>%
+    mutate(diff = switch.frac - switch.frac.arl) %>%
+    group_by(model, alphaS, ratio, max, time) %>%
+    reframe(switch.delta = mean(diff))
+  rm(arl_switch_baseline); results$switches.time <- NULL; gc()
 
   write.csv(plot.data, file = file.path(resultsdir, "switchtimediff.csv"))
 
@@ -435,6 +418,7 @@ if(!file.exists(file.path(resultsdir, "accdiff.csv")) & !file.exists(file.path(r
                 labels = c("a", "b"), font.label = list(size=rel(30)))
     ggexport(p, width = 2800, height = 1440,
       filename = file.path(resultsdir, "switchtimediff.jpeg"))
+  rm(plot.data, p, p1, p2); gc()
 
 }else{
   print("Plots from numerical simulations already exist. Skipping.")
