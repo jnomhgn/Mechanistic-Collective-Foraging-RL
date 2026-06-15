@@ -9,16 +9,21 @@ Previous versions of the code are available under [Releases](https://github.com/
 
 ### With Docker
 
-Navigate to the project root. From there build the image and run the container. The container runs `Rscript code/main.R` by default and expects `data/` and `results/` to be mounted from your host machine.
+Navigate to the project root. From there build the image and run the container. The container runs `Rscript code/main.R` by default and expects `data/` and `results/` to be mounted from your host machine. Optional: Mount the container's `/tmp` to a host directory with sufficient free space (e.g., -v /host/path:/tmp).
 
 **Build:**
 ```
 docker build -t rlforaging .
 ```
 
-**Run:**
+**Run (Linux/MacOS):**
 ```
-docker run --rm -v ./data:/rlforaging/data -v ./results:/rlforaging/results rlforaging
+docker run --rm -v ./data:/rlforaging/data -v ./results:/rlforaging/results -v ./tmp:/tmp rlforaging
+```
+
+**Run (Windows):**
+```
+docker run --rm -v ${PWD}/data:/rlforaging/data -v ${PWD}/results:/rlforaging/results -v ${PWD}/tmp:/tmp rlforaging
 ```
 
 ### Without Docker
