@@ -85,7 +85,7 @@ env.pars = list(max=env.pars$max, ratio=env.pars$ratio)
 #### Functions to run local model comparison ####
 modelfit <- function(msim, mfit, sim, models, stan.data.d, chains, cores, iter, warmup, refresh){
   fit = models$compiled[[mfit]]$sample(data = stan.data.d,
-                  chains = chains, parallel_chains = cores, iter_sampling = iter - warmup, iter_warmup = warmup, refresh = refresh)
+                  chains = chains, parallel_chains = cores, iter_sampling = iter - warmup, iter_warmup = warmup, refresh = refresh, show_messages = FALSE)
   fit$save_object(file = file.path(resultsdir, paste(models$name[[msim]], models$name[[mfit]], sim, "fit", "rds", sep = ".")))
 }
 
@@ -175,7 +175,7 @@ for(msim in 1:length(models$name)){
     log_progress(paste("Fitting model", models$name[[msim]], "to experimental data"))
     fit.exp = models$compiled[[msim]]$sample(data = stan.data.d,
                chains = chains, parallel_chains = cores,
-               iter_sampling = iter - warmup, iter_warmup = warmup, refresh = 0)
+               iter_sampling = iter - warmup, iter_warmup = warmup, refresh = 0, show_messages = FALSE)
     fit.exp$save_object(file = exp_fit_file)
   } else {
     log_progress(paste("Loading existing fit for model", models$name[[msim]]))
