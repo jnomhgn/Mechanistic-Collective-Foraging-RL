@@ -227,14 +227,12 @@ if(!file.exists(file.path(resultsdir, "accdiff_v1.csv"))){
       acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
     ) %>%
     ungroup() %>%
-    rowwise() %>%
     mutate(
-      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
-      acc.delta = mean(pairwise),
-      lower = quantile(pairwise, probs = 0.05),
-      upper = quantile(pairwise, probs = 0.95)
+      acc.delta = map2_dbl(acc.mean.vec, acc.mean.vec.arl, ~ mean(.x) - mean(.y)),
+      lower = map2_dbl(acc.mean.vec, acc.mean.vec.arl, ~ quantile(as.vector(outer(.x, .y, "-")), probs = 0.05)),
+      upper = map2_dbl(acc.mean.vec, acc.mean.vec.arl, ~ quantile(as.vector(outer(.x, .y, "-")), probs = 0.95))
     ) %>%
-    select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise)) %>%
+    select(-c(acc.mean.vec, acc.mean.vec.arl)) %>%
     filter(model != "arl.fixed")
   write.csv(plot.data.c, file = file.path(resultsdir, "accdiff_v1.csv"))
 
@@ -285,25 +283,17 @@ if(!file.exists(file.path(resultsdir, "accdiff_v1.csv"))){
   #   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
   #   group_by(ratio, max, time) %>%
   #   mutate(acc.delta = acc.mean - acc.mean[which(model == "arl.fixed")])
-  plot.data.c = results$acc.time %>% 
-    mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
-    filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
-    group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
-    reframe(acc.mean.vec = list(frac.corr[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
-    ungroup() %>%
-    group_by(ratio, max, time) %>%
-    mutate(
-      acc.mean.vec.arl = list(acc.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
-    ) %>%
-    ungroup() %>%
-    rowwise() %>%
-    mutate(
-      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.arl, "-"))), # Compute pairwise differences
-      acc.delta = mean(pairwise)
-    ) %>%
-    select(-c(acc.mean.vec, acc.mean.vec.arl, pairwise)) %>%
-    filter(model != "arl.fixed")
+  arl_acc_baseline = results$acc.time %>%
+    filter(model == "arl.fixed", alphaVSR == 0) %>%
+    select(sim, ratio, max, time, frac.corr.arl = frac.corr)
 
+  plot.data.c = results$acc.time %>%
+    mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%
+    filter(model != "arl.fixed") %>%
+    left_join(arl_acc_baseline, by = c("sim", "ratio", "max", "time")) %>%
+    mutate(diff = frac.corr - frac.corr.arl) %>%
+    group_by(model, alphaS, ratio, max, time) %>%
+    reframe(acc.delta = mean(diff))
 
   write.csv(plot.data.c, file = file.path(resultsdir, "acctimediff_v1.csv"))
 
@@ -382,25 +372,17 @@ if(!file.exists(file.path(resultsdir, "accdiff_v1.csv"))){
   #   filter((model == "arl.fixed" & alphaS == 0) | model != "arl.fixed" ) %>%
   #   group_by(ratio, max, time) %>%
   #   mutate(switch.delta = switch.mean - switch.mean[which(model == "arl.fixed")])
-  plot.data.c = results$switches.time %>% 
-    mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%  
-    filter(model != "arl.fixed" | alphaS == 0) %>% # Drop unnecessary simulations
-    group_by(model, alphaS, ratio, max, time) %>% # Group by model, social learning weight, ratio, max and time
-    reframe(switch.mean.vec = list(switch.frac[which(sim%in% c(1:nsim))])) %>%  # Vector of nsim accuracies for each group
-    ungroup() %>%
-    group_by(ratio, max, time) %>%
-    mutate(
-      switch.mean.vec.arl = list(switch.mean.vec[model == "arl.fixed"][[1]]) # Extract the arl.fixed vector
-    ) %>%
-    ungroup() %>%
-    rowwise() %>%
-    mutate(
-      pairwise = list(as.vector(outer(switch.mean.vec, switch.mean.vec.arl, "-"))), # Compute pairwise differences
-      switch.delta = mean(pairwise)
-    ) %>%
-    select(-c(switch.mean.vec, switch.mean.vec.arl, pairwise)) %>%
-    filter(model != "arl.fixed")
+  arl_switch_baseline = results$switches.time %>%
+    filter(model == "arl.fixed", alphaVSR == 0) %>%
+    select(sim, ratio, max, time, switch.frac.arl = switch.frac)
 
+  plot.data.c = results$switches.time %>%
+    mutate(alphaS = ifelse(model == "dbr1.fixed", alphaDBR, alphaVSR)) %>%
+    filter(model != "arl.fixed") %>%
+    left_join(arl_switch_baseline, by = c("sim", "ratio", "max", "time")) %>%
+    mutate(diff = switch.frac - switch.frac.arl) %>%
+    group_by(model, alphaS, ratio, max, time) %>%
+    reframe(switch.delta = mean(diff))
 
   write.csv(plot.data.c, file = file.path(resultsdir, "switchtimediff_v1.csv"))
 
@@ -468,8 +450,14 @@ if(!file.exists(file.path(resultsdir, "accdiff_v1.csv"))){
 
 #### Run Simulations For v2 ####
 
+rew.acc.path       <- file.path(resultsdir, "numsims_v2_rew.acc.rds")
+acc.time.path      <- file.path(resultsdir, "numsims_v2_acc.time.rds")
+switches.path      <- file.path(resultsdir, "numsims_v2_switches.rds")
+switches.time.path <- file.path(resultsdir, "numsims_v2_switches.time.rds")
+v2_existence <- file.exists(rew.acc.path) & file.exists(acc.time.path) & file.exists(switches.path) & file.exists(switches.time.path)
+
 # Add caching
-if(!file.exists(file.path(resultsdir, "numsims_v2.rds"))){
+if(!v2_existence){
 
   # Get model list
   models = getmodels()
@@ -588,13 +576,11 @@ if(!file.exists(file.path(resultsdir, "numsims_v2.rds"))){
   }
   
   results = lapply(results, function(x) bind_rows(x))
-  saveRDS(results, file = file.path(resultsdir, "numsims_v2.rds"))
-  
-}else if(!file.exists(file.path(resultsdir, "accdiff_v2_vsndbr.jpeg")) | !file.exists(file.path(resultsdir, "accdiff_v2_vsnvsr.jpeg")) |
-         !file.exists(file.path(resultsdir, "acctimediff_v2_vsndbr.csv")) | !file.exists(file.path(resultsdir, "acctimediff_v2_vsnvsr.csv")) |
-         !file.exists(file.path(resultsdir, "switchtimediff_v2_vsndbr.csv")) | !file.exists(file.path(resultsdir, "switchtimediff_v2_vsnvsr.csv"))){
-  print("Results from numerical simulations for v2 already exist. Loading results.")
-  results = readRDS(file = file.path(resultsdir, "numsims_v2.rds"))
+  saveRDS(results$rew.acc,       rew.acc.path)
+  saveRDS(results$acc.time,      acc.time.path)
+  saveRDS(results$switches,      switches.path)
+  saveRDS(results$switches.time, switches.time.path)
+  rm(results); gc()
 }
 
 #### Plot Results For v2 ####
@@ -607,16 +593,18 @@ if(!file.exists(file.path(resultsdir, "accdiff_v2_vsndbr.jpeg")) & !file.exists(
   # List to save plots to
   plot.list = list()
 
-  # Facet labels
-  max.labs = paste("Maximum Yield", sort(unique(results$rew.acc$max)))
-  names(max.labs) = sort(unique(results$rew.acc$max))
+  rew.acc <- readRDS(rew.acc.path)
 
-  ratio.labs = paste("Yield Ratio", sort(unique(results$rew.acc$ratio)))
-  names(ratio.labs) = sort(unique(results$rew.acc$ratio))
+  # Facet labels
+  max.labs = paste("Maximum Yield", sort(unique(rew.acc$max)))
+  names(max.labs) = sort(unique(rew.acc$max))
+
+  ratio.labs = paste("Yield Ratio", sort(unique(rew.acc$ratio)))
+  names(ratio.labs) = sort(unique(rew.acc$ratio))
 
   facet.labeller = labeller(ratio=ratio.labs, max=max.labs)
 
-  plot.data.c.vsndbr = results$rew.acc %>% 
+  plot.data.c.vsndbr = rew.acc %>%
     filter(model != "vsnvsr1.fixed") %>% 
     select(-c(alphaVSD, alphaVSR, alphaVSDR, sigmaVSDR)) %>% # Unused
     mutate(alphaDBR = map_dbl(alphaDBR, ~ if (is.null(.x)) NA_real_ else .x[1, 1])) %>%  # "Constant" across environments 
@@ -629,17 +617,15 @@ if(!file.exists(file.path(resultsdir, "accdiff_v2_vsndbr.jpeg")) & !file.exists(
       acc.mean.vec.vsn = list(acc.mean.vec[model == "vsn2.fixed"][[1]]) # Extract the arl.fixed vector
     ) %>%
     ungroup() %>%
-    rowwise() %>%
     mutate(
-      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.vsn, "-"))), # Compute pairwise differences
-      acc.delta = mean(pairwise),
-      lower = quantile(pairwise, probs = 0.05),
-      upper = quantile(pairwise, probs = 0.95)
+      acc.delta = map2_dbl(acc.mean.vec, acc.mean.vec.vsn, ~ mean(.x) - mean(.y)),
+      lower = map2_dbl(acc.mean.vec, acc.mean.vec.vsn, ~ quantile(as.vector(outer(.x, .y, "-")), probs = 0.05)),
+      upper = map2_dbl(acc.mean.vec, acc.mean.vec.vsn, ~ quantile(as.vector(outer(.x, .y, "-")), probs = 0.95))
     ) %>%
-    select(-c(acc.mean.vec, acc.mean.vec.vsn, pairwise)) %>%
+    select(-c(acc.mean.vec, acc.mean.vec.vsn)) %>%
     filter(model != "vsn2.fixed")
 
-  plot.data.c.vsnvsr = results$rew.acc %>% 
+  plot.data.c.vsnvsr = rew.acc %>%
     filter(model != "vsndbr2.fixed") %>% 
     select(-c(alphaVSD, alphaVSR, alphaDBR)) %>% # Unused
     group_by(model, alphaVSDR, sigmaVSDR, ratio, max) %>% # Group by model, social learning weight, ratio, and max
@@ -650,107 +636,82 @@ if(!file.exists(file.path(resultsdir, "accdiff_v2_vsndbr.jpeg")) & !file.exists(
       acc.mean.vec.vsn = list(acc.mean.vec[model == "vsn2.fixed"][[1]]) # Extract the arl.fixed vector
     ) %>% 
     ungroup() %>%
-    rowwise() %>%
     mutate(
-      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.vsn, "-"))), # Compute pairwise differences
-      acc.delta = mean(pairwise),
-      lower = quantile(pairwise, probs = 0.05),
-      upper = quantile(pairwise, probs = 0.95)
+      acc.delta = map2_dbl(acc.mean.vec, acc.mean.vec.vsn, ~ mean(.x) - mean(.y)),
+      lower = map2_dbl(acc.mean.vec, acc.mean.vec.vsn, ~ quantile(as.vector(outer(.x, .y, "-")), probs = 0.05)),
+      upper = map2_dbl(acc.mean.vec, acc.mean.vec.vsn, ~ quantile(as.vector(outer(.x, .y, "-")), probs = 0.95))
     ) %>%
-    select(-c(acc.mean.vec, acc.mean.vec.vsn, pairwise)) %>%
+    select(-c(acc.mean.vec, acc.mean.vec.vsn)) %>%
     filter(model != "vsn2.fixed")
 
   # Bind data
   plot.data.c = bind_rows(plot.data.c.vsndbr, plot.data.c.vsnvsr)
   write.csv(plot.data.c, file = file.path(resultsdir, "accdiff_v2.csv"))
+  rm(plot.data.c.vsndbr, plot.data.c.vsnvsr); rm(rew.acc); gc()
+
+  acc.time <- readRDS(acc.time.path)
+
+  vsn_acc_baseline = acc.time %>%
+    filter(model == "vsn2.fixed") %>%
+    select(sim, ratio, max, time, frac.corr.vsn = frac.corr)
 
   # Time-resolved accuracy: vsndbr models
-  acctimediff_v2_vsndbr = results$acc.time %>%
-    filter(model != "vsnvsr1.fixed") %>%
+  acctimediff_v2_vsndbr = acc.time %>%
+    filter(model == "vsndbr2.fixed") %>%
     select(-c(alphaVSD, alphaVSR, alphaVSDR, sigmaVSDR)) %>%
     mutate(alphaDBR = map_dbl(alphaDBR, ~ if (is.null(.x)) NA_real_ else .x[1, 1])) %>%
     mutate(alphaS = alphaDBR) %>%
+    left_join(vsn_acc_baseline, by = c("sim", "ratio", "max", "time")) %>%
+    mutate(diff = frac.corr - frac.corr.vsn) %>%
     group_by(model, alphaS, ratio, max, time) %>%
-    reframe(acc.mean.vec = list(frac.corr[which(sim %in% c(1:nsim))])) %>%
-    ungroup() %>%
-    group_by(ratio, max, time) %>%
-    mutate(
-      acc.mean.vec.vsn = list(acc.mean.vec[model == "vsn2.fixed"][[1]])
-    ) %>%
-    ungroup() %>%
-    rowwise() %>%
-    mutate(
-      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.vsn, "-"))),
-      acc.delta = mean(pairwise)
-    ) %>%
-    select(-c(acc.mean.vec, acc.mean.vec.vsn, pairwise)) %>%
-    filter(model != "vsn2.fixed")
+    reframe(acc.delta = mean(diff))
   write.csv(acctimediff_v2_vsndbr, file = file.path(resultsdir, "acctimediff_v2_vsndbr.csv"))
+  rm(acctimediff_v2_vsndbr); gc()
 
   # Time-resolved accuracy: vsnvsr1 model (two-parameter)
-  acctimediff_v2_vsnvsr = results$acc.time %>%
-    filter(model != "vsndbr2.fixed") %>%
+  acctimediff_v2_vsnvsr = acc.time %>%
+    filter(model == "vsnvsr1.fixed") %>%
+    filter(round(alphaVSDR %% 0.05, 10) == 0, round(sigmaVSDR %% 0.05, 10) == 0) %>%
     select(-c(alphaVSD, alphaVSR, alphaDBR)) %>%
+    left_join(vsn_acc_baseline, by = c("sim", "ratio", "max", "time")) %>%
+    mutate(diff = frac.corr - frac.corr.vsn) %>%
     group_by(model, alphaVSDR, sigmaVSDR, ratio, max, time) %>%
-    reframe(acc.mean.vec = list(frac.corr[which(sim %in% c(1:nsim))])) %>%
-    ungroup() %>%
-    group_by(ratio, max, time) %>%
-    mutate(
-      acc.mean.vec.vsn = list(acc.mean.vec[model == "vsn2.fixed"][[1]])
-    ) %>%
-    ungroup() %>%
-    rowwise() %>%
-    mutate(
-      pairwise = list(as.vector(outer(acc.mean.vec, acc.mean.vec.vsn, "-"))),
-      acc.delta = mean(pairwise)
-    ) %>%
-    select(-c(acc.mean.vec, acc.mean.vec.vsn, pairwise)) %>%
-    filter(model != "vsn2.fixed")
+    reframe(acc.delta = mean(diff))
   write.csv(acctimediff_v2_vsnvsr, file = file.path(resultsdir, "acctimediff_v2_vsnvsr.csv"))
+  rm(acctimediff_v2_vsnvsr, vsn_acc_baseline); gc()
+  rm(acc.time); gc()
+
+  switches.time <- readRDS(switches.time.path)
+
+  vsn_switch_baseline = switches.time %>%
+    filter(model == "vsn2.fixed") %>%
+    select(sim, ratio, max, time, switch.frac.vsn = switch.frac)
 
   # Time-resolved switch rate: vsndbr models
-  switchtimediff_v2_vsndbr = results$switches.time %>%
-    filter(model != "vsnvsr1.fixed") %>%
+  switchtimediff_v2_vsndbr = switches.time %>%
+    filter(model == "vsndbr2.fixed") %>%
     select(-c(alphaVSD, alphaVSR, alphaVSDR, sigmaVSDR)) %>%
     mutate(alphaDBR = map_dbl(alphaDBR, ~ if (is.null(.x)) NA_real_ else .x[1, 1])) %>%
     mutate(alphaS = alphaDBR) %>%
+    left_join(vsn_switch_baseline, by = c("sim", "ratio", "max", "time")) %>%
+    mutate(diff = switch.frac - switch.frac.vsn) %>%
     group_by(model, alphaS, ratio, max, time) %>%
-    reframe(switch.mean.vec = list(switch.frac[which(sim %in% c(1:nsim))])) %>%
-    ungroup() %>%
-    group_by(ratio, max, time) %>%
-    mutate(
-      switch.mean.vec.vsn = list(switch.mean.vec[model == "vsn2.fixed"][[1]])
-    ) %>%
-    ungroup() %>%
-    rowwise() %>%
-    mutate(
-      pairwise = list(as.vector(outer(switch.mean.vec, switch.mean.vec.vsn, "-"))),
-      switch.delta = mean(pairwise)
-    ) %>%
-    select(-c(switch.mean.vec, switch.mean.vec.vsn, pairwise)) %>%
-    filter(model != "vsn2.fixed")
+    reframe(switch.delta = mean(diff))
   write.csv(switchtimediff_v2_vsndbr, file = file.path(resultsdir, "switchtimediff_v2_vsndbr.csv"))
+  rm(switchtimediff_v2_vsndbr); gc()
 
   # Time-resolved switch rate: vsnvsr1 model (two-parameter)
-  switchtimediff_v2_vsnvsr = results$switches.time %>%
-    filter(model != "vsndbr2.fixed") %>%
+  switchtimediff_v2_vsnvsr = switches.time %>%
+    filter(model == "vsnvsr1.fixed") %>%
+    filter(round(alphaVSDR %% 0.05, 10) == 0, round(sigmaVSDR %% 0.05, 10) == 0) %>%
     select(-c(alphaVSD, alphaVSR, alphaDBR)) %>%
+    left_join(vsn_switch_baseline, by = c("sim", "ratio", "max", "time")) %>%
+    mutate(diff = switch.frac - switch.frac.vsn) %>%
     group_by(model, alphaVSDR, sigmaVSDR, ratio, max, time) %>%
-    reframe(switch.mean.vec = list(switch.frac[which(sim %in% c(1:nsim))])) %>%
-    ungroup() %>%
-    group_by(ratio, max, time) %>%
-    mutate(
-      switch.mean.vec.vsn = list(switch.mean.vec[model == "vsn2.fixed"][[1]])
-    ) %>%
-    ungroup() %>%
-    rowwise() %>%
-    mutate(
-      pairwise = list(as.vector(outer(switch.mean.vec, switch.mean.vec.vsn, "-"))),
-      switch.delta = mean(pairwise)
-    ) %>%
-    select(-c(switch.mean.vec, switch.mean.vec.vsn, pairwise)) %>%
-    filter(model != "vsn2.fixed")
+    reframe(switch.delta = mean(diff))
   write.csv(switchtimediff_v2_vsnvsr, file = file.path(resultsdir, "switchtimediff_v2_vsnvsr.csv"))
+  rm(switchtimediff_v2_vsnvsr, vsn_switch_baseline); gc()
+  rm(switches.time); gc()
 
   # Reward-based DB 
   p = plot.data.c %>% filter(model %in% c("vsndbr2.fixed")) %>%
@@ -782,8 +743,9 @@ if(!file.exists(file.path(resultsdir, "accdiff_v2_vsndbr.jpeg")) & !file.exists(
     facet_grid(ratio ~ max, labeller = facet.labeller)
   p
   #plot.list =  append(plot.list, list(p))
-    ggexport(p, width = 2800, height = 1440, 
+    ggexport(p, width = 2800, height = 1440,
       filename = file.path(resultsdir, "accdiff_v2_vsnvsr.jpeg"))
+  rm(plot.data.c, p); gc()
 }else{
   print("Plots from numerical simulations for v2 already exist. Skipping.")
 }
