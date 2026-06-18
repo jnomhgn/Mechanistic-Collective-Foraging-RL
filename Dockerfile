@@ -20,7 +20,6 @@ RUN apt update && apt install -y \
     libncursesw5-dev \
     xz-utils tk-dev \
     libxml2-dev \
-    libxmlsec1-dev \
     libffi-dev \
     liblzma-dev \
     libcairo2-dev \
