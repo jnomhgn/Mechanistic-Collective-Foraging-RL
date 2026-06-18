@@ -57,77 +57,77 @@ source(file.path("code", "preprocessing", "preprocessing.R"))
 print("Converting data to numpy arrays...")
 source_python(file.path("code", "preprocessing", "numpy_conversion.py"))
 
-#### Run Behavioral Analyses ####
-print("Running behavioral analyses...")
-source(file.path("code", "behavioral", "behavioral.R"))
+# #### Run Behavioral Analyses ####
+# print("Running behavioral analyses...")
+# source(file.path("code", "behavioral", "behavioral.R"))
 
-#### Run Bayesian Agent Analysis ####
-print("Running Bayesian Forager analyses...")
-source(file.path("code", "bayesianforager", "BayesianForager.R"))
+# #### Run Bayesian Agent Analysis ####
+# print("Running Bayesian Forager analyses...")
+# source(file.path("code", "bayesianforager", "BayesianForager.R"))
 
-#### Alone condition ####
+# #### Alone condition ####
 
-# Run model comparison
-print("Running model comparison for alone condition...")
-source(file.path("code", "rl", "alone", "analyses", "modelcomp.R"))
-rm(list = ls()); invisible(gc())
+# # Run model comparison
+# print("Running model comparison for alone condition...")
+# source(file.path("code", "rl", "alone", "analyses", "modelcomp.R"))
+# rm(list = ls()); invisible(gc())
 
-# Run parameter recovery
-print("Running parameter recovery for alone condition...")
-source(file.path("code", "rl", "alone", "analyses", "parrecov.R"))
-rm(list = ls()); invisible(gc())
+# # Run parameter recovery
+# print("Running parameter recovery for alone condition...")
+# source(file.path("code", "rl", "alone", "analyses", "parrecov.R"))
+# rm(list = ls()); invisible(gc())
 
-#### No catches condition ####
+# #### No catches condition ####
 
-# Run numerical simulations
-print("Running numerical simulations for no catches condition...")
-source(file.path("code", "rl", "nocatches", "analyses", "numsims.R"))
-rm(list = ls()); invisible(gc())
+# # Run numerical simulations
+# print("Running numerical simulations for no catches condition...")
+# source(file.path("code", "rl", "nocatches", "analyses", "numsims.R"))
+# rm(list = ls()); invisible(gc())
 
-# Run model comparison
-print("Running model comparison for no catches condition...")
-source(file.path("code", "rl", "nocatches", "analyses", "modelcomp.R"))
-rm(list = ls()); invisible(gc())
+# # Run model comparison
+# print("Running model comparison for no catches condition...")
+# source(file.path("code", "rl", "nocatches", "analyses", "modelcomp.R"))
+# rm(list = ls()); invisible(gc())
 
-# Run parameter recovery
-print("Running parameter recovery for no catches condition...")
-source(file.path("code", "rl", "nocatches", "analyses", "parrecov.R"))
-rm(list = ls()); invisible(gc())
+# # Run parameter recovery
+# print("Running parameter recovery for no catches condition...")
+# source(file.path("code", "rl", "nocatches", "analyses", "parrecov.R"))
+# rm(list = ls()); invisible(gc())
 
-#### Catches condition ####
+# #### Catches condition ####
 
-# Run numerical simulations
-print("Running numerical simulations for catches condition...")
-source(file.path("code", "rl", "catches", "analyses", "numsims.R"))
-rm(list = ls()); invisible(gc())
+# # Run numerical simulations
+# print("Running numerical simulations for catches condition...")
+# source(file.path("code", "rl", "catches", "analyses", "numsims.R"))
+# rm(list = ls()); invisible(gc())
 
-# Run model comparison
-print("Running model comparison for catches condition...")
-source(file.path("code", "rl", "catches", "analyses", "modelcomp.R"))
-rm(list = ls()); invisible(gc())
+# # Run model comparison
+# print("Running model comparison for catches condition...")
+# source(file.path("code", "rl", "catches", "analyses", "modelcomp.R"))
+# rm(list = ls()); invisible(gc())
 
-# Run parameter recovery
-print("Running parameter recovery for catches condition...")
-source(file.path("code", "rl", "catches", "analyses", "parrecov.R"))
-rm(list = ls()); invisible(gc())
+# # Run parameter recovery
+# print("Running parameter recovery for catches condition...")
+# source(file.path("code", "rl", "catches", "analyses", "parrecov.R"))
+# rm(list = ls()); invisible(gc())
 
-#### Create figures ####
+# #### Create figures ####
 
-# Plot figures
-print("Creating figures...")
-source_python(file.path("code", "figures", "figures.py"))
+# # Plot figures
+# print("Creating figures...")
+# source_python(file.path("code", "figures", "figures.py"))
 
-#### Run model recovery for all conditions at the end due to computation time ####
+# #### Run model recovery for all conditions at the end due to computation time ####
 
-# Alone condition
-print("Running model recovery for alone condition...")
-source(file.path("code", "rl", "alone", "analyses", "modelrecov.R"))
-rm(list = ls()); invisible(gc())
+# # Alone condition
+# print("Running model recovery for alone condition...")
+# source(file.path("code", "rl", "alone", "analyses", "modelrecov.R"))
+# rm(list = ls()); invisible(gc())
 
-# No catches condition
-print("Running model recovery for no catches condition...")
-source(file.path("code", "rl", "nocatches", "analyses", "modelrecov.R"))
-rm(list = ls()); invisible(gc())
+# # No catches condition
+# print("Running model recovery for no catches condition...")
+# source(file.path("code", "rl", "nocatches", "analyses", "modelrecov.R"))
+# rm(list = ls()); invisible(gc())
 
 # Catches condition
 print("Running model recovery for catches condition...")
