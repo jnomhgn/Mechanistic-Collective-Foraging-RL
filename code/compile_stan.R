@@ -6,7 +6,7 @@ stan_files <- list.files("code", pattern = "\\.stan$", recursive = TRUE, full.na
 for (f in stan_files) {
   message("Compiling: ", f)
   tryCatch(
-    cmdstan_model(f),
+    capture.output(cmdstan_model(f, quiet = TRUE), type = "output"),
     error = function(e) message("Failed: ", f, "\n", conditionMessage(e))
   )
 }
