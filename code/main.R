@@ -39,9 +39,9 @@ options(
 	pipeline_config = make_pipeline_config(pipeline_mode)
 )
 
-# Python integration setup
-library(reticulate)
-use_virtualenv(virtualenv = file.path(getwd(), "venv"), required = TRUE)
+# # Python integration setup
+# library(reticulate)
+# use_virtualenv(virtualenv = file.path(getwd(), "venv"), required = TRUE)
 
 # Add seed for reproducibility
 set.seed(42)
@@ -53,9 +53,9 @@ set.seed(42)
 print("Preprocessing data...")
 source(file.path("code", "preprocessing", "preprocessing.R"))
 
-# Convert preprocessed data to numpy arrays.
-print("Converting data to numpy arrays...")
-source_python(file.path("code", "preprocessing", "numpy_conversion.py"))
+# # Convert preprocessed data to numpy arrays.
+# print("Converting data to numpy arrays...")
+# source_python(file.path("code", "preprocessing", "numpy_conversion.py"))
 
 # #### Run Behavioral Analyses ####
 # print("Running behavioral analyses...")
