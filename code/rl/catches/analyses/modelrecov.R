@@ -175,6 +175,9 @@ computeloo <- function(msim, sim, models, stan.data){
 # Get models
 models = getmodels(hierarch = F)
 
+# Exclude adaptive variants
+models = lapply(models, function(x) x[!grepl(pattern = "2", models$name)])
+
 # Compile models to avoid recompiling
 models$compiled = sapply(1:length(models$stan.loglik), function(x) cmdstan_model(stan_file = models$stan.loglik[[x]]))
 
