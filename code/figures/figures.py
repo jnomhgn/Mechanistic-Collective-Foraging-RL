@@ -10,6 +10,9 @@ import math as math
 import csv
 import pandas
 import scipy as sc
+import scipy.stats
+import pyreadr
+import glob
 import os
 
 # Set results directory
@@ -21,10 +24,11 @@ plt.close('all')
 plt.rcdefaults()
 
 # Set global font size and style
-plt.rcParams.update({'font.size': 18,'text.usetex':False,"font.family":"serif"})
+plt.rcParams.update({'font.size': 18,'text.usetex':False,"font.family":"serif",'mathtext.fontset':'stix'})
 
 # Define colors
 co = ['#003a7d','#d83034','#e9c716']
+cmap_fig6 = mcolors.LinearSegmentedColormap.from_list('fig6', ['#003a7d', '#00a878', '#e9c716'])
 
 
 recov_files = [os.path.join('results', 'rl', cond, 'modelrecov', 'modelrecov.csv') for cond in ['alone', 'nocatches', 'catches']]
@@ -526,8 +530,6 @@ if not recov_done:
     df_vsnvsr = df_numsim_v2[df_numsim_v2['model'] == 'vsnvsr1.fixed'].copy()
 
     color_vsndbr = '#003a7d'
-    from matplotlib.colors import LinearSegmentedColormap
-    cmap_fig6 = LinearSegmentedColormap.from_list('fig6', ['#003a7d', '#00a878', '#e9c716'])
     vmin_heatmap = df_vsnvsr['acc.delta'].min()
     vmax_heatmap = df_vsnvsr['acc.delta'].max()
 
@@ -725,45 +727,109 @@ if not recov_done:
     fig.set_size_inches(15, 11)
     fig.savefig(os.path.join(resultsdir, 'FigS2.pdf'), bbox_inches='tight')
 
+
+    ####
+    #### FigS4-S6. -- Parameter recovery ####
+    ####
+
+    # Parameter symbols
+    par_symbols = {'alphaQN': r'$\alpha_{P,-}$', 'alphaQP': r'$\alpha_{P,+}$',
+                   'betaQ': r'$\beta_{Q}$', 'betaC': r'$\beta_{H}$'}
+    env_max = ['.5', '.7', '.9']
+    env_ratio = ['.5', '.65', '.8', '.95']
+    for prefix, label in [('VSD', 'VSl'), ('DBR', 'DBr')]:
+        for i_ratio in range(len(env_ratio)):
+            for i_max in range(len(env_max)):
+                par_symbols[f'alpha{prefix}[{i_max + 1},{i_ratio + 1}]'] = \
+                    rf'$\alpha_{{{label}[{env_max[i_max]}, {env_ratio[i_ratio]}]}}$'
+
+    for cond, fig_name in [('alone', 'FigS4'), ('nocatches', 'FigS5'), ('catches', 'FigS6')]:
+        parrecov_dir = os.path.join('results', 'rl', cond, 'parrecov')
+        files = glob.glob(os.path.join(parrecov_dir, '*.rds')) + glob.glob(os.path.join(parrecov_dir, '*.Rdata'))
+        if len(files) == 0:
+            print('Skipping parameter recovery figure for ' + cond + ': no results found.')
+            continue
+
+        # Posterior summaries per parameter and simulation
+        df_parrecov = next(iter(pyreadr.read_r(files[0]).values()))
+        pars = [p for p in par_symbols if p in set(df_parrecov['par'])]
+        pars += sorted(set(df_parrecov['par']) - set(pars))
+
+        ncols = min(4, len(pars))
+        nrows = math.ceil(len(pars) / ncols)
+        fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 3.5 * nrows), squeeze=False)
+
+        for ax, par in zip(axes.flat, pars):
+            d_par = df_parrecov[df_parrecov['par'] == par]
+            x = d_par['true.pars'].to_numpy()
+            y = d_par['.mean'].to_numpy()
+            err = np.clip([y - d_par['.lower'].to_numpy(), d_par['.upper'].to_numpy() - y], 0, None)
+            ax.errorbar(x, y, yerr=err, fmt='o', color='black', markersize=3, linewidth=1)
+
+            # Identity line on shared axis limits
+            lims = [np.min([x.min(), (y - err[0]).min()]), np.max([x.max(), (y + err[1]).max()])]
+            pad = 0.05 * (lims[1] - lims[0])
+            lims = [lims[0] - pad, lims[1] + pad]
+            ax.plot(lims, lims, '--', color='grey', linewidth=1, zorder=0)
+            ax.set_xlim(lims)
+            ax.set_ylim(lims)
+
+            if len(x) > 2 and x.std() > 0 and y.std() > 0:
+                r_text = 'r = ' + f'{scipy.stats.pearsonr(x, y)[0]:.2f}'
+            else:
+                r_text = 'r = n/a'
+            ax.text(0.05, 0.95, r_text, transform=ax.transAxes, ha='left', va='top', fontsize=10)
+            ax.set_title(par_symbols.get(par, par), fontsize=14)
+            ax.tick_params(labelsize=10)
+
+        for ax in axes.flat[len(pars):]:
+            ax.set_visible(False)
+
+        fig.supxlabel('Generating Parameter Value', fontsize=14)
+        fig.supylabel('Estimated Parameter Value', fontsize=14)
+        fig.tight_layout()
+        fig.savefig(os.path.join(resultsdir, fig_name + '.pdf'), bbox_inches='tight')
+
 ####
 #### FigS3. -- Model recovery ####
 ####
 
 if recov_done:
     recov_panels = [
-        ('Solo', [r'$ARL_{\bar{H},\bar{\pm}}$', r'$ARL_{\bar{H},\pm}$', r'$ARL_{H,\bar{\pm}}$',
+        ('Alone', [r'$ARL_{\bar{H},\bar{\pm}}$', r'$ARL_{\bar{H},\pm}$', r'$ARL_{H,\bar{\pm}}$',
                   r'$ARL_{H,\pm}$', r'$ARL_{H,\pm[m]}$', r'$ARL_{H,\pm[m,r]}$']),
         ('No catches', [r'$ARL_{H,\pm}$', r'$DB_l$', r'$DB_{l[m,r]}$', r'$VS_l$', r'$VS_{l[m,r]}$']),
         ('Catches', [r'$ARL_{H,\pm}$', r'$DB_l$', r'$VS_l$', r'$DB_r$', r'$VS_r$',
                      r'$DB_{l}VS_{r}$', r'$VS_{l}DB_{r}$', r'$VS_{l}VS_{r}$', r'$DB_{l}DB_{r}$']),
     ]
 
-    fig, axes = plt.subplots(1, 3, figsize=(24, 8), gridspec_kw={'width_ratios': [len(m) for _, m in recov_panels], 'wspace': 0.3})
+    # Alone centred on the top row, social conditions on the bottom row
+    fig = plt.figure(figsize=(14, 14))
+    gs = fig.add_gridspec(2, 4, wspace=1.2, hspace=0.45)
+    axes = [fig.add_subplot(gs[0, 1:3]), fig.add_subplot(gs[1, 0:2]), fig.add_subplot(gs[1, 2:4])]
 
-    for ax, (title, names), f in zip(axes, recov_panels, recov_files):
+    for ax, (title, names), f, letter in zip(axes, recov_panels, recov_files, 'abc'):
         df_recov = pandas.read_csv(f)
 
         # p(fit|sim): share of simulations won by each fitted model
         n_sim = df_recov['sim'].nunique()
         p = np.zeros((len(names), len(names)))
         for msim, mfit, win in zip(df_recov['msim'], df_recov['mfit'], df_recov['win']):
-            p[msim - 1, mfit - 1] += win / n_sim
+            p[mfit - 1, msim - 1] += win / n_sim
 
-        im = ax.imshow(p, cmap='viridis', vmin=0, vmax=1, alpha=0.75)
+        im = ax.imshow(p, cmap=cmap_fig6, vmin=0, vmax=1)
+        ax.set_box_aspect(1)
         for i in range(len(names)):
             for j in range(len(names)):
-                ax.text(j, i, f'{p[i, j]:.1f}', ha='center', va='center', fontsize=10,
+                ax.text(j, i, f'{p[i, j]:.1f}', ha='center', va='center', fontsize=12,
                         color='white' if p[i, j] < 0.5 else 'black')
         ax.set_xticks(range(len(names)))
         ax.set_yticks(range(len(names)))
-        ax.set_xticklabels(names, rotation=45, ha='right', fontsize=10)
-        ax.set_yticklabels(names, fontsize=10)
-        ax.set_title(title, fontsize=13)
-        ax.set_xlabel('Fitted Model', fontsize=13)
-    axes[0].set_ylabel('Simulated Model', fontsize=13)
-
-    cbar = fig.colorbar(im, ax=axes, fraction=0.015, pad=0.02)
-    cbar.ax.tick_params(labelsize=10)
-    cbar.ax.set_title('p(fit|sim)', fontsize=13)
+        ax.set_xticklabels(names, rotation=45, ha='right', fontsize=15)
+        ax.set_yticklabels(names, fontsize=15)
+        ax.set_title(title, fontsize=14)
+        ax.set_xlabel('Simulated Model', fontsize=16)
+        ax.set_ylabel('Fitted Model', fontsize=16)
+        ax.text(-0.35, 1.05, letter, transform=ax.transAxes, fontsize=20, fontweight='bold', va='bottom', ha='left')
 
     fig.savefig(os.path.join(resultsdir, 'FigS3.pdf'), bbox_inches='tight')
