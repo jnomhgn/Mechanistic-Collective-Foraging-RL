@@ -755,7 +755,7 @@ if not recov_done:
         pars = [p for p in par_symbols if p in set(df_parrecov['par'])]
         pars += sorted(set(df_parrecov['par']) - set(pars))
 
-        ncols = min(4, len(pars))
+        ncols = 2 if len(pars) <= 4 else 4
         nrows = math.ceil(len(pars) / ncols)
         fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 3.5 * nrows), squeeze=False)
 
@@ -764,7 +764,7 @@ if not recov_done:
             x = d_par['true.pars'].to_numpy()
             y = d_par['.mean'].to_numpy()
             err = np.clip([y - d_par['.lower'].to_numpy(), d_par['.upper'].to_numpy() - y], 0, None)
-            ax.errorbar(x, y, yerr=err, fmt='o', color='black', markersize=3, linewidth=1)
+            ax.errorbar(x, y, yerr=err, fmt='o', color='black', markersize=6, linewidth=1)
 
             # Identity line on shared axis limits
             lims = [np.min([x.min(), (y - err[0]).min()]), np.max([x.max(), (y + err[1]).max()])]
@@ -778,15 +778,15 @@ if not recov_done:
                 r_text = 'r = ' + f'{scipy.stats.pearsonr(x, y)[0]:.2f}'
             else:
                 r_text = 'r = n/a'
-            ax.text(0.05, 0.95, r_text, transform=ax.transAxes, ha='left', va='top', fontsize=10)
-            ax.set_title(par_symbols.get(par, par), fontsize=14)
-            ax.tick_params(labelsize=10)
+            ax.text(0.05, 0.95, r_text, transform=ax.transAxes, ha='left', va='top', fontsize=12)
+            ax.set_title(par_symbols.get(par, par), fontsize=20)
+            ax.tick_params(labelsize=12)
 
         for ax in axes.flat[len(pars):]:
             ax.set_visible(False)
 
-        fig.supxlabel('Generating Parameter Value', fontsize=14)
-        fig.supylabel('Estimated Parameter Value', fontsize=14)
+        fig.supxlabel('Generating Parameter Value', fontsize=16)
+        fig.supylabel('Estimated Parameter Value', fontsize=16)
         fig.tight_layout()
         fig.savefig(os.path.join(resultsdir, fig_name + '.pdf'), bbox_inches='tight')
 
