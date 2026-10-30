@@ -767,7 +767,7 @@ if not recov_done:
             ax.errorbar(x, y, yerr=err, fmt='o', color='black', markersize=6, linewidth=1)
 
             # x axis spans the generating parameter range plus a margin, y axis also covers all estimates
-            bounds = {'betaQ': (0, 10), 'betaC': (-4, 4)}.get(par, (0, 1))
+            bounds = {'betaQ': (0, 14), 'betaC': (-6, 6)}.get(par, (0, 1))
             margin = 0.125 * (bounds[1] - bounds[0])
             xlims = [bounds[0] - margin, bounds[1] + margin]
             ylims = [np.min([xlims[0], (y - err[0]).min()]), np.max([xlims[1], (y + err[1]).max()])]
@@ -776,7 +776,7 @@ if not recov_done:
             ax.set_ylim(ylims)
 
             # Same ticks in every panel of a parameter type
-            ticks = {'betaQ': [0, 2.5, 5, 7.5, 10], 'betaC': [-4, -2, 0, 2, 4]}.get(par, [0, 0.2, 0.4, 0.6, 0.8, 1])
+            ticks = {'betaQ': [0, 2, 4, 6, 8, 10, 12, 14], 'betaC': [-6, -3, 0, 3, 6]}.get(par, [0, 0.2, 0.4, 0.6, 0.8, 1])
             ax.set_xticks(ticks)
             ax.set_yticks(ticks)
 
