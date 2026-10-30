@@ -766,13 +766,19 @@ if not recov_done:
             err = np.clip([y - d_par['.lower'].to_numpy(), d_par['.upper'].to_numpy() - y], 0, None)
             ax.errorbar(x, y, yerr=err, fmt='o', color='black', markersize=6, linewidth=1)
 
-            # Identity line on shared axis limits
-            lims = [np.min([x.min(), (y - err[0]).min()]), np.max([x.max(), (y + err[1]).max()])]
-            pad = 0.05 * (lims[1] - lims[0])
-            lims = [lims[0] - pad, lims[1] + pad]
-            ax.plot(lims, lims, '--', color='grey', linewidth=1, zorder=0)
-            ax.set_xlim(lims)
-            ax.set_ylim(lims)
+            # x axis spans the generating parameter range plus a margin, y axis also covers all estimates
+            bounds = {'betaQ': (0, 10), 'betaC': (-4, 4)}.get(par, (0, 1))
+            margin = 0.125 * (bounds[1] - bounds[0])
+            xlims = [bounds[0] - margin, bounds[1] + margin]
+            ylims = [np.min([xlims[0], (y - err[0]).min()]), np.max([xlims[1], (y + err[1]).max()])]
+            ax.plot(xlims, xlims, '--', color='grey', linewidth=1, zorder=0)
+            ax.set_xlim(xlims)
+            ax.set_ylim(ylims)
+
+            # Same ticks in every panel of a parameter type
+            ticks = {'betaQ': [0, 2.5, 5, 7.5, 10], 'betaC': [-4, -2, 0, 2, 4]}.get(par, [0, 0.2, 0.4, 0.6, 0.8, 1])
+            ax.set_xticks(ticks)
+            ax.set_yticks(ticks)
 
             if len(x) > 2 and x.std() > 0 and y.std() > 0:
                 r_text = 'r = ' + f'{scipy.stats.pearsonr(x, y)[0]:.2f}'
