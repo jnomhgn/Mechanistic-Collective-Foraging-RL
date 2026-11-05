@@ -505,3 +505,31 @@ if(!file.exists(file.path(resultsdir, adaptivity, "postpredict_acctime.csv")) &
   }else{
     sprintf("Posterior predictions for %s model already exist. Skipping simulation.", adaptivity) %>% print()
   }
+
+
+#### Contrasts of social learning weights ####
+
+winner.name = gsub(".hierarch", "", unname(winner), fixed = TRUE)
+
+# Get environment-varying parameter of the winning model
+models.fixed = getmodels(hierarch = F)
+pop.names = names(models.fixed$free.pars.pop[[grep(paste0("^", winner.name, "\\.fixed$"), unlist(models.fixed$name))]])
+contrast.par = unique(sub("\\[.*$", "", grep("\\[", pop.names, value = TRUE)))
+contrast.file = file.path(resultsdir, "adaptive", "contrasts.csv")
+
+if(!grepl("2", winner.name)){
+  print("Winning model is not adaptive. Skipping contrasts.")
+}else if(file.exists(contrast.file)){
+  print("Contrasts of social learning weights already exist. Skipping computation.")
+}else{
+
+  fit = readRDS(file.path(resultsdir, "adaptive", paste0(winner.name, ".hierarch.fit.rds")))
+
+  # Factor level labels
+  max.levels = d %>% distinct(max.fac, max) %>% arrange(max.fac) %>% pull(max)
+  ratio.levels = d %>% distinct(ratio.fac, ratio) %>% arrange(ratio.fac) %>% pull(ratio)
+
+  contrasts.alpha = parameter.contrasts(contrast.par, fit, max.levels, ratio.levels)
+
+  write.csv(contrasts.alpha, file = contrast.file, row.names = F)
+}
