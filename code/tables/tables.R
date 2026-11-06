@@ -19,48 +19,6 @@ model_names <- list(
   C  = "$VS_{l[m,r]}DB_{r[m,r]}$"
 )
 
-# Read a diagnostics csv and round its numeric summary columns
-read_diagnostics <- function(path) {
-  d <- read.csv(path)
-  d[, 3:13] <- apply(d[, 3:13], 2, function(x) round(x, 3))
-  d
-}
-
-# Pull mean/lower/upper (q5/q95) for a set of variables, in the given order
-extract_pars <- function(d, vars) {
-  out <- d[match(vars, d$variable), c("variable", "mean", "q5", "q95")]
-  colnames(out) <- c("variable", "mean", "lower", "upper")
-  out
-}
-
-# Format as "mean [lower, upper]" with fixed 3 decimal places
-format_value <- function(pars_table) {
-  sprintf("%.3f [%.3f, %.3f]", pars_table$mean, pars_table$lower, pars_table$upper)
-}
-
-# Build the multirow LaTeX rows for one condition/model block
-build_latex_block <- function(pars_table, condition, model_name) {
-  n <- nrow(pars_table)
-  rows <- character(n)
-  rows[1] <- sprintf(
-    "\\multirow{%d}{*}{%s} & \\multirow{%d}{*}{%s} & %s & %s \\\\",
-    n, condition, n, model_name, pars_table$parameter[1], pars_table$value[1]
-  )
-  if (n > 1) {
-    rows[-1] <- sprintf(" & & %s & %s \\\\", pars_table$parameter[-1], pars_table$value[-1])
-  }
-  rows
-}
-
-# Extract parameters for one condition and build its LaTeX block in one go
-build_condition_block <- function(condition) {
-  d <- read_diagnostics(diagnostics_files[[condition]])
-  pars_table <- extract_pars(d, param_vars[[condition]])
-  pars_table$parameter <- symbol_map[pars_table$variable]
-  pars_table$value <- format_value(pars_table)
-  build_latex_block(pars_table, condition, model_names[[condition]])
-}
-
 # Map raw Stan variable names to the LaTeX parameter symbols used in the write-up
 symbol_map <- c(
   "alphaQN" = "$\\alpha_{P,-}$",
@@ -115,9 +73,44 @@ param_vars <- list(
   C  = c(asocial_vars, vs_vars, db_vars)
 )
 
-pars_a_rows  <- build_condition_block("A")
-pars_nc_rows <- build_condition_block("NC")
-pars_c_rows  <- build_condition_block("C")
+# Condition A
+pars_a <- read.csv(diagnostics_files$A)
+pars_a[, 3:13] <- round(pars_a[, 3:13], 3)
+pars_a <- pars_a[match(param_vars$A, pars_a$variable), c("variable", "mean", "q5", "q95")]
+colnames(pars_a) <- c("variable", "mean", "lower", "upper")
+pars_a$parameter <- symbol_map[pars_a$variable]
+pars_a$value <- sprintf("%.3f [%.3f, %.3f]", pars_a$mean, pars_a$lower, pars_a$upper)
+pars_a_rows <- sprintf(" & & %s & %s \\\\", pars_a$parameter, pars_a$value)
+pars_a_rows[1] <- sprintf(
+  "\\multirow{%d}{*}{%s} & \\multirow{%d}{*}{%s} & %s & %s \\\\",
+  nrow(pars_a), "A", nrow(pars_a), model_names$A, pars_a$parameter[1], pars_a$value[1]
+)
+
+# Condition NC
+pars_nc <- read.csv(diagnostics_files$NC)
+pars_nc[, 3:13] <- round(pars_nc[, 3:13], 3)
+pars_nc <- pars_nc[match(param_vars$NC, pars_nc$variable), c("variable", "mean", "q5", "q95")]
+colnames(pars_nc) <- c("variable", "mean", "lower", "upper")
+pars_nc$parameter <- symbol_map[pars_nc$variable]
+pars_nc$value <- sprintf("%.3f [%.3f, %.3f]", pars_nc$mean, pars_nc$lower, pars_nc$upper)
+pars_nc_rows <- sprintf(" & & %s & %s \\\\", pars_nc$parameter, pars_nc$value)
+pars_nc_rows[1] <- sprintf(
+  "\\multirow{%d}{*}{%s} & \\multirow{%d}{*}{%s} & %s & %s \\\\",
+  nrow(pars_nc), "NC", nrow(pars_nc), model_names$NC, pars_nc$parameter[1], pars_nc$value[1]
+)
+
+# Condition C
+pars_c <- read.csv(diagnostics_files$C)
+pars_c[, 3:13] <- round(pars_c[, 3:13], 3)
+pars_c <- pars_c[match(param_vars$C, pars_c$variable), c("variable", "mean", "q5", "q95")]
+colnames(pars_c) <- c("variable", "mean", "lower", "upper")
+pars_c$parameter <- symbol_map[pars_c$variable]
+pars_c$value <- sprintf("%.3f [%.3f, %.3f]", pars_c$mean, pars_c$lower, pars_c$upper)
+pars_c_rows <- sprintf(" & & %s & %s \\\\", pars_c$parameter, pars_c$value)
+pars_c_rows[1] <- sprintf(
+  "\\multirow{%d}{*}{%s} & \\multirow{%d}{*}{%s} & %s & %s \\\\",
+  nrow(pars_c), "C", nrow(pars_c), model_names$C, pars_c$parameter[1], pars_c$value[1]
+)
 
 pars_body_lines <- c(pars_a_rows, "\\midrule", pars_nc_rows, "\\midrule", pars_c_rows)
 
@@ -125,13 +118,14 @@ pars_table_lines <- c(
   "\\begin{table}[h!]",
   "    \\centering",
   "    \\footnotesize",
+  "    \\resizebox{\\linewidth}{!}{%",
   "    \\begin{tabular}{c c l l}",
   "        \\toprule",
   "        Condition & Model & Parameter & Mean \\& 90\\% HPDI \\\\",
   "        \\midrule",
   paste0("        ", pars_body_lines),
   "        \\bottomrule",
-  "    \\end{tabular}",
+  "    \\end{tabular}}",
   "    \\caption{Inferred RLM parameters for the winning models in the A, NC, and C conditions reported as means and 90\\% HPDIs.}",
   "    \\label{tab:rlpars}",
   "\\end{table}"
@@ -186,29 +180,32 @@ model_labels <- list(
   )
 )
 
-# Format elpd_diff / se_diff to a fixed 3 decimal places
-format_num <- function(x) {
-  sprintf("%.3f", x)
-}
+# Condition A
+modelcomp_a <- read.csv(modelcomp_files$A)
+colnames(modelcomp_a)[1] <- "model"
+modelcomp_a <- modelcomp_a[modelcomp_a$model %in% names(model_labels$A), ]
+modelcomp_a_rows <- sprintf(
+  "%s & %s & %.3f & %.3f \\\\",
+  c("A", rep("", nrow(modelcomp_a) - 1)), paste0("$", model_labels$A[modelcomp_a$model], "$"), modelcomp_a$elpd_diff, modelcomp_a$se_diff
+)
 
-# Extract and format the model comparison rows for one condition
-build_modelcomp_block <- function(condition) {
-  d <- read.csv(modelcomp_files[[condition]])
-  colnames(d)[1] <- "model"
+# Condition NC
+modelcomp_nc <- read.csv(modelcomp_files$NC)
+colnames(modelcomp_nc)[1] <- "model"
+modelcomp_nc <- modelcomp_nc[modelcomp_nc$model %in% names(model_labels$NC), ]
+modelcomp_nc_rows <- sprintf(
+  "%s & %s & %.3f & %.3f \\\\",
+  c("NC", rep("", nrow(modelcomp_nc) - 1)), paste0("$", model_labels$NC[modelcomp_nc$model], "$"), modelcomp_nc$elpd_diff, modelcomp_nc$se_diff
+)
 
-  labels <- model_labels[[condition]]
-  d <- d[match(names(labels), d$model), ]
-
-  condition_col <- c(condition, rep("", nrow(d) - 1))
-  sprintf(
-    "%s & %s & %s & %s \\\\",
-    condition_col, labels[d$model], format_num(d$elpd_diff), format_num(d$se_diff)
-  )
-}
-
-modelcomp_a_rows  <- build_modelcomp_block("A")
-modelcomp_nc_rows <- build_modelcomp_block("NC")
-modelcomp_c_rows  <- build_modelcomp_block("C")
+# Condition C
+modelcomp_c <- read.csv(modelcomp_files$C)
+colnames(modelcomp_c)[1] <- "model"
+modelcomp_c <- modelcomp_c[modelcomp_c$model %in% names(model_labels$C), ]
+modelcomp_c_rows <- sprintf(
+  "%s & %s & %.3f & %.3f \\\\",
+  c("C", rep("", nrow(modelcomp_c) - 1)), paste0("$", model_labels$C[modelcomp_c$model], "$"), modelcomp_c$elpd_diff, modelcomp_c$se_diff
+)
 
 modelcomp_body_lines <- c(modelcomp_a_rows, "\\midrule", modelcomp_nc_rows, "\\midrule", modelcomp_c_rows)
 
@@ -216,25 +213,85 @@ modelcomp_table_lines <- c(
   "% Results model comparison",
   "\\begin{table}[h!]",
   "    %\\caption{Results of the model comparison}",
-  "\\begin{tabularx}{1\\linewidth}{ ",
-  "    >{\\raggedright\\arraybackslash}X",
-  "    >{\\raggedright\\arraybackslash}X ",
-  "    >{\\raggedright\\arraybackslash}X  ",
-  "    >{\\raggedright\\arraybackslash}X  }",
+  "    \\resizebox{\\linewidth}{!}{%",
+  "    \\begin{tabular}{l l l l}",
   "         \\toprule",
   "         Condition & Model & $\\hat{elpd}_{diff}$ &  $SE(\\hat{elpd}_{diff})$\\\\",
   "         \\midrule",
   paste0("         ", modelcomp_body_lines),
   "        \\bottomrule",
-  "    \\end{tabularx}",
-  "    \\caption{Results of the RL model comparisons for the A, NC, and C conditions. $\\hat{elpd}_{diff}$ denotes the difference in the estimated expected log pointwise predictive density $\\hat{elpd}_{PSIS-loo}$ relative to the best model and $SE(\\hat{elpd}_{diff})$ denotes its standard error. We explored different ARL models not discussed in the main text. We first crossed the absence (``$\\Bar{H}$\") / presence (``$H$\") of the persistence parameter $\\beta_H$ with the absence (``$\\Bar{\\pm}$\") / presence (``$\\pm$\") of the asymmetric personal learning weights $\\alpha_{P-}$ and $\\alpha_{P+}$. Then we explored models that allowed these asymmetric personal learning weights to vary depending on either the maximum catch (``$\\pm[m]$\"), or the maximum catch as well as the catch ratio (``$\\pm[m,r]$\"). To keep our further analyses tractable, we settled on model $ARL_{H, \\pm}$ which performed substantially better than the less complex models but only marginally worse than the more complex ones. }",
+  "    \\end{tabular}}",
+  "    \\caption{Results of the RL model comparisons for the A, NC, and C conditions. $\\hat{elpd}_{diff}$ denotes the difference in the estimated expected log pointwise predictive density $\\hat{elpd}_{PSIS-loo}$ relative to the best model and $SE(\\hat{elpd}_{diff})$ denotes its standard error.}",
   "    \\label{tab:modelcomp}",
   "\\end{table}"
 )
 
 cat(modelcomp_table_lines, sep = "\n")
 
+#### Contrasts table ####
+
+contrast_files <- list(
+  NC = file.path("results", "rl", "nocatches", "modelcomp", "adaptive", "contrasts.csv"),
+  C  = file.path("results", "rl", "catches", "modelcomp", "contrasts.csv")
+)
+
+# LaTeX symbols for the contrasted parameters
+contrast_symbols <- c(
+  "alphaVSD" = "$\\alpha_{VSl[m,r]}$",
+  "alphaDBR" = "$\\alpha_{DBr[m,r]}$"
+)
+
+# Condition NC
+contrasts_nc <- read.csv(contrast_files$NC)
+contrasts_nc_symbol <- contrast_symbols[unique(contrasts_nc$parameter)]
+contrasts_nc$label <- paste0(contrasts_nc$effect, ": ", contrasts_nc$contrast)
+contrasts_nc$value <- sprintf("%.3f [%.3f, %.3f]", contrasts_nc$mean, contrasts_nc$lower, contrasts_nc$upper)
+# Typeset minus signs in math mode and pad non-negative numbers with an invisible minus
+contrasts_nc$value <- gsub("-", "$-$", contrasts_nc$value, fixed = TRUE)
+contrasts_nc$value <- gsub("(^|\\[|, )([0-9])", "\\1\\\\phantom{$-$}\\2", contrasts_nc$value)
+
+# Condition C
+contrasts_c <- read.csv(contrast_files$C)
+contrasts_c$label <- paste0(contrasts_c$effect, ": ", contrasts_c$contrast)
+contrasts_c$value <- sprintf("%.3f [%.3f, %.3f]", contrasts_c$mean, contrasts_c$lower, contrasts_c$upper)
+contrasts_c$value <- gsub("-", "$-$", contrasts_c$value, fixed = TRUE)
+contrasts_c$value <- gsub("(^|\\[|, )([0-9])", "\\1\\\\phantom{$-$}\\2", contrasts_c$value)
+contrasts_c_vsd <- contrasts_c[contrasts_c$parameter == "alphaVSD", ]
+contrasts_c_dbr <- contrasts_c[contrasts_c$parameter == "alphaDBR", ]
+
+# One row per contrast, one value column per weight
+contrast_labels <- unique(contrasts_nc$label)
+contrast_rows <- sprintf(
+  "%s & %s & %s & %s \\\\",
+  contrast_labels,
+  contrasts_nc$value[match(contrast_labels, contrasts_nc$label)],
+  contrasts_c_vsd$value[match(contrast_labels, contrasts_c_vsd$label)],
+  contrasts_c_dbr$value[match(contrast_labels, contrasts_c_dbr$label)]
+)
+
+contrast_table_lines <- c(
+  "\\begin{table}[h!]",
+  "    \\centering",
+  "    \\footnotesize",
+  "    \\resizebox{\\linewidth}{!}{%",
+  "    \\begin{tabular}{l r r r}",
+  "        \\toprule",
+  "        & \\multicolumn{1}{c}{NC} & \\multicolumn{2}{c}{C} \\\\",
+  "        \\cmidrule(lr){2-2} \\cmidrule(lr){3-4}",
+  paste0("        Contrast & \\multicolumn{1}{c}{", contrasts_nc_symbol, "} & \\multicolumn{1}{c}{", contrast_symbols["alphaVSD"], "} & \\multicolumn{1}{c}{", contrast_symbols["alphaDBR"], "} \\\\"),
+  "        \\midrule",
+  paste0("        ", contrast_rows),
+  "        \\bottomrule",
+  "    \\end{tabular}}",
+  "    \\caption{Contrasts of the social learning weights in the NC and C conditions reported as means and 90\\% HPDIs. Rows labeled max and ratio give differences between the maximum catch and catch ratio levels, respectively, marginal over the levels of the other factor. Rows labeled max x ratio give interaction contrasts with $(m_2 - m_1)\\times(r_2 - r_1)$ defined as the difference between maximum catch levels $m_2$ and $m_1$ at catch ratio $r_2$, minus the same difference at catch ratio $r_1$.}",
+  "    \\label{tab:contrasts}",
+  "\\end{table}"
+)
+
+cat(contrast_table_lines, sep = "\n")
+
 #### Write tables ####
 
 writeLines(pars_table_lines, file.path(resultsdir, "pars.tex"))
 writeLines(modelcomp_table_lines, file.path(resultsdir, "modelcomp.tex"))
+writeLines(contrast_table_lines, file.path(resultsdir, "contrasts.tex"))
