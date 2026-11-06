@@ -129,7 +129,7 @@ make_pipeline_config <- function(mode = c("full", "test")) {
       ),
       catches = list(
         numsims = list(
-          nsim = 100,
+          nsim = 500,
           sessions = 18,
           trials = 12,
           nplayers = 5,
