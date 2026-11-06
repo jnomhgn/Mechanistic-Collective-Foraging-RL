@@ -4,8 +4,9 @@ pairwise.contrasts = function(marg, labels, factor.name){
   lapply(seq_len(ncol(pairs)), function(k){
     diff = marg[, pairs[2, k]] - marg[, pairs[1, k]]
     mean_hdi(diff, .width = .9) %>%
-      transmute(factor = factor.name,
+      transmute(effect = factor.name,
                 contrast = paste(labels[pairs[2, k]], "-", labels[pairs[1, k]]),
+                contrast_definition = paste(factor.name, labels[pairs[2, k]], "-", factor.name, labels[pairs[1, k]]),
                 mean = y, lower = ymin, upper = ymax)
   }) %>% bind_rows()
 }
@@ -21,9 +22,11 @@ interaction.contrasts = function(arr, max.labels, ratio.labels){
     diff = (arr[, m[2], r[2]] - arr[, m[1], r[2]]) -
            (arr[, m[2], r[1]] - arr[, m[1], r[1]])
     mean_hdi(diff, .width = .9) %>%
-      transmute(factor = "max x ratio",
-                contrast = paste0("max=", max.labels[m[2]], " - max=", max.labels[m[1]],
-                                  " at ratio=", ratio.labels[r[2]], " vs ratio=", ratio.labels[r[1]]),
+      transmute(effect = "max x ratio",
+                contrast = paste0("(", max.labels[m[2]], " - ", max.labels[m[1]], ")x(",
+                                  ratio.labels[r[2]], " - ", ratio.labels[r[1]], ")"),
+                contrast_definition = paste0("(max ", max.labels[m[2]], " - max ", max.labels[m[1]], ") at ratio ",
+                                             ratio.labels[r[2]], " vs ratio ", ratio.labels[r[1]]),
                 mean = y, lower = ymin, upper = ymax)
   }) %>% bind_rows()
 }
