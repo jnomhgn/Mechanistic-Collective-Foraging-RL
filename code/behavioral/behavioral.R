@@ -1,6 +1,7 @@
 #### Setup ####
 
 source(file.path("code", "pipeline_config.R"))
+source(file.path("code", "behavioral", "contrasts.R"))
 
 chains <- get_pipeline_value("behavioral", "chains", default = 4)
 cores <- get_pipeline_value("behavioral", "cores", default = 4)
@@ -168,7 +169,7 @@ if(!file.exists(file.path(resultsdir, "acc.csv"))){
 # Load model fit
 acc = readRDS(file.path(resultsdir, "acc.rds"))
 
-if(!file.exists(file.path(resultsdir, "acc_point_estimates.csv"))){
+if(!file.exists(file.path(resultsdir, "acc_point_estimates.csv")) | !file.exists(file.path(resultsdir, "contrasts.csv"))){
 
   # Factor level labels
   max.levels = sort(unique(d$max))
@@ -187,6 +188,10 @@ if(!file.exists(file.path(resultsdir, "acc_point_estimates.csv"))){
     }
   }
 
+}
+
+if(!file.exists(file.path(resultsdir, "acc_point_estimates.csv"))){
+
   # Reshape to long format
   acc.long = as.data.frame.table(acc.arr, responseName = "acc") %>%
     rename(draw = Var1, social = Var2, max = Var3, ratio = Var4)
@@ -203,5 +208,47 @@ if(!file.exists(file.path(resultsdir, "acc_point_estimates.csv"))){
 }else{
 
   print("Point estimates already exist. Skipping.")
+
+}
+
+if(!file.exists(file.path(resultsdir, "contrasts.csv"))){
+
+  # Accuracy per draw in alone condition [draw, max, ratio]
+  alone.arr = acc.arr[, "Alone", , ]
+
+  # Main effects in alone condition: marginal means per draw
+  marg.max = apply(alone.arr, c(1, 2), mean)
+  marg.ratio = apply(alone.arr, c(1, 3), mean)
+
+  # Main, conditional and interaction contrasts in alone condition
+  contrasts.alone = bind_rows(
+    pairwise.contrasts(marg.max, max.levels, "max"),
+    pairwise.contrasts(marg.ratio, ratio.levels, "ratio"),
+    conditional.ratio.contrasts(alone.arr, max.levels, ratio.levels),
+    conditional.max.contrasts(alone.arr, max.levels, ratio.levels),
+    interaction.contrasts(alone.arr, max.levels, ratio.levels)
+  ) %>% mutate(social = "Alone", .before = 1)
+
+  # Social main effects: marginal means over environments per draw
+  marg.social = apply(acc.arr, c(1, 2), mean)
+  contrasts.social.main = pairwise.contrasts(marg.social, social.levels, "social")
+
+  # Social differences within each environment
+  contrasts.social.env = NULL
+  for(m in seq_along(max.levels)){
+    for(r in seq_along(ratio.levels)){
+      contrasts.cell = pairwise.contrasts(acc.arr[, , m, r], social.levels, "social") %>%
+        mutate(effect = "social | max, ratio",
+               contrast = paste0(contrast, " | ", max.levels[m], ", ", ratio.levels[r]),
+               contrast_definition = paste0(contrast_definition, " at max ", max.levels[m], ", ratio ", ratio.levels[r]))
+      contrasts.social.env = bind_rows(contrasts.social.env, contrasts.cell)
+    }
+  }
+
+  write.csv(bind_rows(contrasts.alone, contrasts.social.main, contrasts.social.env), file = file.path(resultsdir, "contrasts.csv"), row.names = F)
+
+}else{
+
+  print("Contrasts already exist. Skipping.")
 
 }
