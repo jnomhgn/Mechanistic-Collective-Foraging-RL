@@ -197,10 +197,10 @@ modelcomp_table_lines <- c(
   "\\begin{table}[h!]",
   "    %\\caption{Results of the model comparison}",
   "\\begin{tabularx}{1\\linewidth}{ ",
-  "    >{\\raggedright\\arraybackslash}X",
-  "    >{\\raggedright\\arraybackslash}X ",
-  "    >{\\raggedright\\arraybackslash}X  ",
-  "    >{\\raggedright\\arraybackslash}X  }",
+  "    >{\\centering\\arraybackslash}X",
+  "    >{\\centering\\arraybackslash}X ",
+  "    >{\\centering\\arraybackslash}X  ",
+  "    >{\\centering\\arraybackslash}X  }",
   "         \\toprule",
   "         Condition & Model & $\\hat{elpd}_{diff}$ &  $SE(\\hat{elpd}_{diff})$\\\\",
   "         \\midrule",
@@ -247,9 +247,15 @@ contrasts_c_dbr <- contrasts_c[contrasts_c$parameter == "alphaDBR", ]
 
 # One row per contrast, one value column per weight
 contrast_labels <- unique(contrasts_nc$label)
+
+# Typeset minus and times signs in labels
+contrast_display_labels <- gsub(" - ", " $-$ ", contrast_labels, fixed = TRUE)
+contrast_display_labels <- gsub(" x ", " $\\times$ ", contrast_display_labels, fixed = TRUE)
+contrast_display_labels <- gsub(")x(", ")$\\times$(", contrast_display_labels, fixed = TRUE)
+
 contrast_rows <- sprintf(
   "%s & %s & %s & %s \\\\",
-  contrast_labels,
+  contrast_display_labels,
   contrasts_nc$value[match(contrast_labels, contrasts_nc$label)],
   contrasts_c_vsd$value[match(contrast_labels, contrasts_c_vsd$label)],
   contrasts_c_dbr$value[match(contrast_labels, contrasts_c_dbr$label)]
@@ -265,7 +271,7 @@ contrast_table_lines <- c(
   "    \\centering",
   "    \\footnotesize",
   "    \\resizebox{\\linewidth}{!}{%",
-  "    \\begin{tabular}{l r r r}",
+  "    \\begin{tabular}{c c c c}",
   "        \\toprule",
   "        & \\multicolumn{1}{c}{NC} & \\multicolumn{2}{c}{C} \\\\",
   "        \\cmidrule(lr){2-2} \\cmidrule(lr){3-4}",
@@ -316,13 +322,14 @@ acc_table_lines <- c(
   "\\begin{table}[h!]",
   "    \\centering",
   "    \\footnotesize",
-  "    \\begin{tabular}{c c l l l}",
+  "    \\resizebox{\\linewidth}{!}{%",
+  "    \\begin{tabular}{c c c c c}",
   "        \\toprule",
   "        Max catch & Catch ratio & A & NC & C \\\\",
   "        \\midrule",
   paste0("        ", acc_rows),
   "        \\bottomrule",
-  "    \\end{tabular}",
+  "    \\end{tabular}}",
   "    \\caption{Inferred probabilities of foraging at the better lake in the A, NC, and C conditions reported as means and 90\\% HPDIs.}",
   "    \\label{tab:acc}",
   "\\end{table}"
@@ -346,9 +353,15 @@ contrasts_alone$label <- paste0(contrasts_alone$effect, ": ", contrasts_alone$co
 
 # One row per contrast
 alone_labels <- unique(contrasts_alone$label)
+
+# Typeset minus and times signs in labels
+alone_display_labels <- gsub(" - ", " $-$ ", alone_labels, fixed = TRUE)
+alone_display_labels <- gsub(" x ", " $\\times$ ", alone_display_labels, fixed = TRUE)
+alone_display_labels <- gsub(")x(", ")$\\times$(", alone_display_labels, fixed = TRUE)
+
 alone_rows <- sprintf(
   "%s & %s \\\\",
-  alone_labels,
+  alone_display_labels,
   contrasts_alone$value[match(alone_labels, contrasts_alone$label)]
 )
 
@@ -362,9 +375,9 @@ alone_table_lines <- c(
   "    \\centering",
   "    \\footnotesize",
   "    \\resizebox{\\linewidth}{!}{%",
-  "    \\begin{tabular}{l r}",
+  "    \\begin{tabular}{c c}",
   "        \\toprule",
-  "        Contrast & \\multicolumn{1}{c}{Mean \\& 90\\% HPDI} \\\\",
+  "        Contrast & \\multicolumn{1}{c}{A} \\\\",
   "        \\midrule",
   paste0("        ", alone_rows),
   "        \\bottomrule",
@@ -424,7 +437,7 @@ social_table_lines <- c(
   "    \\centering",
   "    \\footnotesize",
   "    \\resizebox{\\linewidth}{!}{%",
-  paste0("    \\begin{tabular}{c c ", paste(rep("r", length(social_pairs)), collapse = " "), "}"),
+  paste0("    \\begin{tabular}{c c ", paste(rep("c", length(social_pairs)), collapse = " "), "}"),
   "        \\toprule",
   paste0("        Max catch & Catch ratio & ", paste0("\\multicolumn{1}{c}{", social_headers, "}", collapse = " & "), " \\\\"),
   "        \\midrule",
