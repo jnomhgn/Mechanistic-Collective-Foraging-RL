@@ -25,107 +25,87 @@ symbol_map <- c(
   "alphaQP" = "$\\alpha_{P,+}$",
   "betaQ"   = "$\\beta_{Q}$",
   "betaC"   = "$\\beta_{H}$",
-  "alphaVSD[1,1]" = "$\\alpha_{VSl[.5, .5]}$",
-  "alphaVSD[2,1]" = "$\\alpha_{VSl[.7, .5]}$",
-  "alphaVSD[3,1]" = "$\\alpha_{VSl[.9, .5]}$",
-  "alphaVSD[1,2]" = "$\\alpha_{VSl[.5, .65]}$",
-  "alphaVSD[2,2]" = "$\\alpha_{VSl[.7, .65]}$",
-  "alphaVSD[3,2]" = "$\\alpha_{VSl[.9, .65]}$",
-  "alphaVSD[1,3]" = "$\\alpha_{VSl[.5, .8]}$",
-  "alphaVSD[2,3]" = "$\\alpha_{VSl[.7, .8]}$",
-  "alphaVSD[3,3]" = "$\\alpha_{VSl[.9, .8]}$",
-  "alphaVSD[1,4]" = "$\\alpha_{VSl[.5, .95]}$",
-  "alphaVSD[2,4]" = "$\\alpha_{VSl[.7, .95]}$",
-  "alphaVSD[3,4]" = "$\\alpha_{VSl[.9, .95]}$",
-  "alphaDBR[1,1]" = "$\\alpha_{DBr[.5, .5]}$",
-  "alphaDBR[2,1]" = "$\\alpha_{DBr[.7, .5]}$",
-  "alphaDBR[3,1]" = "$\\alpha_{DBr[.9, .5]}$",
-  "alphaDBR[1,2]" = "$\\alpha_{DBr[.5, .65]}$",
-  "alphaDBR[2,2]" = "$\\alpha_{DBr[.7, .65]}$",
-  "alphaDBR[3,2]" = "$\\alpha_{DBr[.9, .65]}$",
-  "alphaDBR[1,3]" = "$\\alpha_{DBr[.5, .8]}$",
-  "alphaDBR[2,3]" = "$\\alpha_{DBr[.7, .8]}$",
-  "alphaDBR[3,3]" = "$\\alpha_{DBr[.9, .8]}$",
-  "alphaDBR[1,4]" = "$\\alpha_{DBr[.5, .95]}$",
-  "alphaDBR[2,4]" = "$\\alpha_{DBr[.7, .95]}$",
-  "alphaDBR[3,4]" = "$\\alpha_{DBr[.9, .95]}$"
+  "alphaVSD" = "$\\alpha_{VSl[m,r]}$",
+  "alphaDBR" = "$\\alpha_{DBr[m,r]}$"
 )
 
 asocial_vars <- c("alphaQN", "alphaQP", "betaQ", "betaC")
 
-# Social parameters, ordered r-major (matches the write-up's row order)
-vs_vars <- c(
-  "alphaVSD[1,1]", "alphaVSD[2,1]", "alphaVSD[3,1]",
-  "alphaVSD[1,2]", "alphaVSD[2,2]", "alphaVSD[3,2]",
-  "alphaVSD[1,3]", "alphaVSD[2,3]", "alphaVSD[3,3]",
-  "alphaVSD[1,4]", "alphaVSD[2,4]", "alphaVSD[3,4]"
-)
-db_vars <- c(
-  "alphaDBR[1,1]", "alphaDBR[2,1]", "alphaDBR[3,1]",
-  "alphaDBR[1,2]", "alphaDBR[2,2]", "alphaDBR[3,2]",
-  "alphaDBR[1,3]", "alphaDBR[2,3]", "alphaDBR[3,3]",
-  "alphaDBR[1,4]", "alphaDBR[2,4]", "alphaDBR[3,4]"
-)
+# Max catch and catch ratio levels in file order
+environment_levels <- read.csv(file.path("results", "behavioral", "acc_point_estimates.csv"))
+max_levels <- unique(environment_levels$max)
+ratio_levels <- unique(environment_levels$ratio)
 
-param_vars <- list(
-  A  = asocial_vars,
-  NC = c(asocial_vars, vs_vars),
-  C  = c(asocial_vars, vs_vars, db_vars)
-)
+# Environment grid, max outermost
+environment_grid <- expand.grid(ratio_index = seq_along(ratio_levels), max_index = seq_along(max_levels))
+vs_vars <- sprintf("alphaVSD[%d,%d]", environment_grid$max_index, environment_grid$ratio_index)
+db_vars <- sprintf("alphaDBR[%d,%d]", environment_grid$max_index, environment_grid$ratio_index)
 
 # Condition A
 pars_a <- read.csv(diagnostics_files$A)
+pars_a <- pars_a[match(asocial_vars, pars_a$variable), ]
 pars_a[, 3:13] <- round(pars_a[, 3:13], 3)
-pars_a <- pars_a[match(param_vars$A, pars_a$variable), c("variable", "mean", "q5", "q95")]
-colnames(pars_a) <- c("variable", "mean", "lower", "upper")
-pars_a$parameter <- symbol_map[pars_a$variable]
-pars_a$value <- sprintf("%.3f [%.3f, %.3f]", pars_a$mean, pars_a$lower, pars_a$upper)
-pars_a_rows <- sprintf(" & & %s & %s \\\\", pars_a$parameter, pars_a$value)
-pars_a_rows[1] <- sprintf(
-  "\\multirow{%d}{*}{%s} & \\multirow{%d}{*}{%s} & %s & %s \\\\",
-  nrow(pars_a), "A", nrow(pars_a), model_names$A, pars_a$parameter[1], pars_a$value[1]
-)
+pars_a$value <- sprintf("%.3f [%.3f, %.3f]", pars_a$mean, pars_a$q5, pars_a$q95)
 
 # Condition NC
 pars_nc <- read.csv(diagnostics_files$NC)
+pars_nc <- pars_nc[match(c(asocial_vars, vs_vars), pars_nc$variable), ]
 pars_nc[, 3:13] <- round(pars_nc[, 3:13], 3)
-pars_nc <- pars_nc[match(param_vars$NC, pars_nc$variable), c("variable", "mean", "q5", "q95")]
-colnames(pars_nc) <- c("variable", "mean", "lower", "upper")
-pars_nc$parameter <- symbol_map[pars_nc$variable]
-pars_nc$value <- sprintf("%.3f [%.3f, %.3f]", pars_nc$mean, pars_nc$lower, pars_nc$upper)
-pars_nc_rows <- sprintf(" & & %s & %s \\\\", pars_nc$parameter, pars_nc$value)
-pars_nc_rows[1] <- sprintf(
-  "\\multirow{%d}{*}{%s} & \\multirow{%d}{*}{%s} & %s & %s \\\\",
-  nrow(pars_nc), "NC", nrow(pars_nc), model_names$NC, pars_nc$parameter[1], pars_nc$value[1]
-)
+pars_nc$value <- sprintf("%.3f [%.3f, %.3f]", pars_nc$mean, pars_nc$q5, pars_nc$q95)
 
 # Condition C
 pars_c <- read.csv(diagnostics_files$C)
+pars_c <- pars_c[match(c(asocial_vars, vs_vars, db_vars), pars_c$variable), ]
 pars_c[, 3:13] <- round(pars_c[, 3:13], 3)
-pars_c <- pars_c[match(param_vars$C, pars_c$variable), c("variable", "mean", "q5", "q95")]
-colnames(pars_c) <- c("variable", "mean", "lower", "upper")
-pars_c$parameter <- symbol_map[pars_c$variable]
-pars_c$value <- sprintf("%.3f [%.3f, %.3f]", pars_c$mean, pars_c$lower, pars_c$upper)
-pars_c_rows <- sprintf(" & & %s & %s \\\\", pars_c$parameter, pars_c$value)
-pars_c_rows[1] <- sprintf(
-  "\\multirow{%d}{*}{%s} & \\multirow{%d}{*}{%s} & %s & %s \\\\",
-  nrow(pars_c), "C", nrow(pars_c), model_names$C, pars_c$parameter[1], pars_c$value[1]
+pars_c$value <- sprintf("%.3f [%.3f, %.3f]", pars_c$mean, pars_c$q5, pars_c$q95)
+
+# Asocial parameters: one row each, one value column per condition
+pars_asocial_rows <- sprintf(
+  "%s & -- & -- & %s & %s & %s \\\\",
+  symbol_map[asocial_vars],
+  pars_a$value[match(asocial_vars, pars_a$variable)],
+  pars_nc$value[match(asocial_vars, pars_nc$variable)],
+  pars_c$value[match(asocial_vars, pars_c$variable)]
 )
 
-pars_body_lines <- c(pars_a_rows, "\\midrule", pars_nc_rows, "\\midrule", pars_c_rows)
+# Parameter and max labels on first row of each block
+n_environments <- nrow(environment_grid)
+pars_max_first <- !duplicated(environment_grid$max_index)
+max_cells <- ifelse(pars_max_first, paste0("\\multirow{", length(ratio_levels), "}{*}{", max_levels[environment_grid$max_index], "}"), "")
+ratio_cells <- ratio_levels[environment_grid$ratio_index]
+
+# VS weights: NC and C only
+vs_parameter_cells <- c(paste0("\\multirow{", n_environments, "}{*}{", symbol_map["alphaVSD"], "}"), rep("", n_environments - 1))
+pars_vs_rows <- sprintf(
+  "%s & %s & %s & -- & %s & %s \\\\",
+  vs_parameter_cells, max_cells, ratio_cells,
+  pars_nc$value[match(vs_vars, pars_nc$variable)],
+  pars_c$value[match(vs_vars, pars_c$variable)]
+)
+
+# DB weights: C only
+db_parameter_cells <- c(paste0("\\multirow{", n_environments, "}{*}{", symbol_map["alphaDBR"], "}"), rep("", n_environments - 1))
+pars_db_rows <- sprintf(
+  "%s & %s & %s & -- & -- & %s \\\\",
+  db_parameter_cells, max_cells, ratio_cells,
+  pars_c$value[match(db_vars, pars_c$variable)]
+)
+
+pars_body_lines <- c(pars_asocial_rows, "\\midrule", pars_vs_rows, "\\midrule", pars_db_rows)
 
 pars_table_lines <- c(
   "\\begin{table}[h!]",
   "    \\centering",
   "    \\footnotesize",
-  "    \\begin{tabular}{c c l l}",
+  "    \\resizebox{\\linewidth}{!}{%",
+  "    \\begin{tabular}{c c c c c c}",
   "        \\toprule",
-  "        Condition & Model & Parameter & Mean \\& 90\\% HPDI \\\\",
+  "        Parameter & Max catch & Catch ratio & A & NC & C \\\\",
   "        \\midrule",
   paste0("        ", pars_body_lines),
   "        \\bottomrule",
-  "    \\end{tabular}",
-  "    \\caption{Inferred RLM parameters for the winning models in the A, NC, and C conditions reported as means and 90\\% HPDIs.}",
+  "    \\end{tabular}}",
+  paste0("    \\caption{Inferred RLM parameters for the winning models in the A (", model_names$A, "), NC (", model_names$NC, "), and C (", model_names$C, ") conditions reported as means and 90\\% HPDIs.}"),
   "    \\label{tab:rlpars}",
   "\\end{table}"
 )
