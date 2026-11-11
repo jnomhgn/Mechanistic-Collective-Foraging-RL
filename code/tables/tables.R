@@ -183,27 +183,31 @@ model_labels <- list(
 modelcomp_a <- read.csv(modelcomp_files$A)
 colnames(modelcomp_a)[1] <- "model"
 modelcomp_a <- modelcomp_a[modelcomp_a$model %in% names(model_labels$A), ]
+# Typeset minus signs in math mode
+modelcomp_a_elpd <- gsub("-", "$-$", sprintf("%.3f", modelcomp_a$elpd_diff), fixed = TRUE)
 modelcomp_a_rows <- sprintf(
-  "%s & %s & %.3f & %.3f \\\\",
-  c("A", rep("", nrow(modelcomp_a) - 1)), paste0("$", model_labels$A[modelcomp_a$model], "$"), modelcomp_a$elpd_diff, modelcomp_a$se_diff
+  "%s & %s & %s & %.3f \\\\",
+  c("A", rep("", nrow(modelcomp_a) - 1)), paste0("$", model_labels$A[modelcomp_a$model], "$"), modelcomp_a_elpd, modelcomp_a$se_diff
 )
 
 # Condition NC
 modelcomp_nc <- read.csv(modelcomp_files$NC)
 colnames(modelcomp_nc)[1] <- "model"
 modelcomp_nc <- modelcomp_nc[modelcomp_nc$model %in% names(model_labels$NC), ]
+modelcomp_nc_elpd <- gsub("-", "$-$", sprintf("%.3f", modelcomp_nc$elpd_diff), fixed = TRUE)
 modelcomp_nc_rows <- sprintf(
-  "%s & %s & %.3f & %.3f \\\\",
-  c("NC", rep("", nrow(modelcomp_nc) - 1)), paste0("$", model_labels$NC[modelcomp_nc$model], "$"), modelcomp_nc$elpd_diff, modelcomp_nc$se_diff
+  "%s & %s & %s & %.3f \\\\",
+  c("NC", rep("", nrow(modelcomp_nc) - 1)), paste0("$", model_labels$NC[modelcomp_nc$model], "$"), modelcomp_nc_elpd, modelcomp_nc$se_diff
 )
 
 # Condition C
 modelcomp_c <- read.csv(modelcomp_files$C)
 colnames(modelcomp_c)[1] <- "model"
 modelcomp_c <- modelcomp_c[modelcomp_c$model %in% names(model_labels$C), ]
+modelcomp_c_elpd <- gsub("-", "$-$", sprintf("%.3f", modelcomp_c$elpd_diff), fixed = TRUE)
 modelcomp_c_rows <- sprintf(
-  "%s & %s & %.3f & %.3f \\\\",
-  c("C", rep("", nrow(modelcomp_c) - 1)), paste0("$", model_labels$C[modelcomp_c$model], "$"), modelcomp_c$elpd_diff, modelcomp_c$se_diff
+  "%s & %s & %s & %.3f \\\\",
+  c("C", rep("", nrow(modelcomp_c) - 1)), paste0("$", model_labels$C[modelcomp_c$model], "$"), modelcomp_c_elpd, modelcomp_c$se_diff
 )
 
 modelcomp_body_lines <- c(modelcomp_a_rows, "\\midrule", modelcomp_nc_rows, "\\midrule", modelcomp_c_rows)
@@ -377,13 +381,14 @@ alone_table_lines <- c(
   "\\begin{table}[h!]",
   "    \\centering",
   "    \\footnotesize",
+  "    \\resizebox{\\linewidth}{!}{%",
   "    \\begin{tabular}{l r}",
   "        \\toprule",
   "        Contrast & \\multicolumn{1}{c}{Mean \\& 90\\% HPDI} \\\\",
   "        \\midrule",
   paste0("        ", alone_rows),
   "        \\bottomrule",
-  "    \\end{tabular}",
+  "    \\end{tabular}}",
   "    \\caption{Contrasts of the inferred probability of foraging at the better lake in the A condition reported as means and 90\\% HPDIs. Rows labeled max and ratio give differences between the maximum catch and catch ratio levels, respectively, marginal over the levels of the other factor. Rows labeled max x ratio give interaction contrasts with $(r_2 - r_1)\\times(m_2 - m_1)$ defined as the difference between catch ratio levels $r_2$ and $r_1$ at maximum catch $m_2$, minus the same difference at maximum catch $m_1$.}",
   "    \\label{tab:contrasts_alone}",
   "\\end{table}"
@@ -438,13 +443,14 @@ social_table_lines <- c(
   "\\begin{table}[h!]",
   "    \\centering",
   "    \\footnotesize",
+  "    \\resizebox{\\linewidth}{!}{%",
   paste0("    \\begin{tabular}{c c ", paste(rep("r", length(social_pairs)), collapse = " "), "}"),
   "        \\toprule",
   paste0("        Max catch & Catch ratio & ", paste0("\\multicolumn{1}{c}{", social_headers, "}", collapse = " & "), " \\\\"),
   "        \\midrule",
   paste0("        ", social_rows),
   "        \\bottomrule",
-  "    \\end{tabular}",
+  "    \\end{tabular}}",
   "    \\caption{Contrasts of the inferred probability of foraging at the better lake between the A, NC, and C conditions reported as means and 90\\% HPDIs. The row labeled as marginal gives the differences between social information conditions marginal over the levels of maximum catch and catch ratio. Rows labeled with maximum catch and catch ratio give the differences between social information conditions at specific levels of maximum catch and catch ratio.}",
   "    \\label{tab:contrasts_social}",
   "\\end{table}"
