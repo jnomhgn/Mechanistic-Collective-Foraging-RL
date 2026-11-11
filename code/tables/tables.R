@@ -346,9 +346,117 @@ acc_table_lines <- c(
 
 cat(acc_table_lines, sep = "\n")
 
+#### Behavioral contrasts tables ####
+
+behavioral_contrast_file <- file.path("results", "behavioral", "contrasts.csv")
+
+behavioral_contrasts <- read.csv(behavioral_contrast_file)
+behavioral_contrasts$value <- sprintf("%.3f [%.3f, %.3f]", behavioral_contrasts$mean, behavioral_contrasts$lower, behavioral_contrasts$upper)
+# Typeset minus signs in math mode and pad non-negative numbers with an invisible minus
+behavioral_contrasts$value <- gsub("-", "$-$", behavioral_contrasts$value, fixed = TRUE)
+behavioral_contrasts$value <- gsub("(^|\\[|, )([0-9])", "\\1\\\\phantom{$-$}\\2", behavioral_contrasts$value)
+
+# Condition A
+contrasts_alone <- behavioral_contrasts[behavioral_contrasts$social %in% "Alone", ]
+contrasts_alone$label <- paste0(contrasts_alone$effect, ": ", contrasts_alone$contrast)
+
+# One row per contrast
+alone_labels <- unique(contrasts_alone$label)
+alone_rows <- sprintf(
+  "%s & %s \\\\",
+  alone_labels,
+  contrasts_alone$value[match(alone_labels, contrasts_alone$label)]
+)
+
+# Comment out conditional contrasts
+alone_effects <- contrasts_alone$effect[match(alone_labels, contrasts_alone$label)]
+alone_rows[alone_effects == "ratio | max"] <- paste0("% ", alone_rows[alone_effects == "ratio | max"])
+alone_rows[alone_effects == "max | ratio"] <- paste0("% ", alone_rows[alone_effects == "max | ratio"])
+
+alone_table_lines <- c(
+  "\\begin{table}[h!]",
+  "    \\centering",
+  "    \\footnotesize",
+  "    \\begin{tabular}{l r}",
+  "        \\toprule",
+  "        Contrast & \\multicolumn{1}{c}{Mean \\& 90\\% HPDI} \\\\",
+  "        \\midrule",
+  paste0("        ", alone_rows),
+  "        \\bottomrule",
+  "    \\end{tabular}",
+  "    \\caption{Contrasts of the inferred probability of foraging at the better lake in the A condition reported as means and 90\\% HPDIs. Rows labeled max and ratio give differences between the maximum catch and catch ratio levels, respectively, marginal over the levels of the other factor. Rows labeled max x ratio give interaction contrasts with $(r_2 - r_1)\\times(m_2 - m_1)$ defined as the difference between catch ratio levels $r_2$ and $r_1$ at maximum catch $m_2$, minus the same difference at maximum catch $m_1$.}",
+  "    \\label{tab:contrasts_alone}",
+  "\\end{table}"
+)
+
+cat(alone_table_lines, sep = "\n")
+
+# Social contrasts averaged over and within environments
+contrasts_social <- behavioral_contrasts[behavioral_contrasts$effect %in% c("social", "social | max, ratio"), ]
+contrasts_social$pair <- sub(" \\| .*$", "", contrasts_social$contrast)
+contrasts_social$environment <- ifelse(contrasts_social$effect == "social", "all", sub("^.* \\| ", "", contrasts_social$contrast))
+contrasts_social$key <- paste(contrasts_social$pair, contrasts_social$environment)
+
+# Social pairs and environments in file order
+social_pairs <- unique(contrasts_social$pair)
+environments <- unique(contrasts_social$environment)
+
+# One value column per social pair
+social_values <- matrix(NA, nrow = length(environments), ncol = length(social_pairs))
+for(p in seq_along(social_pairs)){
+  social_values[, p] <- contrasts_social$value[match(paste(social_pairs[p], environments), contrasts_social$key)]
+}
+
+# Max and ratio of each environment
+environment_max <- ifelse(environments == "all", "all", sub(",.*$", "", environments))
+environment_ratio <- ifelse(environments == "all", "marginal", sub("^.*, ", "", environments))
+
+# One row per environment
+social_rows <- sprintf(
+  " & %s & %s \\\\",
+  environment_ratio,
+  apply(social_values, 1, paste, collapse = " & ")
+)
+
+# Max label on first row of each max level
+social_max_first <- !duplicated(environment_max)
+social_n_ratio <- length(unique(environment_ratio[environment_max != "all"]))
+social_max_labels <- ifelse(environment_max == "all", "marginal", paste0("\\multirow{", social_n_ratio, "}{*}{", environment_max, "}"))
+social_rows[social_max_first] <- paste0(social_max_labels[social_max_first], social_rows[social_max_first])
+
+# Rule between marginal and environment-specific contrasts
+social_marginal <- environment_max == "all"
+social_rows <- c(social_rows[social_marginal], "\\midrule", social_rows[!social_marginal])
+
+# Abbreviated social pair headers
+social_headers <- gsub("No Catches", "NC", social_pairs)
+social_headers <- gsub("Catches", "C", social_headers)
+social_headers <- gsub("Alone", "A", social_headers)
+social_headers <- gsub("-", "$-$", social_headers, fixed = TRUE)
+
+social_table_lines <- c(
+  "\\begin{table}[h!]",
+  "    \\centering",
+  "    \\footnotesize",
+  paste0("    \\begin{tabular}{c c ", paste(rep("r", length(social_pairs)), collapse = " "), "}"),
+  "        \\toprule",
+  paste0("        Max catch & Catch ratio & ", paste0("\\multicolumn{1}{c}{", social_headers, "}", collapse = " & "), " \\\\"),
+  "        \\midrule",
+  paste0("        ", social_rows),
+  "        \\bottomrule",
+  "    \\end{tabular}",
+  "    \\caption{Contrasts of the inferred probability of foraging at the better lake between the A, NC, and C conditions reported as means and 90\\% HPDIs. The row labeled as marginal gives the differences between social information conditions marginal over the levels of maximum catch and catch ratio. Rows labeled with maximum catch and catch ratio give the differences between social information conditions at specific levels of maximum catch and catch ratio.}",
+  "    \\label{tab:contrasts_social}",
+  "\\end{table}"
+)
+
+cat(social_table_lines, sep = "\n")
+
 #### Write tables ####
 
 writeLines(pars_table_lines, file.path(resultsdir, "pars.tex"))
 writeLines(modelcomp_table_lines, file.path(resultsdir, "modelcomp.tex"))
 writeLines(contrast_table_lines, file.path(resultsdir, "contrasts.tex"))
 writeLines(acc_table_lines, file.path(resultsdir, "acc.tex"))
+writeLines(alone_table_lines, file.path(resultsdir, "contrasts_alone.tex"))
+writeLines(social_table_lines, file.path(resultsdir, "contrasts_social.tex"))
