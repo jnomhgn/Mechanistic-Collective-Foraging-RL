@@ -105,7 +105,7 @@ pars_table_lines <- c(
   paste0("        ", pars_body_lines),
   "        \\bottomrule",
   "    \\end{tabular}}",
-  paste0("    \\caption{Inferred RLM parameters for the winning models in the A (", model_names$A, "), NC (", model_names$NC, "), and C (", model_names$C, ") conditions reported as means and 90\\% HPDIs.}"),
+  paste0("    \\caption{Inferred RLM parameters for the winning models in the A (", model_names$A, "), NC (", model_names$NC, "), and C (", model_names$C, ") conditions reported as means and 90\\% HPDIs. Dashes mark parameters that do not vary with maximum catch and catch ratio (asocial learning) or that are not part of the winning model (social learning).}"),
   "    \\label{tab:rlpars}",
   "\\end{table}"
 )
@@ -196,17 +196,15 @@ modelcomp_table_lines <- c(
   "% Results model comparison",
   "\\begin{table}[h!]",
   "    %\\caption{Results of the model comparison}",
-  "\\begin{tabularx}{1\\linewidth}{ ",
-  "    >{\\centering\\arraybackslash}X",
-  "    >{\\centering\\arraybackslash}X ",
-  "    >{\\centering\\arraybackslash}X  ",
-  "    >{\\centering\\arraybackslash}X  }",
+  "    \\centering",
+  "    \\footnotesize",
+  "    \\begin{tabular}{c c c c}",
   "         \\toprule",
   "         Condition & Model & $\\hat{elpd}_{diff}$ &  $SE(\\hat{elpd}_{diff})$\\\\",
   "         \\midrule",
   paste0("         ", modelcomp_body_lines),
   "        \\bottomrule",
-  "    \\end{tabularx}",
+  "    \\end{tabular}",
   "    \\caption{Results of the RL model comparisons for the A, NC, and C conditions. $\\hat{elpd}_{diff}$ denotes the difference in the estimated expected log pointwise predictive density $\\hat{elpd}_{PSIS-loo}$ relative to the best model and $SE(\\hat{elpd}_{diff})$ denotes its standard error.}",
   "    \\label{tab:modelcomp}",
   "\\end{table}"
@@ -245,24 +243,55 @@ contrasts_c$value <- gsub("(^|\\[|, )([0-9])", "\\1\\\\phantom{$-$}\\2", contras
 contrasts_c_vsd <- contrasts_c[contrasts_c$parameter == "alphaVSD", ]
 contrasts_c_dbr <- contrasts_c[contrasts_c$parameter == "alphaDBR", ]
 
-# One row per contrast, one value column per weight
+# Contrasts in file order
 contrast_labels <- unique(contrasts_nc$label)
+contrast_effects <- contrasts_nc$effect[match(contrast_labels, contrasts_nc$label)]
+contrast_texts <- contrasts_nc$contrast[match(contrast_labels, contrasts_nc$label)]
 
-# Typeset minus and times signs in labels
-contrast_display_labels <- gsub(" - ", " $-$ ", contrast_labels, fixed = TRUE)
-contrast_display_labels <- gsub(" x ", " $\\times$ ", contrast_display_labels, fixed = TRUE)
-contrast_display_labels <- gsub(")x(", ")$\\times$(", contrast_display_labels, fixed = TRUE)
+# Max catch and catch ratio cells, marginal where a factor is averaged over
+contrast_max_cells <- rep("marginal", length(contrast_labels))
+contrast_ratio_cells <- rep("marginal", length(contrast_labels))
 
+# Main effects
+contrast_max_cells[contrast_effects == "max"] <- contrast_texts[contrast_effects == "max"]
+contrast_ratio_cells[contrast_effects == "ratio"] <- contrast_texts[contrast_effects == "ratio"]
+
+# Conditional contrasts
+contrast_ratio_given_max <- contrast_effects == "ratio | max"
+contrast_ratio_cells[contrast_ratio_given_max] <- sub(" \\| .*$", "", contrast_texts[contrast_ratio_given_max])
+contrast_max_cells[contrast_ratio_given_max] <- sub("^.* \\| ", "", contrast_texts[contrast_ratio_given_max])
+contrast_max_given_ratio <- contrast_effects == "max | ratio"
+contrast_max_cells[contrast_max_given_ratio] <- sub(" \\| .*$", "", contrast_texts[contrast_max_given_ratio])
+contrast_ratio_cells[contrast_max_given_ratio] <- sub("^.* \\| ", "", contrast_texts[contrast_max_given_ratio])
+
+# Interaction contrasts: (ratio difference)x(max difference)
+contrast_interaction <- contrast_effects == "max x ratio"
+contrast_ratio_cells[contrast_interaction] <- sub("^\\((.*)\\)x\\((.*)\\)$", "\\1", contrast_texts[contrast_interaction])
+contrast_max_cells[contrast_interaction] <- sub("^\\((.*)\\)x\\((.*)\\)$", "\\2", contrast_texts[contrast_interaction])
+
+# Typeset minus signs in math mode
+contrast_max_cells <- gsub(" - ", " $-$ ", contrast_max_cells, fixed = TRUE)
+contrast_ratio_cells <- gsub(" - ", " $-$ ", contrast_ratio_cells, fixed = TRUE)
+
+# Write marginal once per main-effect block
+contrast_ratio_effect_rows <- which(contrast_effects == "ratio")
+contrast_max_cells[contrast_ratio_effect_rows] <- ""
+contrast_max_cells[contrast_ratio_effect_rows[1]] <- paste0("\\multirow{", length(contrast_ratio_effect_rows), "}{*}{$\\cdot$}")
+contrast_max_effect_rows <- which(contrast_effects == "max")
+contrast_ratio_cells[contrast_max_effect_rows] <- ""
+contrast_ratio_cells[contrast_max_effect_rows[1]] <- paste0("\\multirow{", length(contrast_max_effect_rows), "}{*}{$\\cdot$}")
+
+# One row per contrast, one value column per weight
 contrast_rows <- sprintf(
-  "%s & %s & %s & %s \\\\",
-  contrast_display_labels,
+  "%s & %s & %s & %s & %s \\\\",
+  contrast_max_cells,
+  contrast_ratio_cells,
   contrasts_nc$value[match(contrast_labels, contrasts_nc$label)],
   contrasts_c_vsd$value[match(contrast_labels, contrasts_c_vsd$label)],
   contrasts_c_dbr$value[match(contrast_labels, contrasts_c_dbr$label)]
 )
 
 # Comment out conditional contrasts
-contrast_effects <- contrasts_nc$effect[match(contrast_labels, contrasts_nc$label)]
 contrast_rows[contrast_effects == "ratio | max"] <- paste0("% ", contrast_rows[contrast_effects == "ratio | max"])
 contrast_rows[contrast_effects == "max | ratio"] <- paste0("% ", contrast_rows[contrast_effects == "max | ratio"])
 
@@ -271,16 +300,16 @@ contrast_table_lines <- c(
   "    \\centering",
   "    \\footnotesize",
   "    \\resizebox{\\linewidth}{!}{%",
-  "    \\begin{tabular}{c c c c}",
+  "    \\begin{tabular}{c c c c c}",
   "        \\toprule",
-  "        & \\multicolumn{1}{c}{NC} & \\multicolumn{2}{c}{C} \\\\",
-  "        \\cmidrule(lr){2-2} \\cmidrule(lr){3-4}",
-  paste0("        Contrast & \\multicolumn{1}{c}{", contrasts_nc_symbol, "} & \\multicolumn{1}{c}{", contrast_symbols["alphaVSD"], "} & \\multicolumn{1}{c}{", contrast_symbols["alphaDBR"], "} \\\\"),
+  "        & & \\multicolumn{1}{c}{NC} & \\multicolumn{2}{c}{C} \\\\",
+  "        \\cmidrule(lr){3-3} \\cmidrule(lr){4-5}",
+  paste0("        Max catch & Catch ratio & \\multicolumn{1}{c}{", contrasts_nc_symbol, "} & \\multicolumn{1}{c}{", contrast_symbols["alphaVSD"], "} & \\multicolumn{1}{c}{", contrast_symbols["alphaDBR"], "} \\\\"),
   "        \\midrule",
   paste0("        ", contrast_rows),
   "        \\bottomrule",
   "    \\end{tabular}}",
-  "    \\caption{Contrasts of the social learning weights in the NC and C conditions reported as means and 90\\% HPDIs. Rows labeled max and ratio give differences between the maximum catch and catch ratio levels, respectively, marginal over the levels of the other factor. Rows labeled max x ratio give interaction contrasts with $(r_2 - r_1)\\times(m_2 - m_1)$ defined as the difference between catch ratio levels $r_2$ and $r_1$ at maximum catch $m_2$, minus the same difference at maximum catch $m_1$.}",
+  "    \\caption{Contrasts of the social learning weights in the NC and C conditions reported as means and 90\\% HPDIs. Rows with a difference in Max catch and $\\cdot$ in Catch ratio give differences between levels of maximum catch marginal over catch ratio, and vice versa. Rows with differences in both columns give interaction contrasts $(r_2 - r_1)\\times(m_2 - m_1)$, defined as the difference between catch ratio levels $r_2$ and $r_1$ at maximum catch $m_2$, minus the same difference at maximum catch $m_1$.}",
   "    \\label{tab:contrasts}",
   "\\end{table}"
 )
@@ -351,22 +380,53 @@ behavioral_contrasts$value <- gsub("(^|\\[|, )([0-9])", "\\1\\\\phantom{$-$}\\2"
 contrasts_alone <- behavioral_contrasts[behavioral_contrasts$social %in% "Alone", ]
 contrasts_alone$label <- paste0(contrasts_alone$effect, ": ", contrasts_alone$contrast)
 
-# One row per contrast
+# Contrasts in file order
 alone_labels <- unique(contrasts_alone$label)
+alone_effects <- contrasts_alone$effect[match(alone_labels, contrasts_alone$label)]
+alone_texts <- contrasts_alone$contrast[match(alone_labels, contrasts_alone$label)]
 
-# Typeset minus and times signs in labels
-alone_display_labels <- gsub(" - ", " $-$ ", alone_labels, fixed = TRUE)
-alone_display_labels <- gsub(" x ", " $\\times$ ", alone_display_labels, fixed = TRUE)
-alone_display_labels <- gsub(")x(", ")$\\times$(", alone_display_labels, fixed = TRUE)
+# Max catch and catch ratio cells, marginal where a factor is averaged over
+alone_max_cells <- rep("marginal", length(alone_labels))
+alone_ratio_cells <- rep("marginal", length(alone_labels))
 
+# Main effects
+alone_max_cells[alone_effects == "max"] <- alone_texts[alone_effects == "max"]
+alone_ratio_cells[alone_effects == "ratio"] <- alone_texts[alone_effects == "ratio"]
+
+# Conditional contrasts
+alone_ratio_given_max <- alone_effects == "ratio | max"
+alone_ratio_cells[alone_ratio_given_max] <- sub(" \\| .*$", "", alone_texts[alone_ratio_given_max])
+alone_max_cells[alone_ratio_given_max] <- sub("^.* \\| ", "", alone_texts[alone_ratio_given_max])
+alone_max_given_ratio <- alone_effects == "max | ratio"
+alone_max_cells[alone_max_given_ratio] <- sub(" \\| .*$", "", alone_texts[alone_max_given_ratio])
+alone_ratio_cells[alone_max_given_ratio] <- sub("^.* \\| ", "", alone_texts[alone_max_given_ratio])
+
+# Interaction contrasts: (ratio difference)x(max difference)
+alone_interaction <- alone_effects == "max x ratio"
+alone_ratio_cells[alone_interaction] <- sub("^\\((.*)\\)x\\((.*)\\)$", "\\1", alone_texts[alone_interaction])
+alone_max_cells[alone_interaction] <- sub("^\\((.*)\\)x\\((.*)\\)$", "\\2", alone_texts[alone_interaction])
+
+# Typeset minus signs in math mode
+alone_max_cells <- gsub(" - ", " $-$ ", alone_max_cells, fixed = TRUE)
+alone_ratio_cells <- gsub(" - ", " $-$ ", alone_ratio_cells, fixed = TRUE)
+
+# Write marginal once per main-effect block
+alone_ratio_effect_rows <- which(alone_effects == "ratio")
+alone_max_cells[alone_ratio_effect_rows] <- ""
+alone_max_cells[alone_ratio_effect_rows[1]] <- paste0("\\multirow{", length(alone_ratio_effect_rows), "}{*}{$\\cdot$}")
+alone_max_effect_rows <- which(alone_effects == "max")
+alone_ratio_cells[alone_max_effect_rows] <- ""
+alone_ratio_cells[alone_max_effect_rows[1]] <- paste0("\\multirow{", length(alone_max_effect_rows), "}{*}{$\\cdot$}")
+
+# One row per contrast
 alone_rows <- sprintf(
-  "%s & %s \\\\",
-  alone_display_labels,
+  "%s & %s & %s \\\\",
+  alone_max_cells,
+  alone_ratio_cells,
   contrasts_alone$value[match(alone_labels, contrasts_alone$label)]
 )
 
 # Comment out conditional contrasts
-alone_effects <- contrasts_alone$effect[match(alone_labels, contrasts_alone$label)]
 alone_rows[alone_effects == "ratio | max"] <- paste0("% ", alone_rows[alone_effects == "ratio | max"])
 alone_rows[alone_effects == "max | ratio"] <- paste0("% ", alone_rows[alone_effects == "max | ratio"])
 
@@ -374,15 +434,14 @@ alone_table_lines <- c(
   "\\begin{table}[h!]",
   "    \\centering",
   "    \\footnotesize",
-  "    \\resizebox{\\linewidth}{!}{%",
-  "    \\begin{tabular}{c c}",
+  "    \\begin{tabular}{c c c}",
   "        \\toprule",
-  "        Contrast & \\multicolumn{1}{c}{A} \\\\",
+  "        Max catch & Catch ratio & \\multicolumn{1}{c}{A} \\\\",
   "        \\midrule",
   paste0("        ", alone_rows),
   "        \\bottomrule",
-  "    \\end{tabular}}",
-  "    \\caption{Contrasts of the inferred probability of foraging at the better lake in the A condition reported as means and 90\\% HPDIs. Rows labeled max and ratio give differences between the maximum catch and catch ratio levels, respectively, marginal over the levels of the other factor. Rows labeled max x ratio give interaction contrasts with $(r_2 - r_1)\\times(m_2 - m_1)$ defined as the difference between catch ratio levels $r_2$ and $r_1$ at maximum catch $m_2$, minus the same difference at maximum catch $m_1$.}",
+  "    \\end{tabular}",
+  "    \\caption{Contrasts of the inferred probability of foraging at the better lake in the A condition reported as means and 90\\% HPDIs. Rows with a difference in Max catch and $\\cdot$ in Catch ratio give differences between levels of maximum catch marginal over catch ratio, and vice versa. Rows with differences in both columns give interaction contrasts $(r_2 - r_1)\\times(m_2 - m_1)$, defined as the difference between catch ratio levels $r_2$ and $r_1$ at maximum catch $m_2$, minus the same difference at maximum catch $m_1$.}",
   "    \\label{tab:contrasts_alone}",
   "\\end{table}"
 )
@@ -407,7 +466,7 @@ for(p in seq_along(social_pairs)){
 
 # Max and ratio of each environment
 environment_max <- ifelse(environments == "marginal", "marginal", sub(",.*$", "", environments))
-environment_ratio <- ifelse(environments == "marginal", "marginal", sub("^.*, ", "", environments))
+environment_ratio <- ifelse(environments == "marginal", "$\\cdot$", sub("^.*, ", "", environments))
 
 # One row per environment
 social_rows <- sprintf(
@@ -419,7 +478,7 @@ social_rows <- sprintf(
 # Max label on first row of each max level
 social_max_first <- !duplicated(environment_max)
 social_n_ratio <- length(unique(environment_ratio[environment_max != "marginal"]))
-social_max_labels <- ifelse(environment_max == "marginal", "marginal", paste0("\\multirow{", social_n_ratio, "}{*}{", environment_max, "}"))
+social_max_labels <- ifelse(environment_max == "marginal", "$\\cdot$", paste0("\\multirow{", social_n_ratio, "}{*}{", environment_max, "}"))
 social_rows[social_max_first] <- paste0(social_max_labels[social_max_first], social_rows[social_max_first])
 
 # Rule between marginal and environment-specific contrasts
@@ -444,7 +503,7 @@ social_table_lines <- c(
   paste0("        ", social_rows),
   "        \\bottomrule",
   "    \\end{tabular}}",
-  "    \\caption{Contrasts of the inferred probability of foraging at the better lake between the A, NC, and C conditions reported as means and 90\\% HPDIs. The row labeled as marginal gives the differences between social information conditions marginal over the levels of maximum catch and catch ratio. Rows labeled with maximum catch and catch ratio give the differences between social information conditions at specific levels of maximum catch and catch ratio.}",
+  "    \\caption{Contrasts of the inferred probability of foraging at the better lake between the A, NC, and C conditions reported as means and 90\\% HPDIs. The row with $\\cdot$ in Max catch and Catch ratio gives the differences between social information conditions marginal over the levels of maximum catch and catch ratio. Rows labeled with maximum catch and catch ratio give the differences between social information conditions at specific levels of maximum catch and catch ratio.}",
   "    \\label{tab:contrasts_social}",
   "\\end{table}"
 )
