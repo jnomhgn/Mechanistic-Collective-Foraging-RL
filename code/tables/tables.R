@@ -394,7 +394,7 @@ cat(alone_table_lines, sep = "\n")
 # Social contrasts averaged over and within environments
 contrasts_social <- behavioral_contrasts[behavioral_contrasts$effect %in% c("social", "social | max, ratio"), ]
 contrasts_social$pair <- sub(" \\| .*$", "", contrasts_social$contrast)
-contrasts_social$environment <- ifelse(contrasts_social$effect == "social", "all", sub("^.* \\| ", "", contrasts_social$contrast))
+contrasts_social$environment <- ifelse(contrasts_social$effect == "social", "marginal", sub("^.* \\| ", "", contrasts_social$contrast))
 contrasts_social$key <- paste(contrasts_social$pair, contrasts_social$environment)
 
 # Social pairs and environments in file order
@@ -408,8 +408,8 @@ for(p in seq_along(social_pairs)){
 }
 
 # Max and ratio of each environment
-environment_max <- ifelse(environments == "all", "all", sub(",.*$", "", environments))
-environment_ratio <- ifelse(environments == "all", "marginal", sub("^.*, ", "", environments))
+environment_max <- ifelse(environments == "marginal", "marginal", sub(",.*$", "", environments))
+environment_ratio <- ifelse(environments == "marginal", "marginal", sub("^.*, ", "", environments))
 
 # One row per environment
 social_rows <- sprintf(
@@ -420,12 +420,12 @@ social_rows <- sprintf(
 
 # Max label on first row of each max level
 social_max_first <- !duplicated(environment_max)
-social_n_ratio <- length(unique(environment_ratio[environment_max != "all"]))
-social_max_labels <- ifelse(environment_max == "all", "marginal", paste0("\\multirow{", social_n_ratio, "}{*}{", environment_max, "}"))
+social_n_ratio <- length(unique(environment_ratio[environment_max != "marginal"]))
+social_max_labels <- ifelse(environment_max == "marginal", "marginal", paste0("\\multirow{", social_n_ratio, "}{*}{", environment_max, "}"))
 social_rows[social_max_first] <- paste0(social_max_labels[social_max_first], social_rows[social_max_first])
 
 # Rule between marginal and environment-specific contrasts
-social_marginal <- environment_max == "all"
+social_marginal <- environment_max == "marginal"
 social_rows <- c(social_rows[social_marginal], "\\midrule", social_rows[!social_marginal])
 
 # Abbreviated social pair headers
