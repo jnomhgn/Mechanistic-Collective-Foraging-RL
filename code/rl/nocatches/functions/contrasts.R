@@ -12,7 +12,7 @@ pairwise.contrasts = function(marg, labels, factor.name){
 }
 
 # Conditional contrasts: ratio differences at each max level
-conditional.contrasts = function(arr, max.labels, ratio.labels){
+conditional.ratio.contrasts = function(arr, max.labels, ratio.labels){
   ratio.pairs = combn(length(ratio.labels), 2)
   pair.grid = expand.grid(j = seq_len(ncol(ratio.pairs)), m = seq_along(max.labels))
   lapply(seq_len(nrow(pair.grid)), function(k){
@@ -23,6 +23,22 @@ conditional.contrasts = function(arr, max.labels, ratio.labels){
       transmute(effect = "ratio | max",
                 contrast = paste0(ratio.labels[r[2]], " - ", ratio.labels[r[1]], " | ", max.labels[m]),
                 contrast_definition = paste0("ratio ", ratio.labels[r[2]], " - ratio ", ratio.labels[r[1]], " at max ", max.labels[m]),
+                mean = y, lower = ymin, upper = ymax)
+  }) %>% bind_rows()
+}
+
+# Conditional contrasts: max differences at each ratio level
+conditional.max.contrasts = function(arr, max.labels, ratio.labels){
+  max.pairs = combn(length(max.labels), 2)
+  pair.grid = expand.grid(i = seq_len(ncol(max.pairs)), r = seq_along(ratio.labels))
+  lapply(seq_len(nrow(pair.grid)), function(k){
+    m = max.pairs[, pair.grid$i[k]]
+    r = pair.grid$r[k]
+    diff = arr[, m[2], r] - arr[, m[1], r]
+    mean_hdi(diff, .width = .9) %>%
+      transmute(effect = "max | ratio",
+                contrast = paste0(max.labels[m[2]], " - ", max.labels[m[1]], " | ", ratio.labels[r]),
+                contrast_definition = paste0("max ", max.labels[m[2]], " - max ", max.labels[m[1]], " at ratio ", ratio.labels[r]),
                 mean = y, lower = ymin, upper = ymax)
   }) %>% bind_rows()
 }
@@ -66,7 +82,8 @@ parameter.contrasts = function(par, fit, max.levels, ratio.levels){
   bind_rows(
     pairwise.contrasts(marg.max, max.levels, "max"),
     pairwise.contrasts(marg.ratio, ratio.levels, "ratio"),
-    conditional.contrasts(alpha.arr, max.levels, ratio.levels),
+    conditional.ratio.contrasts(alpha.arr, max.levels, ratio.levels),
+    conditional.max.contrasts(alpha.arr, max.levels, ratio.levels),
     interaction.contrasts(alpha.arr, max.levels, ratio.levels)
   ) %>% mutate(parameter = par, .before = 1)
 }
