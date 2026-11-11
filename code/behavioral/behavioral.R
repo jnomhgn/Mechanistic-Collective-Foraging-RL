@@ -13,27 +13,28 @@ resultsdir <- file.path("results", "behavioral")
 if(!dir.exists(resultsdir)){dir.create(resultsdir, recursive = TRUE)}
 
 
-#### Run analysis #### 
-if(!file.exists(file.path(resultsdir, "acc.rds"))){
+# Read data
+path <- file.path("data", "processed", "data_discrete_1s.csv")
+d = read.csv(path, colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
+d = apply_pipeline_data_filter(d)
 
-  # Read data
-  path <- file.path("data", "processed", "data_discrete_1s.csv")
-  d = read.csv(path, colClasses = c(rep(NA, 8), rep("character", 2), rep(NA, 4)))
-  d = apply_pipeline_data_filter(d)
+# Set player id unique across sessions
+d = d %>% mutate(id = (session - 1) * 5  + player) %>%
+  mutate(id = factor(id, levels = c(1:max(id)))) %>%
+  mutate(decision = correct) %>% mutate(reward = catch) %>% mutate(nplayers = 5) %>%
+  mutate(time = time.rounded)
 
-  # Set player id unique across sessions
-  d = d %>% mutate(id = (session - 1) * 5  + player) %>%
-    mutate(id = factor(id, levels = c(1:max(id)))) %>%
-    mutate(decision = correct) %>% mutate(reward = catch) %>% mutate(nplayers = 5) %>%
-    mutate(time = time.rounded)
-
-  d = d %>%
-    mutate(max.fac = factor(max.fac, levels = c(1:3))) %>%
-    mutate(ratio.fac = factor(ratio.fac, levels = c(1:4))) %>%
-    mutate(social.fac = factor(social.fac, levels = c(1:3))) %>%
+d = d %>%
+  mutate(max.fac = factor(max.fac, levels = c(1:3))) %>%
+  mutate(ratio.fac = factor(ratio.fac, levels = c(1:4))) %>%
+  mutate(social.fac = factor(social.fac, levels = c(1:3))) %>%
   mutate(cond = interaction(max.fac, ratio.fac, social.fac)) %>%
   mutate(session = factor(session, levels=1:max(session)))
-  
+
+
+#### Run analysis ####
+if(!file.exists(file.path(resultsdir, "acc.rds"))){
+
   # Formula
   formula = bf(decision ~ 0 + cond + (1|session) + (1|id)) 
   
@@ -158,5 +159,49 @@ if(!file.exists(file.path(resultsdir, "acc.csv"))){
 }else{
 
   print("Draws and predictions from posterior already exist. Skipping.")
+
+}
+
+
+#### Point Estimates And Contrasts ####
+
+# Load model fit
+acc = readRDS(file.path(resultsdir, "acc.rds"))
+
+if(!file.exists(file.path(resultsdir, "acc_point_estimates.csv"))){
+
+  # Factor level labels
+  max.levels = sort(unique(d$max))
+  ratio.levels = sort(unique(d$ratio))
+  social.levels = c("Alone", "No Catches", "Catches")[sort(unique(d$social.fac))]
+
+  # Accuracy per draw as array [draw, social, max, ratio]
+  contrast.draws = posterior::as_draws_matrix(acc)
+  acc.arr = array(NA, dim = c(nrow(contrast.draws), length(social.levels), length(max.levels), length(ratio.levels)),
+                  dimnames = list(seq_len(nrow(contrast.draws)), social.levels, max.levels, ratio.levels))
+  for(s in seq_along(social.levels)){
+    for(m in seq_along(max.levels)){
+      for(r in seq_along(ratio.levels)){
+        acc.arr[, s, m, r] = inv_logit_scaled(contrast.draws[, sprintf("b_cond%d.%d.%d", m, r, s)])
+      }
+    }
+  }
+
+  # Reshape to long format
+  acc.long = as.data.frame.table(acc.arr, responseName = "acc") %>%
+    rename(draw = Var1, social = Var2, max = Var3, ratio = Var4)
+
+  # Summarise each cell
+  acc.estimates = acc.long %>%
+    group_by(social, max, ratio) %>%
+    mean_hdi(acc, .width = .9) %>%
+    rename(mean = acc, lower = .lower, upper = .upper) %>%
+    select(-c(.width, .point, .interval))
+
+  write.csv(acc.estimates, file = file.path(resultsdir, "acc_point_estimates.csv"), row.names = F)
+
+}else{
+
+  print("Point estimates already exist. Skipping.")
 
 }
