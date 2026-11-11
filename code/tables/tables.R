@@ -271,6 +271,10 @@ contrast_rows <- sprintf(
   contrasts_c_dbr$value[match(contrast_labels, contrasts_c_dbr$label)]
 )
 
+# Comment out conditional contrasts
+contrast_effects <- contrasts_nc$effect[match(contrast_labels, contrasts_nc$label)]
+contrast_rows[contrast_effects == "ratio | max"] <- paste0("% ", contrast_rows[contrast_effects == "ratio | max"])
+
 contrast_table_lines <- c(
   "\\begin{table}[h!]",
   "    \\centering",
@@ -285,7 +289,7 @@ contrast_table_lines <- c(
   paste0("        ", contrast_rows),
   "        \\bottomrule",
   "    \\end{tabular}}",
-  "    \\caption{Contrasts of the social learning weights in the NC and C conditions reported as means and 90\\% HPDIs. Rows labeled max and ratio give differences between the maximum catch and catch ratio levels, respectively, marginal over the levels of the other factor. Rows labeled max x ratio give interaction contrasts with $(m_2 - m_1)\\times(r_2 - r_1)$ defined as the difference between maximum catch levels $m_2$ and $m_1$ at catch ratio $r_2$, minus the same difference at catch ratio $r_1$.}",
+  "    \\caption{Contrasts of the social learning weights in the NC and C conditions reported as means and 90\\% HPDIs. Rows labeled max and ratio give differences between the maximum catch and catch ratio levels, respectively, marginal over the levels of the other factor. Rows labeled max x ratio give interaction contrasts with $(r_2 - r_1)\\times(m_2 - m_1)$ defined as the difference between catch ratio levels $r_2$ and $r_1$ at maximum catch $m_2$, minus the same difference at maximum catch $m_1$.}",
   "    \\label{tab:contrasts}",
   "\\end{table}"
 )
