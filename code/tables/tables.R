@@ -296,8 +296,58 @@ contrast_table_lines <- c(
 
 cat(contrast_table_lines, sep = "\n")
 
+#### Behavioral point estimates table ####
+
+acc_file <- file.path("results", "behavioral", "acc_point_estimates.csv")
+
+acc_estimates <- read.csv(acc_file)
+acc_estimates$value <- sprintf("%.3f [%.3f, %.3f]", acc_estimates$mean, acc_estimates$lower, acc_estimates$upper)
+acc_estimates$cell <- paste(acc_estimates$max, acc_estimates$ratio)
+
+# Condition A
+acc_a <- acc_estimates[acc_estimates$social == "Alone", ]
+
+# Condition NC
+acc_nc <- acc_estimates[acc_estimates$social == "No Catches", ]
+
+# Condition C
+acc_c <- acc_estimates[acc_estimates$social == "Catches", ]
+
+# One row per environment, one value column per condition
+acc_rows <- sprintf(
+  " & %s & %s & %s & %s \\\\",
+  acc_a$ratio,
+  acc_a$value,
+  acc_nc$value[match(acc_a$cell, acc_nc$cell)],
+  acc_c$value[match(acc_a$cell, acc_c$cell)]
+)
+
+# Max label on first row of each max level
+max_first <- !duplicated(acc_a$max)
+n_ratio <- length(unique(acc_a$ratio))
+acc_rows[max_first] <- paste0("\\multirow{", n_ratio, "}{*}{", acc_a$max[max_first], "}", acc_rows[max_first])
+
+acc_table_lines <- c(
+  "\\begin{table}[h!]",
+  "    \\centering",
+  "    \\footnotesize",
+  "    \\begin{tabular}{c c l l l}",
+  "        \\toprule",
+  "        Max catch & Catch ratio & A & NC & C \\\\",
+  "        \\midrule",
+  paste0("        ", acc_rows),
+  "        \\bottomrule",
+  "    \\end{tabular}",
+  "    \\caption{Inferred probabilities of foraging at the better lake in the A, NC, and C conditions reported as means and 90\\% HPDIs.}",
+  "    \\label{tab:acc}",
+  "\\end{table}"
+)
+
+cat(acc_table_lines, sep = "\n")
+
 #### Write tables ####
 
 writeLines(pars_table_lines, file.path(resultsdir, "pars.tex"))
 writeLines(modelcomp_table_lines, file.path(resultsdir, "modelcomp.tex"))
 writeLines(contrast_table_lines, file.path(resultsdir, "contrasts.tex"))
+writeLines(acc_table_lines, file.path(resultsdir, "acc.tex"))
