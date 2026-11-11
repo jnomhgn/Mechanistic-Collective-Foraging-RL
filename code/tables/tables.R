@@ -274,6 +274,7 @@ contrast_rows <- sprintf(
 # Comment out conditional contrasts
 contrast_effects <- contrasts_nc$effect[match(contrast_labels, contrasts_nc$label)]
 contrast_rows[contrast_effects == "ratio | max"] <- paste0("% ", contrast_rows[contrast_effects == "ratio | max"])
+contrast_rows[contrast_effects == "max | ratio"] <- paste0("% ", contrast_rows[contrast_effects == "max | ratio"])
 
 contrast_table_lines <- c(
   "\\begin{table}[h!]",
