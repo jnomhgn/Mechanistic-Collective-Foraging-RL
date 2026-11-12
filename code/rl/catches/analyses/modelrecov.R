@@ -161,9 +161,10 @@ computeloo <- function(msim, sim, models, stan.data){
 
   # Add model name
   comparison = as.data.frame(comparison)
+  comparison = rownames_to_column(comparison, var = "model")
 
   # Note winning model (to reload for parameter recovery)
-  winner = comparison %>% filter(row_number() == 1 & elpd_diff == 0) %>% rownames() %>% unlist()
+  winner = comparison %>% filter(row_number() == 1 & elpd_diff == 0) %>% pull(model)
 
   # Return comparison and winner individually
   return(list(comparison = comparison, winner = winner))
@@ -343,27 +344,22 @@ saveRDS(results, file.path(resultsdir, "modelrecov.rds"))
 write.csv(results, file.path(resultsdir, "modelrecov.csv"), row.names = FALSE)
 
 #### Plot model recovery results ####
-if(!file.exists(file.path(resultsdir, "modelrecov.jpeg"))){
 
-  # For each simulated model, count how often the other models won the comparison
-  comp = results %>%
-    group_by(msim, mfit) %>%
-    reframe(p = sum(win) / nsim) %>%
-    ungroup() %>%
-    mutate(msim = factor(msim, labels = unlist(models$name))) %>%
-    mutate(mfit = factor(mfit, labels = unlist(models$name)))
+# For each simulated model, count how often the other models won the comparison
+comp = results %>%
+  group_by(msim, mfit) %>%
+  reframe(p = sum(win) / nsim) %>%
+  ungroup() %>%
+  mutate(msim = factor(msim, labels = unlist(models$name))) %>%
+  mutate(mfit = factor(mfit, labels = unlist(models$name)))
 
-  # Plot confusion matrix
-  p = comp %>%
-    ggplot(aes(x=mfit, y=msim, fill=p)) +
-    geom_tile(alpha=.75, col="black", linewidth=1) +
-    geom_text(aes(label=p), size=10) +
-    labs(x="Fitted Model", y="Simulated Model", fill="p(fit|sim) \n") +
-    scale_fill_viridis()+
-    theme_gray(base_size = 11)
-    ggexport(p, width = 2560, height = 1440, 
-      filename = file.path(resultsdir, "modelrecov.jpeg"))
-
-}else{
-  print("Skipping. Model recovery plot already exists." )
-}
+# Plot confusion matrix
+p = comp %>%
+  ggplot(aes(x=mfit, y=msim, fill=p)) +
+  geom_tile(alpha=.75, col="black", linewidth=1) +
+  geom_text(aes(label=p), size=10) +
+  labs(x="Fitted Model", y="Simulated Model", fill="p(fit|sim) \n") +
+  scale_fill_viridis()+
+  theme_gray(base_size = 11)
+  ggexport(p, width = 2560, height = 1440,
+    filename = file.path(resultsdir, "modelrecov.jpeg"))
