@@ -14,5 +14,6 @@ renv/cache
 results
 data
 
-# Windows-compiled Stan executables (incompatible with Linux image)
-code/**/stan/*.exe
+# Host-compiled Stan executables and headers (incompatible with Linux image)
+code/**/stan/*
+!code/**/stan/*.stan
