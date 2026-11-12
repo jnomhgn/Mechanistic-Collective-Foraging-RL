@@ -117,6 +117,12 @@ rm(list = ls()); invisible(gc())
 print("Creating figures...")
 source_python(file.path("code", "figures", "figures.py"))
 
+#### Create tables ####
+
+# Extract results tables
+print("Creating tables...")
+source(file.path("code", "tables", "tables.R"))
+
 #### Run model recovery for all conditions at the end due to computation time ####
 
 # Alone condition
