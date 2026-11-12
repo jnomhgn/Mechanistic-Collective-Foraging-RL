@@ -448,10 +448,11 @@ alone_table_lines <- c(
 
 cat(alone_table_lines, sep = "\n")
 
-# Social contrasts averaged over and within environments
-contrasts_social <- behavioral_contrasts[behavioral_contrasts$effect %in% c("social", "social | max, ratio"), ]
+# Social contrasts averaged over, at single levels of, and within environments
+contrasts_social <- behavioral_contrasts[behavioral_contrasts$effect %in% c("social", "social | max", "social | ratio", "social | max, ratio"), ]
 contrasts_social$pair <- sub(" \\| .*$", "", contrasts_social$contrast)
 contrasts_social$environment <- ifelse(contrasts_social$effect == "social", "marginal", sub("^.* \\| ", "", contrasts_social$contrast))
+contrasts_social$environment <- paste0(contrasts_social$effect, ": ", contrasts_social$environment)
 contrasts_social$key <- paste(contrasts_social$pair, contrasts_social$environment)
 
 # Social pairs and environments in file order
@@ -464,9 +465,18 @@ for(p in seq_along(social_pairs)){
   social_values[, p] <- contrasts_social$value[match(paste(social_pairs[p], environments), contrasts_social$key)]
 }
 
-# Max and ratio of each environment
-environment_max <- ifelse(environments == "marginal", "marginal", sub(",.*$", "", environments))
-environment_ratio <- ifelse(environments == "marginal", "$\\cdot$", sub("^.*, ", "", environments))
+# Effect and levels of each environment
+environment_effects <- sub(": .*$", "", environments)
+environment_levels <- sub("^.*: ", "", environments)
+environment_cell <- environment_effects == "social | max, ratio"
+
+# Max and ratio of each environment, dot where averaged over
+environment_max <- rep("$\\cdot$", length(environments))
+environment_ratio <- rep("$\\cdot$", length(environments))
+environment_max[environment_effects == "social | max"] <- environment_levels[environment_effects == "social | max"]
+environment_ratio[environment_effects == "social | ratio"] <- environment_levels[environment_effects == "social | ratio"]
+environment_max[environment_cell] <- sub(",.*$", "", environment_levels[environment_cell])
+environment_ratio[environment_cell] <- sub("^.*, ", "", environment_levels[environment_cell])
 
 # One row per environment
 social_rows <- sprintf(
@@ -475,15 +485,21 @@ social_rows <- sprintf(
   apply(social_values, 1, paste, collapse = " & ")
 )
 
-# Max label on first row of each max level
-social_max_first <- !duplicated(environment_max)
-social_n_ratio <- length(unique(environment_ratio[environment_max != "marginal"]))
-social_max_labels <- ifelse(environment_max == "marginal", "$\\cdot$", paste0("\\multirow{", social_n_ratio, "}{*}{", environment_max, "}"))
-social_rows[social_max_first] <- paste0(social_max_labels[social_max_first], social_rows[social_max_first])
+# Max label on first row of each max level within environments
+social_max_first <- environment_cell & !duplicated(paste(environment_effects, environment_max))
+social_n_ratio <- length(unique(environment_ratio[environment_cell]))
+social_max_labels <- environment_max
+social_max_labels[environment_cell] <- ""
+social_max_labels[social_max_first] <- paste0("\\multirow{", social_n_ratio, "}{*}{", environment_max[social_max_first], "}")
+social_rows <- paste0(social_max_labels, social_rows)
 
-# Rule between marginal and environment-specific contrasts
-social_marginal <- environment_max == "marginal"
-social_rows <- c(social_rows[social_marginal], "\\midrule", social_rows[!social_marginal])
+# Rules between effect blocks
+social_rows <- c(
+  social_rows[environment_effects == "social"], "\\midrule",
+  social_rows[environment_effects == "social | max"], "\\midrule",
+  social_rows[environment_effects == "social | ratio"], "\\midrule",
+  social_rows[environment_cell]
+)
 
 # Abbreviated social pair headers
 social_headers <- gsub("No Catches", "NC", social_pairs)
@@ -503,7 +519,7 @@ social_table_lines <- c(
   paste0("        ", social_rows),
   "        \\bottomrule",
   "    \\end{tabular}}",
-  "    \\caption{Contrasts of the inferred probability of foraging at the better lake between the A, NC, and C conditions reported as means and 90\\% HPDIs. The row with $\\cdot$ in Max catch and Catch ratio gives the differences between social information conditions marginal over the levels of maximum catch and catch ratio. Rows labeled with maximum catch and catch ratio give the differences between social information conditions at specific levels of maximum catch and catch ratio.}",
+  "    \\caption{Contrasts of the inferred probability of foraging at the better lake between the A, NC, and C conditions reported as means and 90\\% HPDIs. The row with $\\cdot$ in Max catch and Catch ratio gives the differences between social information conditions marginal over the levels of maximum catch and catch ratio. Rows with a level in Max catch and $\\cdot$ in Catch ratio give the differences at that level of maximum catch marginal over catch ratio, and vice versa. Rows labeled with maximum catch and catch ratio give the differences between social information conditions at specific levels of maximum catch and catch ratio.}",
   "    \\label{tab:contrasts_social}",
   "\\end{table}"
 )
