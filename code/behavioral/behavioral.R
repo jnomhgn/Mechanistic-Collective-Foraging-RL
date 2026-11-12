@@ -233,6 +233,28 @@ if(!file.exists(file.path(resultsdir, "contrasts.csv"))){
   marg.social = apply(acc.arr, c(1, 2), mean)
   contrasts.social.main = pairwise.contrasts(marg.social, social.levels, "social")
 
+  # Social differences at each max level, marginal over ratio
+  contrasts.social.max = NULL
+  for(m in seq_along(max.levels)){
+    marg.social.max = apply(acc.arr[, , m, ], c(1, 2), mean)
+    contrasts.level = pairwise.contrasts(marg.social.max, social.levels, "social") %>%
+      mutate(effect = "social | max",
+             contrast = paste0(contrast, " | ", max.levels[m]),
+             contrast_definition = paste0(contrast_definition, " at max ", max.levels[m]))
+    contrasts.social.max = bind_rows(contrasts.social.max, contrasts.level)
+  }
+
+  # Social differences at each ratio level, marginal over max
+  contrasts.social.ratio = NULL
+  for(r in seq_along(ratio.levels)){
+    marg.social.ratio = apply(acc.arr[, , , r], c(1, 2), mean)
+    contrasts.level = pairwise.contrasts(marg.social.ratio, social.levels, "social") %>%
+      mutate(effect = "social | ratio",
+             contrast = paste0(contrast, " | ", ratio.levels[r]),
+             contrast_definition = paste0(contrast_definition, " at ratio ", ratio.levels[r]))
+    contrasts.social.ratio = bind_rows(contrasts.social.ratio, contrasts.level)
+  }
+
   # Social differences within each environment
   contrasts.social.env = NULL
   for(m in seq_along(max.levels)){
@@ -245,7 +267,7 @@ if(!file.exists(file.path(resultsdir, "contrasts.csv"))){
     }
   }
 
-  write.csv(bind_rows(contrasts.alone, contrasts.social.main, contrasts.social.env), file = file.path(resultsdir, "contrasts.csv"), row.names = F)
+  write.csv(bind_rows(contrasts.alone, contrasts.social.main, contrasts.social.max, contrasts.social.ratio, contrasts.social.env), file = file.path(resultsdir, "contrasts.csv"), row.names = F)
 
 }else{
 
