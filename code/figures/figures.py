@@ -523,6 +523,24 @@ cmap_fig6 = LinearSegmentedColormap.from_list('fig6', ['#003a7d', '#00a878', '#e
 vmin_heatmap = df_vsnvsr['acc.delta'].min()
 vmax_heatmap = df_vsnvsr['acc.delta'].max()
 
+# Heatmap colour scale, white at 0, losses and gains stretched separately
+cmap_heatmap = LinearSegmentedColormap.from_list('heatmap', [co[1], 'white', co[0]])
+norm_heatmap = mcolors.TwoSlopeNorm(vmin=vmin_heatmap, vcenter=0, vmax=vmax_heatmap)
+
+# Heatmap smoothing width
+sigma_smooth = 1
+
+# Contour levels: 0.05 steps for losses and gains
+levels_loss = np.round(np.arange(np.floor(vmin_heatmap / 0.05) * 0.05, 0, 0.05), 3)
+levels_gain = np.round(np.arange(0.05, np.ceil(vmax_heatmap / 0.05) * 0.05, 0.05), 3)
+levels_contour = np.concatenate([levels_loss, [-0.005], levels_gain])
+
+# Labelled contour levels: multiples of 0.1
+levels_labelled = levels_contour[np.isclose(np.round(levels_contour, 1), levels_contour)]
+
+# Colour bar ticks every 0.05
+cbar_ticks = np.round(np.arange(levels_contour[0], vmax_heatmap, 0.05), 3)
+
 fig = plt.figure(figsize=(15, 8))
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 gs = GridSpec(1, 2, figure=fig, wspace=0.2, right=0.87)
@@ -533,14 +551,14 @@ ax_r = np.array([[fig.add_subplot(gs_right[i, j]) for j in range(3)] for i in ra
 
 for i_max in range(len(max)):
         max_val = max[i_max]
-        ax_l[0, i_max].set_title('Max catch ' + str(max_val), fontsize=10)
-        ax_r[0, i_max].set_title('Max catch ' + str(max_val), fontsize=10)
+        ax_l[0, i_max].set_title('Max catch ' + str(max_val), fontsize=12)
+        ax_r[0, i_max].set_title('Max catch ' + str(max_val), fontsize=12)
 
         for i_ratio in range(len(ratio)):
                 ratio_val = ratio[i_ratio]
 
                 ax_r[i_ratio, -1].yaxis.set_label_position("right")
-                ax_r[i_ratio, -1].set_ylabel('Catch Ratio ' + str(ratio_val), fontsize=10, rotation=270, labelpad=15)
+                ax_r[i_ratio, -1].set_ylabel('Catch Ratio ' + str(ratio_val), fontsize=12, rotation=270, labelpad=15)
 
                 # Line plot (left group)
                 mask = (df_vsndbr['max'] == max_val) & (df_vsndbr['ratio'] == ratio_val)
@@ -559,13 +577,13 @@ for i_max in range(len(max)):
                         ax_l[i_ratio, i_max].tick_params(left=False)
                         ax_l[i_ratio, i_max].set_yticklabels([])
                 else:
-                        ax_l[i_ratio, i_max].set_yticklabels(['-0.5', '-0.25', '0', '0.25'], fontsize=10)
+                        ax_l[i_ratio, i_max].set_yticklabels(['-0.5', '-0.25', '0', '0.25'], fontsize=12)
                 if i_ratio < 3:
                         ax_l[i_ratio, i_max].tick_params(bottom=False)
                         ax_l[i_ratio, i_max].set_xticklabels([])
                 else:
                         ax_l[i_ratio, i_max].set_xticks([0, 0.5, 1.0])
-                        ax_l[i_ratio, i_max].set_xticklabels(['0', '0.5', '1.0'], fontsize=10)
+                        ax_l[i_ratio, i_max].set_xticklabels(['0', '0.5', '1.0'], fontsize=12)
 
                 # Heatmap (right group)
                 mask = (df_vsnvsr['max'] == max_val) & (df_vsnvsr['ratio'] == ratio_val)
@@ -573,48 +591,55 @@ for i_max in range(len(max)):
                 pivot = panel_data.pivot(index='sigmaVSDR', columns='alphaVSDR', values='acc.delta')
                 alpha_vals = pivot.columns.to_numpy()
                 sigma_vals = pivot.index.to_numpy()
+                acc_diff_smooth = sc.ndimage.gaussian_filter(pivot.values, sigma=sigma_smooth)
 
                 im = ax_r[i_ratio, i_max].pcolormesh(
-                        alpha_vals, sigma_vals, pivot.values,
-                        cmap=cmap_fig6, vmin=vmin_heatmap, vmax=vmax_heatmap, shading='nearest'
+                        alpha_vals, sigma_vals, acc_diff_smooth,
+                        cmap=cmap_heatmap, norm=norm_heatmap, shading='nearest'
                 )
+                contours = ax_r[i_ratio, i_max].contour(alpha_vals, sigma_vals, acc_diff_smooth,
+                                                        levels=levels_contour, colors='k', linewidths=0.4)
+                ax_r[i_ratio, i_max].clabel(contours, levels=levels_labelled, fmt='%g', fontsize=12, colors='k')
+                contour_zero = ax_r[i_ratio, i_max].contour(alpha_vals, sigma_vals, acc_diff_smooth,
+                                                            levels=[0], colors='k', linewidths=1.2)
+                ax_r[i_ratio, i_max].clabel(contour_zero, fmt='%g', fontsize=12, colors='k')
                 ax_r[i_ratio, i_max].set_xticks([0.0, 0.5, 1.0])
                 ax_r[i_ratio, i_max].set_yticks([0.0, 0.5, 1.0])
                 if i_ratio < 3:
                         ax_r[i_ratio, i_max].tick_params(bottom=False)
                         ax_r[i_ratio, i_max].set_xticklabels([])
                 else:
-                        ax_r[i_ratio, i_max].set_xticklabels(['0.0', '0.5', '1.0'], fontsize=10)
+                        ax_r[i_ratio, i_max].set_xticklabels(['0.0', '0.5', '1.0'], fontsize=12)
                 if i_max > 0:
                         ax_r[i_ratio, i_max].tick_params(left=False)
                         ax_r[i_ratio, i_max].set_yticklabels([])
                 else:
-                        ax_r[i_ratio, i_max].set_yticklabels(['0.0', '0.5', '1.0'], fontsize=10)
+                        ax_r[i_ratio, i_max].set_yticklabels(['0.0', '0.5', '1.0'], fontsize=12)
 
-ax_l[3, 1].set_xlabel(r'$\alpha_{DBr}$', fontsize=10)
-ax_r[3, 1].set_xlabel(r'$\alpha_{VSlr}$', fontsize=10)
+ax_l[3, 1].set_xlabel(r'$\alpha_{DBr}$', fontsize=12)
+ax_r[3, 1].set_xlabel(r'$\alpha_{VSlr}$', fontsize=12)
 
 fig.canvas.draw()
 
 pos_l_top = ax_l[0, 0].get_position()
 pos_l_bot = ax_l[-1, 0].get_position()
 y_center_l = (pos_l_top.y1 + pos_l_bot.y0) / 2
-fig.text(pos_l_bot.x0 - 0.04, y_center_l, 'Mean Accuracy Difference', fontsize=10, va='center', ha='right', rotation=90)
+fig.text(pos_l_bot.x0 - 0.04, y_center_l, 'Mean Accuracy Difference', fontsize=12, va='center', ha='right', rotation=90)
 
 pos_r_top = ax_r[0, 0].get_position()
 pos_r_bot = ax_r[-1, 0].get_position()
 y_center_r = (pos_r_top.y1 + pos_r_bot.y0) / 2
-fig.text(pos_r_bot.x0 - 0.025, y_center_r, r'$\sigma_{VSlr}$', fontsize=10, va='center', ha='right', rotation=90)
+fig.text(pos_r_bot.x0 - 0.025, y_center_r, r'$\sigma_{VSlr}$', fontsize=12, va='center', ha='right', rotation=90)
 
 pos_cbar_top = ax_r[0, -1].get_position()
 pos_cbar_bot = ax_r[-1, -1].get_position()
 total_height = pos_cbar_top.y1 - pos_cbar_bot.y0
-cbar_height = total_height * 0.2
+cbar_height = total_height * 0.6
 cbar_bottom = pos_cbar_bot.y0 + (total_height - cbar_height) / 2
-cbar_ax = fig.add_axes([pos_cbar_top.x1 + 0.04, cbar_bottom, 0.015, cbar_height])
-cbar = fig.colorbar(im, cax=cbar_ax)
-cbar.ax.tick_params(labelsize=10)
-cbar.ax.set_title('Mean\nAccuracy\nDifference', fontsize=10)
+cbar_ax = fig.add_axes([pos_cbar_top.x1 + 0.045, cbar_bottom, 0.015, cbar_height])
+cbar = fig.colorbar(im, cax=cbar_ax, ticks=cbar_ticks)
+cbar.ax.tick_params(labelsize=12)
+cbar.ax.set_title('Mean\nAccuracy\nDifference', fontsize=12)
 fig.set_size_inches(15, 8)
 fig.savefig(os.path.join(resultsdir, 'Fig6.pdf'), bbox_inches='tight')
 
