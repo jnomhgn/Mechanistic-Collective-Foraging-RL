@@ -295,6 +295,15 @@ contrast_rows <- sprintf(
 contrast_rows[contrast_effects == "ratio | max"] <- paste0("% ", contrast_rows[contrast_effects == "ratio | max"])
 contrast_rows[contrast_effects == "max | ratio"] <- paste0("% ", contrast_rows[contrast_effects == "max | ratio"])
 
+# Rules between effect blocks
+contrast_rows <- c(
+  contrast_rows[contrast_effects == "max"], "\\midrule",
+  contrast_rows[contrast_effects == "ratio"], "\\midrule",
+  contrast_rows[contrast_effects == "ratio | max"],
+  contrast_rows[contrast_effects == "max | ratio"],
+  contrast_rows[contrast_effects == "max x ratio"]
+)
+
 contrast_table_lines <- c(
   "\\begin{table}[h!]",
   "    \\centering",
@@ -302,9 +311,9 @@ contrast_table_lines <- c(
   "    \\resizebox{\\linewidth}{!}{%",
   "    \\begin{tabular}{c c c c c}",
   "        \\toprule",
-  "        & & \\multicolumn{1}{c}{NC} & \\multicolumn{2}{c}{C} \\\\",
+  "        \\multirow{2}{*}[-0.5ex]{Max catch} & \\multirow{2}{*}[-0.5ex]{Catch ratio} &\\multicolumn{1}{c}{NC} & \\multicolumn{2}{c}{C} \\\\",
   "        \\cmidrule(lr){3-3} \\cmidrule(lr){4-5}",
-  paste0("        Max catch & Catch ratio & \\multicolumn{1}{c}{", contrasts_nc_symbol, "} & \\multicolumn{1}{c}{", contrast_symbols["alphaVSD"], "} & \\multicolumn{1}{c}{", contrast_symbols["alphaDBR"], "} \\\\"),
+  paste0("        & & \\multicolumn{1}{c}{", contrasts_nc_symbol, "} & \\multicolumn{1}{c}{", contrast_symbols["alphaVSD"], "} & \\multicolumn{1}{c}{", contrast_symbols["alphaDBR"], "} \\\\"),
   "        \\midrule",
   paste0("        ", contrast_rows),
   "        \\bottomrule",
@@ -429,6 +438,15 @@ alone_rows <- sprintf(
 # Comment out conditional contrasts
 alone_rows[alone_effects == "ratio | max"] <- paste0("% ", alone_rows[alone_effects == "ratio | max"])
 alone_rows[alone_effects == "max | ratio"] <- paste0("% ", alone_rows[alone_effects == "max | ratio"])
+
+# Rules between effect blocks
+alone_rows <- c(
+  alone_rows[alone_effects == "max"], "\\midrule",
+  alone_rows[alone_effects == "ratio"], "\\midrule",
+  alone_rows[alone_effects == "ratio | max"],
+  alone_rows[alone_effects == "max | ratio"],
+  alone_rows[alone_effects == "max x ratio"]
+)
 
 alone_table_lines <- c(
   "\\begin{table}[h!]",
