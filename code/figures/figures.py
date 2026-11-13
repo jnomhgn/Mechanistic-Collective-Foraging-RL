@@ -30,6 +30,9 @@ plt.rcParams.update({'font.size': 18,'text.usetex':False,"font.family":"serif",'
 co = ['#003a7d','#d83034','#e9c716']
 cmap_fig6 = mcolors.LinearSegmentedColormap.from_list('fig6', ['#003a7d', '#00a878', '#e9c716'])
 
+# Model recovery colour scale, white to blue
+cmap_recov = mcolors.LinearSegmentedColormap.from_list('recov', ['white', co[0]])
+
 
 recov_files = [os.path.join('results', 'rl', cond, 'modelrecov', 'modelrecov.csv') for cond in ['alone', 'nocatches', 'catches']]
 
@@ -823,12 +826,12 @@ if recov_done:
         for msim, mfit, win in zip(df_recov['msim'], df_recov['mfit'], df_recov['win']):
             p[mfit - 1, msim - 1] += win / n_sim
 
-        im = ax.imshow(p, cmap=cmap_fig6, vmin=0, vmax=1)
+        im = ax.imshow(p, cmap=cmap_recov, vmin=0, vmax=1)
         ax.set_box_aspect(1)
         for i in range(len(names)):
             for j in range(len(names)):
                 ax.text(j, i, f'{p[i, j]:.1f}', ha='center', va='center', fontsize=12,
-                        color='white' if p[i, j] < 0.5 else 'black')
+                        color='black' if p[i, j] < 0.5 else 'white')
         ax.set_xticks(range(len(names)))
         ax.set_yticks(range(len(names)))
         ax.set_xticklabels(names, rotation=45, ha='right', fontsize=15)
