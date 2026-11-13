@@ -440,6 +440,23 @@ model_names = ['DB', 'VS']
 
 df_numsim = pandas.read_csv(os.path.join('results', 'rl', 'nocatches', 'numsims', 'accdiff.csv'))
 
+# Load estimated social learning weights
+df_estimates = pandas.read_csv(os.path.join('results', 'rl', 'nocatches', 'modelcomp', 'adaptive', 'estimates.csv'))
+df_estimates = df_estimates[df_estimates['parameter'] == 'alphaVSD']
+df_estimates = df_estimates[['max', 'ratio', 'mean', 'lower', 'upper']]
+
+# Piecewise-linear weight axis: 0 to break over half the width
+weight_break = 0.1
+break_share = 0.5
+
+def weight_forward(weight):
+        weight = np.asarray(weight, dtype=float)
+        return np.where(weight <= weight_break, weight / weight_break * break_share, break_share + (weight - weight_break) / (1 - weight_break) * (1 - break_share))
+
+def weight_inverse(position):
+        position = np.asarray(position, dtype=float)
+        return np.where(position <= break_share, position / break_share * weight_break, weight_break + (position - break_share) / (1 - break_share) * (1 - weight_break))
+
 fig, ax = plt.subplots(4, 3, figsize=(7.5, 10), sharex=True, sharey=True)
 fig.supxlabel(r'Social Learning Weight', fontsize=16)
 fig.supylabel('Mean Accuracy Difference', fontsize=16)
@@ -480,12 +497,30 @@ for i_model in [0, 1]:
                                 ax[i_ratio, i_max].tick_params(left=False)
                         if i_ratio < 3:
                                 ax[i_ratio, i_max].tick_params(bottom=False)
-                        ax[i_ratio, i_max].set_xticks([0, 0.5, 1.0])
-                        ax[i_ratio, i_max].set_xticklabels(['0', '0.5', '1.0'], fontsize=10)
-                        ax[i_ratio, i_max].set_xlim(-0.075, 1.075)
+                        ax[i_ratio, i_max].set_xscale('function', functions=(weight_forward, weight_inverse))
+                        ax[i_ratio, i_max].set_xticks([0, 0.05, 0.1, 0.5, 1.0])
+                        ax[i_ratio, i_max].set_xticklabels(['0', '0.05', '0.1', '0.5', '1.0'], fontsize=10)
+                        ax[i_ratio, i_max].set_xlim(weight_inverse(-0.075), weight_inverse(1.075))
                         ax[i_ratio, i_max].set_ylim(-0.7, 0.3)
                         ax[i_ratio, i_max].set_yticks([-0.5, -0.25, 0, 0.25])
                         ax[i_ratio, i_max].set_yticklabels(['-0.5', '-0.25', '0', '0.25'], fontsize=10)
+
+# Add estimated social learning weights
+for i_max in range(len(max)):
+        max_val = max[i_max]
+        for i_ratio in range(len(ratio)):
+                ratio_val = ratio[i_ratio]
+                estimate_row = df_estimates[(df_estimates['max'] == max_val) & (df_estimates['ratio'] == ratio_val)]
+                estimate = estimate_row['mean'].iloc[0]
+                estimate_lower = estimate_row['lower'].iloc[0]
+                estimate_upper = estimate_row['upper'].iloc[0]
+
+                # Mark estimate on VS curve
+                vs_rows = df_numsim[(df_numsim['model'] == 'vsn1.fixed') & (df_numsim['max'] == max_val) & (df_numsim['ratio'] == ratio_val)]
+                vs_rows = vs_rows.sort_values('alphaS')
+                estimate_acc_diff = np.interp(estimate, vs_rows['alphaS'], vs_rows['acc.delta'])
+                estimate_xerr = [[estimate - estimate_lower], [estimate_upper - estimate]]
+                ax[i_ratio, i_max].errorbar(estimate, estimate_acc_diff, xerr=estimate_xerr, marker='o', markersize=4, color='k', capsize=2, linestyle='none')
 
 fig.subplots_adjust(wspace=0, hspace=0)
 
@@ -516,6 +551,14 @@ fig.savefig(os.path.join(resultsdir, 'Fig4.pdf'), bbox_inches='tight')
 df_numsim_v2 = pandas.read_csv(os.path.join('results', 'rl', 'catches', 'numsims', 'accdiff_v2.csv'))
 df_vsndbr = df_numsim_v2[df_numsim_v2['model'] == 'vsndbr2.fixed'].copy()
 df_vsnvsr = df_numsim_v2[df_numsim_v2['model'] == 'vsnvsr1.fixed'].copy()
+
+# Load estimated social learning weights
+df_estimates = pandas.read_csv(os.path.join('results', 'rl', 'catches', 'modelcomp', 'estimates.csv'))
+df_estimates = df_estimates[df_estimates['parameter'] == 'alphaDBR']
+df_estimates = df_estimates[['max', 'ratio', 'mean', 'lower', 'upper']]
+
+# Weight axis break for catches
+weight_break = 0.02
 
 color_vsndbr = '#003a7d'
 from matplotlib.colors import LinearSegmentedColormap
@@ -571,19 +614,29 @@ for i_max in range(len(max)):
                 ax_l[i_ratio, i_max].plot(social_weight, acc_diff, color=color_vsndbr)
                 ax_l[i_ratio, i_max].fill_between(social_weight, ci_lower, ci_upper, alpha=0.1, color=color_vsndbr)
                 ax_l[i_ratio, i_max].axhline(0, linestyle='--', color='k', alpha=0.7)
-                ax_l[i_ratio, i_max].set_xlim(-0.075, 1.075)
+                ax_l[i_ratio, i_max].set_xscale('function', functions=(weight_forward, weight_inverse))
+                ax_l[i_ratio, i_max].set_xlim(weight_inverse(-0.075), weight_inverse(1.075))
                 ax_l[i_ratio, i_max].set_yticks([-0.5, -0.25, 0, 0.25])
                 if i_max > 0:
                         ax_l[i_ratio, i_max].tick_params(left=False)
                         ax_l[i_ratio, i_max].set_yticklabels([])
                 else:
                         ax_l[i_ratio, i_max].set_yticklabels(['-0.5', '-0.25', '0', '0.25'], fontsize=12)
+                ax_l[i_ratio, i_max].set_xticks([0, 0.02, 1.0])
                 if i_ratio < 3:
                         ax_l[i_ratio, i_max].tick_params(bottom=False)
                         ax_l[i_ratio, i_max].set_xticklabels([])
                 else:
-                        ax_l[i_ratio, i_max].set_xticks([0, 0.5, 1.0])
-                        ax_l[i_ratio, i_max].set_xticklabels(['0', '0.5', '1.0'], fontsize=12)
+                        ax_l[i_ratio, i_max].set_xticklabels(['0', '0.02', '1.0'], fontsize=12)
+
+                # Mark estimate on curve
+                estimate_row = df_estimates[(df_estimates['max'] == max_val) & (df_estimates['ratio'] == ratio_val)]
+                estimate = estimate_row['mean'].iloc[0]
+                estimate_lower = estimate_row['lower'].iloc[0]
+                estimate_upper = estimate_row['upper'].iloc[0]
+                estimate_acc_diff = np.interp(estimate, social_weight, acc_diff)
+                estimate_xerr = [[estimate - estimate_lower], [estimate_upper - estimate]]
+                ax_l[i_ratio, i_max].errorbar(estimate, estimate_acc_diff, xerr=estimate_xerr, marker='o', markersize=6, color='k', capsize=2, linestyle='none', zorder=3)
 
                 # Heatmap (right group)
                 mask = (df_vsnvsr['max'] == max_val) & (df_vsnvsr['ratio'] == ratio_val)

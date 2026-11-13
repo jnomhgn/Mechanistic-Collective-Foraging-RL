@@ -507,7 +507,7 @@ if(!file.exists(file.path(resultsdir, adaptivity, "postpredict_acctime.csv")) &
   }
 
 
-#### Contrasts of social learning weights ####
+#### Estimates and contrasts of social learning weights ####
 
 winner.name = gsub(".hierarch", "", unname(winner), fixed = TRUE)
 
@@ -516,11 +516,12 @@ models.fixed = getmodels(hierarch = F)
 pop.names = names(models.fixed$free.pars.pop[[grep(paste0("^", winner.name, "\\.fixed$"), unlist(models.fixed$name))]])
 contrast.par = unique(sub("\\[.*$", "", grep("\\[", pop.names, value = TRUE)))
 contrast.file = file.path(resultsdir, "adaptive", "contrasts.csv")
+estimates.file = file.path(resultsdir, "adaptive", "estimates.csv")
 
 if(!grepl("2", winner.name)){
   print("Winning model is not adaptive. Skipping contrasts.")
-}else if(file.exists(contrast.file)){
-  print("Contrasts of social learning weights already exist. Skipping computation.")
+}else if(file.exists(contrast.file) & file.exists(estimates.file)){
+  print("Contrasts and parameter estimates already exist. Skipping computation.")
 }else{
 
   fit = readRDS(file.path(resultsdir, "adaptive", paste0(winner.name, ".hierarch.fit.rds")))
@@ -529,7 +530,31 @@ if(!grepl("2", winner.name)){
   max.levels = d %>% distinct(max.fac, max) %>% arrange(max.fac) %>% pull(max)
   ratio.levels = d %>% distinct(ratio.fac, ratio) %>% arrange(ratio.fac) %>% pull(ratio)
 
-  contrasts.alpha = parameter.contrasts(contrast.par, fit, max.levels, ratio.levels)
+  # Contrasts
+  if(!file.exists(contrast.file)){
+    contrasts.alpha = parameter.contrasts(contrast.par, fit, max.levels, ratio.levels)
 
-  write.csv(contrasts.alpha, file = contrast.file, row.names = F)
+    write.csv(contrasts.alpha, file = contrast.file, row.names = F)
+  }
+
+  # Population-level estimates
+  if(!file.exists(estimates.file)){
+    estimates = fit_summary_cmd(fit, variables = pop.names) %>% select(variable, mean, q5, q95)
+
+    # Max and ratio indices of environment-varying parameters
+    environment.rows = grepl("\\[", estimates$variable)
+    estimates$max.index = NA_integer_
+    estimates$ratio.index = NA_integer_
+    estimates$max.index[environment.rows] = as.integer(sub("^.*\\[([0-9]+),[0-9]+\\]$", "\\1", estimates$variable[environment.rows]))
+    estimates$ratio.index[environment.rows] = as.integer(sub("^.*\\[[0-9]+,([0-9]+)\\]$", "\\1", estimates$variable[environment.rows]))
+
+    # Factor level labels
+    estimates$parameter = sub("\\[.*$", "", estimates$variable)
+    estimates$max = max.levels[estimates$max.index]
+    estimates$ratio = ratio.levels[estimates$ratio.index]
+
+    estimates = estimates %>% select(parameter, max, ratio, mean, lower = q5, upper = q95)
+
+    write.csv(estimates, file = estimates.file, row.names = F)
+  }
 }
