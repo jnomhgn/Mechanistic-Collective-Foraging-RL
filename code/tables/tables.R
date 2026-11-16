@@ -112,6 +112,21 @@ pars_table_lines <- c(
 
 cat(pars_table_lines, sep = "\n")
 
+#### Convergence diagnostics ####
+
+# Condition A
+convergence_a <- data.frame(social = "A", pars_a[, c("variable", "rhat", "ess_bulk", "ess_tail")])
+
+# Condition NC
+convergence_nc <- data.frame(social = "NC", pars_nc[, c("variable", "rhat", "ess_bulk", "ess_tail")])
+
+# Condition C
+convergence_c <- data.frame(social = "C", pars_c[, c("variable", "rhat", "ess_bulk", "ess_tail")])
+
+convergence <- rbind(convergence_a, convergence_nc, convergence_c)
+
+print(convergence, row.names = FALSE)
+
 #### Model comparison table ####
 
 modelcomp_files <- list(
@@ -547,6 +562,7 @@ cat(social_table_lines, sep = "\n")
 #### Write tables ####
 
 writeLines(pars_table_lines, file.path(resultsdir, "pars.tex"))
+write.csv(convergence, file.path(resultsdir, "convergence.csv"), row.names = FALSE)
 writeLines(modelcomp_table_lines, file.path(resultsdir, "modelcomp.tex"))
 writeLines(contrast_table_lines, file.path(resultsdir, "contrasts.tex"))
 writeLines(acc_table_lines, file.path(resultsdir, "acc.tex"))

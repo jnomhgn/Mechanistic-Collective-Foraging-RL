@@ -73,6 +73,10 @@ generated quantities {
   real<lower=0> betaQ;
   array[ID] real<lower=0> idbetaQ;
   array[ID] real idbetaC;
+  real<lower=0, upper=1> alphaQN_without90;
+  real<lower=0, upper=1> alphaQP_without90;
+  real<lower=0> betaQ_without90;
+  real betaC_without90;
   for (i in 1 : ID) {
     idalphaQN[i] = inv_logit(logit_alphaQN + idoffset[i, 1]);
     idalphaQP[i] = inv_logit(logit_alphaQP + idoffset[i, 2]);
@@ -82,6 +86,19 @@ generated quantities {
   alphaQN = mean(idalphaQN);
   alphaQP = mean(idalphaQP);
   betaQ = mean(idbetaQ);
+  // Population means without participant 90
+  alphaQN_without90 = 0;
+  alphaQP_without90 = 0;
+  betaQ_without90 = 0;
+  betaC_without90 = 0;
+  for (i in 1 : ID) {
+    if (i != 90) {
+      alphaQN_without90 += idalphaQN[i] / (ID - 1);
+      alphaQP_without90 += idalphaQP[i] / (ID - 1);
+      betaQ_without90 += idbetaQ[i] / (ID - 1);
+      betaC_without90 += idbetaC[i] / (ID - 1);
+    }
+  }
   Rho = cholesky * cholesky';
   vector[OBSERVATIONS] log_lik;
   vector[DECISIONS] Q;
