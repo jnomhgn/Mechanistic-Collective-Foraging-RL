@@ -80,26 +80,26 @@ getmodels <- function(hierarch=FALSE){
         # M1.1
         list(
           "alphaQ" = c(0, 1), # Individual learning rate
-          "betaQ" = c(0, 10)     # Inverse temp
+          "betaQ" = c(0, 14)     # Inverse temp
         ),
         # M2.1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10)
+          "betaQ" = c(0, 14)
         ),
         # M3.1
         list(
           "alphaQ" = c(0, 1), # Individual learning rate
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.2
         list(
@@ -109,8 +109,8 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP[1]" = c(0, 1),
           "alphaQP[2]" = c(0, 1),
           "alphaQP[3]" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.3
         list(
@@ -138,8 +138,8 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP[1,4]" = c(0, 1),
           "alphaQP[2,4]" = c(0, 1),
           "alphaQP[3,4]" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         )
         
       ),
@@ -149,26 +149,26 @@ getmodels <- function(hierarch=FALSE){
         # M1.1
         list(
           "alphaQ" = c(0, 1), # Individual learning rate
-          "betaQ" = c(0, 10)     # Inverse temp
+          "betaQ" = c(0, 14)     # Inverse temp
         ),
         # M2.1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10)
+          "betaQ" = c(0, 14)
         ),
         # M3.1
         list(
           "alphaQ" = c(0, 1), # Individual learning rate
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.2
         list(
@@ -301,26 +301,26 @@ getmodels <- function(hierarch=FALSE){
         # M1.1
         list(
           "alphaQ" = c(0, 1), # Individual learning rate
-          "betaQ" = c(0, 10)     # Inverse temp
+          "betaQ" = c(0, 14)     # Inverse temp
         ),
         # M2.1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10)
+          "betaQ" = c(0, 14)
         ),
         # M3.1
         list(
           "alphaQ" = c(0, 1), # Individual learning rate
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.2
         list(
@@ -330,8 +330,8 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP[1]" = c(0, 1),
           "alphaQP[2]" = c(0, 1),
           "alphaQP[3]" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.3
         list(
@@ -361,8 +361,8 @@ getmodels <- function(hierarch=FALSE){
           "alphaQP[2,4]" = c(0, 1),
           "alphaQP[3,4]" = c(0, 1),
           
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         )
       ),
       
@@ -371,26 +371,26 @@ getmodels <- function(hierarch=FALSE){
         # M1.1
         list(
           "alphaQ" = c(0, 1), # Individual learning rate
-          "betaQ" = c(0, 10)     # Inverse temp
+          "betaQ" = c(0, 14)     # Inverse temp
         ),
         # M2.1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10)
+          "betaQ" = c(0, 14)
         ),
         # M3.1
         list(
           "alphaQ" = c(0, 1), # Individual learning rate
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4)
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6)
         ),
         # M4.2
         list(

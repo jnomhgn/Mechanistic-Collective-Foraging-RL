@@ -128,23 +128,23 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1), # Individual learning rate for negative rpes 
           "alphaQP" = c(0, 1), # Individual learning rate for positive rpes
-          "betaQ" = c(0, 10),     # Inverse temp
-          "betaC" = c(-4, 4)      # Autocorrelation
+          "betaQ" = c(0, 14),     # Inverse temp
+          "betaC" = c(-6, 6)      # Autocorrelation
         ),
         # dbn1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
         # dbn2
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           
           "alphaDBD[1,1]" = c(0, 1),
           "alphaDBD[2,1]" = c(0, 1),
@@ -163,16 +163,16 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSD" = c(0, 1)     # Social learning rate VS
         ),
         # vsn2
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           
           "alphaVSD[1,1]" = c(0, 1),
           "alphaVSD[2,1]" = c(0, 1),
@@ -192,8 +192,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
@@ -201,8 +201,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1)    # Social learning rate VS
         ),
         
@@ -210,8 +210,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
           "alphaDBD" = c(0, 1)    # Social learning rate DB
           
@@ -221,8 +221,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
@@ -231,8 +231,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSDR" = c(0, 1),    # Social learning rate VS
           "sigmaVSDR" = c(0, 1)    # relative influence of r/d
         ),
@@ -241,8 +241,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBDR" = c(0, 1),    # Social learning rate DB
           "sigmaDBDR" = c(0, 1)    # relative influence of r/d
         )
@@ -321,8 +321,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
@@ -330,8 +330,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1)    # Social learning rate VS
         ),
         
@@ -339,8 +339,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
           "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
@@ -349,8 +349,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
@@ -359,8 +359,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSDR" = c(0, 1),    # Social learning rate VS
           "sigmaVSDR" = c(0, 1)    # relative influence of r/d
         ),
@@ -369,8 +369,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBDR" = c(0, 1),    # Social learning rate DB
           "sigmaDBDR" = c(0, 1)    # relative influence of r/d
         )
@@ -499,23 +499,23 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1), # Individual learning rate for negative rpes 
           "alphaQP" = c(0, 1), # Individual learning rate for positive rpes
-          "betaQ" = c(0, 10),     # Inverse temp
-          "betaC" = c(-4, 4)      # Autocorrelation
+          "betaQ" = c(0, 14),     # Inverse temp
+          "betaC" = c(-6, 6)      # Autocorrelation
         ),
         # dbn1
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
         # dbn2
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           
           "alphaDBD[1,1]" = c(0, 1),
           "alphaDBD[2,1]" = c(0, 1),
@@ -534,16 +534,16 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSD" = c(0, 1)     # Social learning rate VS
         ),
         # vsn2
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           
           "alphaVSD[1,1]" = c(0, 1),
           "alphaVSD[2,1]" = c(0, 1),
@@ -563,8 +563,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
@@ -572,8 +572,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1)    # Social learning rate VS
         ),
         
@@ -581,8 +581,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
           "alphaDBD" = c(0, 1)    # Social learning rate DB
           
@@ -592,8 +592,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
@@ -602,8 +602,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSDR" = c(0, 1),    # Social learning rate VS
           "sigmaVSDR" = c(0, 1)    # relative influence of r/d
         ),
@@ -612,8 +612,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBDR" = c(0, 1),    # Social learning rate DB
           "sigmaDBDR" = c(0, 1)    # relative influence of r/d
         )
@@ -692,8 +692,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
@@ -701,8 +701,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1)    # Social learning rate VS
         ),
         
@@ -710,8 +710,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
           "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
@@ -720,8 +720,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
@@ -730,8 +730,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSDR" = c(0, 1),    # Social learning rate VS
           "sigmaVSDR" = c(0, 1)    # relative influence of r/d
         ),
@@ -740,8 +740,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBDR" = c(0, 1),    # Social learning rate DB
           "sigmaDBDR" = c(0, 1)    # relative influence of r/d
         )
@@ -818,8 +818,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
         
@@ -827,8 +827,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1)    # Social learning rate VS
         ),
         
@@ -836,8 +836,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSR" = c(0, 1),    # Social learning rate VS
           "alphaDBD" = c(0, 1)    # Social learning rate DB
         ),
@@ -846,8 +846,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSD" = c(0, 1),    # Social learning rate VS
           "alphaDBR" = c(0, 1)    # Social learning rate DB
         ),
@@ -856,8 +856,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaVSDR" = c(0, 1),    # Social learning rate VS
           "sigmaVSDR" = c(0, 1)    # relative influence of r/d
         ),
@@ -866,8 +866,8 @@ getmodels <- function(hierarch=FALSE){
         list(
           "alphaQN" = c(0, 1),
           "alphaQP" = c(0, 1),
-          "betaQ" = c(0, 10),
-          "betaC" = c(-4, 4),
+          "betaQ" = c(0, 14),
+          "betaC" = c(-6, 6),
           "alphaDBDR" = c(0, 1),    # Social learning rate DB
           "sigmaDBDR" = c(0, 1)    # relative influence of r/d
         )
