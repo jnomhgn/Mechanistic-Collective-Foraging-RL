@@ -28,8 +28,10 @@ plt.rcdefaults()
 plt.rcParams.update({'font.size': 18,'text.usetex':False,"font.family":"serif",'mathtext.fontset':'stix'})
 
 # Define colors
-co = ['#003a7d','#d83034','#e9c716']
-cmap_fig6 = mcolors.LinearSegmentedColormap.from_list('fig6', ['#003a7d', '#00a878', '#e9c716'])
+co = ['#003a7d','#bf8c0f']
+
+# Max catch colours, blue-grey to dark navy
+co_max = ['#8b95aa', '#4468b9', '#002c5e']
 
 # Model recovery colour scale, white to blue
 cmap_recov = mcolors.LinearSegmentedColormap.from_list('recov', ['white', co[0]])
@@ -45,8 +47,8 @@ recov_done = all(os.path.exists(f) for f in recov_files)
 #### Fig 2. -- Accuracy  ####
 ####
 
-# Define color mapping for Exp, Bayesian, and RL
-method_colors = {'Exp':0, 'Bayes': 1, 'RL': 2}
+# Define colors for Exp, Bayesian, and RL
+method_colors = {'Exp': co[0], 'Bayes': 'black', 'RL': co[1]}
 
 max_trial_length = 106
 social = [1, 2, 3]
@@ -92,28 +94,29 @@ for i_cond in range(3):
                 ax[0,i_max].set_title('Max catch ' + str(max_val),fontsize=14)
                 for i_ratio in range(len(ratio)):
                         ratio_val = ratio[i_ratio]
-                        ax[i_ratio,i_max].axhline(mean_acc_bayes[i_max,i_ratio],color=co[method_colors['Bayes']],linestyle='--')
+                        ax[i_ratio,i_max].axhline(mean_acc_bayes[i_max,i_ratio],color=method_colors['Bayes'],linestyle='--',linewidth=2)
                         ax[i_ratio,-1].yaxis.set_label_position("right")
                         ax[i_ratio,-1].set_ylabel('Catch ratio ' + str(ratio_val),fontsize=14,rotation=270,labelpad=15)
                         if i_cond==0 and i_max==0 and i_ratio==0:
-                                ax[i_ratio,i_max].plot(cond_x,mean_acc_behav[:,i_max,i_ratio],'o',color=co[method_colors['Exp']],label='EXP',markersize=marker_size)
-                                ax[i_ratio,i_max].plot(cond_x,mean_acc_rl[:,i_max,i_ratio],'o',color=co[method_colors['RL']],label='RL',markersize=marker_size)
+                                ax[i_ratio,i_max].plot(cond_x,mean_acc_behav[:,i_max,i_ratio],'o',color=method_colors['Exp'],label='EXP',markersize=marker_size)
+                                ax[i_ratio,i_max].plot(cond_x,mean_acc_rl[:,i_max,i_ratio],'o',color=method_colors['RL'],label='RL',markersize=marker_size)
                         else:
-                                ax[i_ratio,i_max].plot(cond_x,mean_acc_behav[:,i_max,i_ratio],'o',color=co[method_colors['Exp']],markersize=marker_size)
-                                ax[i_ratio,i_max].plot(cond_x,mean_acc_rl[:,i_max,i_ratio],'o',color=co[method_colors['RL']],markersize=marker_size)
+                                ax[i_ratio,i_max].plot(cond_x,mean_acc_behav[:,i_max,i_ratio],'o',color=method_colors['Exp'],markersize=marker_size)
+                                ax[i_ratio,i_max].plot(cond_x,mean_acc_rl[:,i_max,i_ratio],'o',color=method_colors['RL'],markersize=marker_size)
 
                         for i_player in range(5):
-                                ax[i_ratio,i_max].scatter([i_cond+0.11*(i_player-2)]*18,acc_exp_by_player[i_cond,i_max,i_ratio,i_player*18:i_player*18+18],color=co[method_colors['Exp']],alpha=0.5,s=4,facecolors='none')
+                                ax[i_ratio,i_max].scatter([i_cond+0.11*(i_player-2)]*18,acc_exp_by_player[i_cond,i_max,i_ratio,i_player*18:i_player*18+18],color=method_colors['Exp'],alpha=0.5,s=4,facecolors='none')
                         ax[i_ratio,i_max].set_xticks(cond_x,['A','NC','C'])
                         ax[i_ratio,i_max].set_xlim(-0.5,2.5)
                         ax[i_ratio,i_max].set_yticks([0,0.4,0.8])
-                        ax[i_ratio,i_max].axhline(0.5,linestyle='--',color='k',alpha=0.7)
+                        ax[i_ratio,i_max].axhline(0.5,linestyle='--',color='gray')
                         if max_val>0.5:
                                 ax[i_ratio,i_max].tick_params(left = False)
                         if i_ratio<3:
                                 ax[i_ratio,i_max].tick_params(bottom=False,labelbottom=False)
 
-                        ax[i_ratio,i_max].plot(cond_x[0],mean_acc_bayes[i_max,i_ratio],color=co[method_colors['Bayes']],markersize=marker_size,marker='x', markeredgewidth=2)
+                        # Mark Bayes mean at Alone, behind the other dots
+                        ax[i_ratio,i_max].plot(cond_x[0],mean_acc_bayes[i_max,i_ratio],'o',color=method_colors['Bayes'],markersize=marker_size,zorder=1.9)
 
 fig.subplots_adjust(wspace=0,hspace=0)
 
@@ -121,9 +124,9 @@ fig.subplots_adjust(wspace=0,hspace=0)
 legend_handles = []
 legend_labels = []
 for map_idx, map_val in enumerate(method_colors):
-    color = co[map_idx]
+    color = method_colors[map_val]
     patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.1)[0]
-    line = ax[0, 0].plot([], [], color=color)[0]
+    line = ax[0, 0].plot([], [], color=color, linewidth=2)[0]
     legend_handles.append((patch, line))
     legend_labels.append(list(method_colors.keys())[map_idx])
 
@@ -166,9 +169,9 @@ social_cond = 1
 legend_handles = []
 legend_labels = []
 for i_max, max_val in enumerate(max):
-    color = co[i_max]
-    patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.1)[0]
-    line = ax[0, 0].plot([], [], color=color)[0]
+    color = co_max[i_max]
+    patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.3)[0]
+    line = ax[0, 0].plot([], [], color=color, linewidth=2)[0]
     legend_handles.append((patch, line))
     legend_labels.append(r'Max catch ' + str(max_val))
 
@@ -207,9 +210,9 @@ for i_row in range(3):
                         se  = se_data[i_row]
                         kw  = dict(label=r'Max catch ' + str(max[i_max])) if i_ratio == 3 else {}
 
-                        ax[i_row, i_ratio].plot(time_bins, acc, color=co[i_max], **kw)
+                        ax[i_row, i_ratio].plot(time_bins, acc, color=co_max[i_max], linewidth=2, **kw)
                         if se is not None:
-                                ax[i_row, i_ratio].fill_between(time_bins, acc - se[i_max, i_ratio], acc + se[i_max, i_ratio], alpha=0.1, color=co[i_max], **kw)
+                                ax[i_row, i_ratio].fill_between(time_bins, acc - se[i_max, i_ratio], acc + se[i_max, i_ratio], alpha=0.3, color=co_max[i_max], **kw)
 
                         if i_row == 0:
                                 ax[i_row, i_ratio].set_title(r'Catch Ratio ' + str(ratio[i_ratio]))
@@ -269,9 +272,9 @@ social_cond = 2
 legend_handles = []
 legend_labels = []
 for i_max, max_val in enumerate(max):
-    color = co[i_max]
-    patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.1)[0]
-    line = ax[0, 0].plot([], [], color=color)[0]
+    color = co_max[i_max]
+    patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.3)[0]
+    line = ax[0, 0].plot([], [], color=color, linewidth=2)[0]
     legend_handles.append((patch, line))
     legend_labels.append(r'Max catch ' + str(max_val))
 
@@ -305,8 +308,8 @@ for i_row in range(2):
                         se  = se_data[i_row][i_max, i_ratio]
                         kw  = dict(label=r'Max catch ' + str(max[i_max])) if i_ratio == 3 else {}
 
-                        ax[i_row, i_ratio].plot(time_bins, acc, color=co[i_max], **kw)
-                        ax[i_row, i_ratio].fill_between(time_bins, acc - se, acc + se, alpha=0.1, color=co[i_max], **kw)
+                        ax[i_row, i_ratio].plot(time_bins, acc, color=co_max[i_max], linewidth=2, **kw)
+                        ax[i_row, i_ratio].fill_between(time_bins, acc - se, acc + se, alpha=0.3, color=co_max[i_max], **kw)
 
                         if i_row == 0:
                                 ax[i_row, i_ratio].set_title(r'Catch Ratio ' + str(ratio[i_ratio]))
@@ -365,9 +368,9 @@ social_cond = 3
 legend_handles = []
 legend_labels = []
 for i_max, max_val in enumerate(max):
-    color = co[i_max]
-    patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.1)[0]
-    line = ax[0, 0].plot([], [], color=color)[0]
+    color = co_max[i_max]
+    patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.3)[0]
+    line = ax[0, 0].plot([], [], color=color, linewidth=2)[0]
     legend_handles.append((patch, line))
     legend_labels.append(r'Max catch ' + str(max_val))
 
@@ -401,8 +404,8 @@ for i_row in range(2):
                         se  = se_data[i_row][i_max, i_ratio]
                         kw  = dict(label=r'Max catch ' + str(max[i_max])) if i_ratio == 3 else {}
 
-                        ax[i_row, i_ratio].plot(time_bins, acc, color=co[i_max], **kw)
-                        ax[i_row, i_ratio].fill_between(time_bins, acc - se, acc + se, alpha=0.1, color=co[i_max], **kw)
+                        ax[i_row, i_ratio].plot(time_bins, acc, color=co_max[i_max], linewidth=2, **kw)
+                        ax[i_row, i_ratio].fill_between(time_bins, acc - se, acc + se, alpha=0.3, color=co_max[i_max], **kw)
 
                         if i_row == 0:
                                 ax[i_row, i_ratio].set_title(r'Catch Ratio ' + str(ratio[i_ratio]))
@@ -447,7 +450,7 @@ fig.savefig(os.path.join(resultsdir, 'Fig7.pdf'), bbox_inches='tight')
 ####
 #### Fig 4. -- Results from numsims for no catches ####
 ####
-colors_fig4 = ['#003a7d', '#e9c716']
+colors_fig4 = [co[0], co[1]]
 model_colors = {'DB': 0, 'VS': 1}
 
 model_names = ['DB', 'VS']
@@ -503,10 +506,10 @@ for i_model in [0, 1]:
                         ci_upper = df_numsim['upper'][idx_mr].to_numpy()
 
                         kw = dict(label=model_names[i_model]) if i_ratio == 0 and i_max == 0 else {}
-                        ax[i_ratio, i_max].plot(social_weight, acc_diff, color=model_color, **kw)
+                        ax[i_ratio, i_max].plot(social_weight, acc_diff, color=model_color, linewidth=2, **kw)
                         ax[i_ratio, i_max].fill_between(social_weight, ci_lower, ci_upper, alpha=0.1, color=model_color)
 
-                        ax[i_ratio, i_max].axhline(0, linestyle='--', color='k', alpha=0.7)
+                        ax[i_ratio, i_max].axhline(0, linestyle='--', color='gray')
                         if max_val > 0.5:
                                 ax[i_ratio, i_max].tick_params(left=False)
                         if i_ratio < 3:
@@ -542,7 +545,7 @@ legend_handles = []
 legend_labels = []
 for map_idx in range(len(model_colors)):
         patch = ax[0, 0].fill(np.nan, np.nan, colors_fig4[map_idx], alpha=0.1)[0]
-        line = ax[0, 0].plot([], [], color=colors_fig4[map_idx])[0]
+        line = ax[0, 0].plot([], [], color=colors_fig4[map_idx], linewidth=2)[0]
         legend_handles.append((patch, line))
         legend_labels.append(list(model_colors.keys())[map_idx])
 
@@ -579,7 +582,7 @@ vmin_heatmap = df_vsnvsr['acc.delta'].min()
 vmax_heatmap = df_vsnvsr['acc.delta'].max()
 
 # Heatmap colour scale, white at 0, losses and gains stretched separately
-cmap_heatmap = LinearSegmentedColormap.from_list('heatmap', [co[1], 'white', co[0]])
+cmap_heatmap = LinearSegmentedColormap.from_list('heatmap', [co[0], 'white', co[1]])
 norm_heatmap = mcolors.TwoSlopeNorm(vmin=vmin_heatmap, vcenter=0, vmax=vmax_heatmap)
 
 # Heatmap smoothing width
@@ -623,9 +626,9 @@ for i_max in range(len(max)):
                 ci_lower = panel_data['lower'].to_numpy()
                 ci_upper = panel_data['upper'].to_numpy()
 
-                ax_l[i_ratio, i_max].plot(social_weight, acc_diff, color=color_vsndbr)
+                ax_l[i_ratio, i_max].plot(social_weight, acc_diff, color=color_vsndbr, linewidth=2)
                 ax_l[i_ratio, i_max].fill_between(social_weight, ci_lower, ci_upper, alpha=0.1, color=color_vsndbr)
-                ax_l[i_ratio, i_max].axhline(0, linestyle='--', color='k', alpha=0.7)
+                ax_l[i_ratio, i_max].axhline(0, linestyle='--', color='gray')
                 ax_l[i_ratio, i_max].set_xscale('function', functions=(weight_forward, weight_inverse))
                 ax_l[i_ratio, i_max].set_xlim(weight_inverse(-0.075), weight_inverse(1.075))
                 ax_l[i_ratio, i_max].set_yticks([-0.5, -0.25, 0, 0.25])
@@ -709,103 +712,6 @@ fig.set_size_inches(15, 8)
 fig.savefig(os.path.join(resultsdir, 'Fig6.pdf'), bbox_inches='tight')
 
 
-
-
-####
-#### FigS2. -- Simulated accuracy and switch rate differences over time, no catches (DB and VS models) ####
-####
-
-df_acctime_nc    = pandas.read_csv(os.path.join('results', 'rl', 'nocatches', 'numsims', 'acctimediff.csv'))
-df_switchtime_nc = pandas.read_csv(os.path.join('results', 'rl', 'nocatches', 'numsims', 'switchtimediff.csv'))
-
-alpha_levels = np.sort(df_acctime_nc['alphaS'].unique())
-time_bins    = np.arange(0, 76, 1)
-
-norm   = mcolors.Normalize(vmin=np.min(alpha_levels), vmax=np.max(alpha_levels))
-colors = cmap_fig6(np.linspace(0, 1, len(alpha_levels)))
-s_map  = plt.cm.ScalarMappable(norm=norm, cmap=cmap_fig6)
-
-fig = plt.figure(figsize=(15, 11))
-gs = GridSpec(2, 2, figure=fig, hspace=0.1, wspace=0.1)
-gs_acc_db    = GridSpecFromSubplotSpec(4, 3, subplot_spec=gs[0, 0], hspace=0.05, wspace=0.05)
-gs_acc_vs    = GridSpecFromSubplotSpec(4, 3, subplot_spec=gs[0, 1], hspace=0.05, wspace=0.05)
-gs_switch_db = GridSpecFromSubplotSpec(4, 3, subplot_spec=gs[1, 0], hspace=0.05, wspace=0.05)
-gs_switch_vs = GridSpecFromSubplotSpec(4, 3, subplot_spec=gs[1, 1], hspace=0.05, wspace=0.05)
-ax_acc_db    = np.array([[fig.add_subplot(gs_acc_db[i, j])    for j in range(3)] for i in range(4)])
-ax_acc_vs    = np.array([[fig.add_subplot(gs_acc_vs[i, j])    for j in range(3)] for i in range(4)])
-ax_switch_db = np.array([[fig.add_subplot(gs_switch_db[i, j]) for j in range(3)] for i in range(4)])
-ax_switch_vs = np.array([[fig.add_subplot(gs_switch_vs[i, j]) for j in range(3)] for i in range(4)])
-
-for ax_db, ax_vs, df, col_delta, ylim_val, ytick_vals, is_top in [
-        (ax_acc_db,    ax_acc_vs,    df_acctime_nc,    'acc.delta',    (-0.6, 0.3),   [-0.4, -0.1, 0.2], True),
-        (ax_switch_db, ax_switch_vs, df_switchtime_nc, 'switch.delta', (-0.25, 0.45), [-0.2, 0.0,  0.2], False),
-]:
-        for ax, model in [(ax_db, 'dbn1.fixed'), (ax_vs, 'vsn1.fixed')]:
-                indc = np.where(df['model'] == model)[0]
-
-                for i_max, max_val in enumerate(max):
-                        if is_top:
-                                ax[0, i_max].set_title('Max catch ' + str(max_val), fontsize=7)
-                        indp = np.where(df['max'] == max_val)[0]
-                        ind  = np.intersect1d(indc, indp)
-
-                        for i_ratio, ratio_val in enumerate(ratio):
-                                indr = np.where(df['ratio'] == ratio_val)[0]
-                                ind1 = np.intersect1d(ind, indr)
-
-                                if ax is ax_vs:
-                                        ax[i_ratio, -1].yaxis.set_label_position("right")
-                                        ax[i_ratio, -1].set_ylabel('Catch ratio ' + str(ratio_val), fontsize=7, rotation=270, labelpad=12)
-
-                                for i_alpha, alpha_val in enumerate(alpha_levels):
-                                        indk = np.where(df['alphaS'] == alpha_val)[0]
-                                        ind2 = np.intersect1d(ind1, indk)
-                                        ax[i_ratio, i_max].plot(time_bins, df[col_delta][ind2].to_numpy(), color=colors[i_alpha])
-
-                                ax[i_ratio, i_max].axhline(0, linestyle='--', color='k', alpha=0.7)
-                                ax[i_ratio, i_max].set_ylim(*ylim_val)
-                                ax[i_ratio, i_max].set_yticks(ytick_vals)
-                                ax[i_ratio, i_max].set_xlim(-1, 76)
-                                ax[i_ratio, i_max].set_xticks([0, 20, 40, 60])
-                                ax[i_ratio, i_max].tick_params(labelsize=7)
-
-                                if max_val > 0.5 or ax is ax_vs:
-                                        ax[i_ratio, i_max].tick_params(left=False, labelleft=False)
-                                if i_ratio < 3 or is_top:
-                                        ax[i_ratio, i_max].tick_params(bottom=False, labelbottom=False)
-
-ax_switch_db[3, 1].set_xlabel('t (s)', fontsize=13)
-ax_switch_vs[3, 1].set_xlabel('t (s)', fontsize=13)
-
-fig.canvas.draw()
-
-pos_acc_db_top = ax_acc_db[0, 0].get_position()
-pos_acc_db_bot = ax_acc_db[-1, 0].get_position()
-fig.text(pos_acc_db_bot.x0 - 0.04, (pos_acc_db_top.y1 + pos_acc_db_bot.y0) / 2,
-         'Accuracy Difference', fontsize=13, va='center', ha='right', rotation=90)
-
-pos_switch_db_top = ax_switch_db[0, 0].get_position()
-pos_switch_db_bot = ax_switch_db[-1, 0].get_position()
-fig.text(pos_switch_db_bot.x0 - 0.04, (pos_switch_db_top.y1 + pos_switch_db_bot.y0) / 2,
-         'Switch Rate Difference', fontsize=13, va='center', ha='right', rotation=90)
-
-for ax_top, col_label in [(ax_acc_db, 'DB'), (ax_acc_vs, 'VS')]:
-        pos_tl = ax_top[0, 0].get_position()
-        pos_tr = ax_top[0, -1].get_position()
-        fig.text((pos_tl.x0 + pos_tr.x1) / 2, pos_tr.y1 + 0.04, col_label,
-                 va='bottom', ha='center', fontsize=13)
-
-pos_l_top = ax_acc_db[0, 0].get_position()
-pos_r_top = ax_acc_vs[0, -1].get_position()
-cbar_width = (pos_r_top.x1 - pos_l_top.x0) * 0.3
-cbar_left  = (pos_l_top.x0 + pos_r_top.x1) / 2 - cbar_width / 2
-cbar_ax = fig.add_axes([cbar_left, pos_r_top.y1 + 0.08, cbar_width, 0.015])
-cbar = fig.colorbar(s_map, cax=cbar_ax, orientation='horizontal')
-cbar.ax.tick_params(labelsize=7)
-cbar.ax.set_title(r'$\alpha_{VSl}$ / $\alpha_{DBl}$', fontsize=13)
-
-fig.set_size_inches(15, 11)
-fig.savefig(os.path.join(resultsdir, 'FigS2.pdf'), bbox_inches='tight')
 
 
 ####
