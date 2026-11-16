@@ -139,3 +139,9 @@ source(file.path("code", "preprocessing", "preprocessing.R"))
 print("Running model recovery for catches condition...")
 source(file.path("code", "rl", "catches", "analyses", "modelrecov.R"))
 rm(list = ls()); invisible(gc())
+
+#### Create model recovery figure ####
+
+# Plot figures
+print("Creating model recovery figure...")
+source_python(file.path("code", "figures", "figures.py"))
