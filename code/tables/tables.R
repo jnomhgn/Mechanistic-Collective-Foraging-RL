@@ -117,13 +117,20 @@ cat(pars_table_lines, sep = "\n")
 # Condition A
 convergence_a <- data.frame(social = "A", pars_a[, c("variable", "rhat", "ess_bulk", "ess_tail")])
 
+# Condition A without participant 90
+without90_vars <- paste0(asocial_vars, "_without90")
+pars_a_without90 <- read.csv(diagnostics_files$A)
+pars_a_without90 <- pars_a_without90[match(without90_vars, pars_a_without90$variable), ]
+pars_a_without90[, 3:13] <- round(pars_a_without90[, 3:13], 3)
+convergence_a_without90 <- data.frame(social = "A", pars_a_without90[, c("variable", "rhat", "ess_bulk", "ess_tail")])
+
 # Condition NC
 convergence_nc <- data.frame(social = "NC", pars_nc[, c("variable", "rhat", "ess_bulk", "ess_tail")])
 
 # Condition C
 convergence_c <- data.frame(social = "C", pars_c[, c("variable", "rhat", "ess_bulk", "ess_tail")])
 
-convergence <- rbind(convergence_a, convergence_nc, convergence_c)
+convergence <- rbind(convergence_a, convergence_a_without90, convergence_nc, convergence_c)
 
 print(convergence, row.names = FALSE)
 
