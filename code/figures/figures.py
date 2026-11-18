@@ -706,6 +706,9 @@ cbar_height = total_height * 0.6
 cbar_bottom = pos_cbar_bot.y0 + (total_height - cbar_height) / 2
 cbar_ax = fig.add_axes([pos_cbar_top.x1 + 0.045, cbar_bottom, 0.015, cbar_height])
 cbar = fig.colorbar(im, cax=cbar_ax, ticks=cbar_ticks)
+# Colour bar linear in value
+cbar.ax.set_yscale('linear')
+cbar.set_ticks(cbar_ticks[cbar_ticks >= vmin_heatmap])
 cbar.ax.tick_params(labelsize=12)
 cbar.ax.set_title('Mean\nAccuracy\nDifference', fontsize=12)
 fig.set_size_inches(15, 8)
