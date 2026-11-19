@@ -1,9 +1,9 @@
-# Mechanistic Collective Foraging
-This repository contains the full data and scripts to reproduce all analyses and figures in:
+# Mechanistic Social Foraging RL
+This repository contains the full data and scripts to reproduce all analyses in:
 
-**Marienhagen, J, Blum Moyse, L., Schakowski, A., Kahl, B., Davidson, J., El Hady, A., Kurvers, R. & Deffner, D. (2025). *Bridging drift-diffusion and reinforcement-learning modeling to uncover the cognitive processes underlying collective foraging.* [Manuscript submitted for publication].**
+**Marienhagen, J, Schakowski, A., Blum Moyse, L., Kahl, B., Davidson, J., El Hady, A., Kurvers, R. & Deffner, D. (2025). *Value shaping guides the adaptive integration of observed locations but not rewards in human social foraging.* [Manuscript submitted for publication].**
 
-Previous versions of the code are available under [Releases](https://github.com/jnomhgn/Mechanistic-Collective-Foraging-DDM-RLM/releases).
+Previous versions of the code are available under [Releases](https://github.com/jnomhgn/Mechanistic-Social-Foraging-RL/releases).
 
 ## Code Execution
 
@@ -55,7 +55,9 @@ Rscript code/main.R
 
 ## Code Overview
 
-"code/main.R" is the entry point for the full analysis pipeline. It runs preprocessing, behavioral analyses, Bayesian forager simulations, all RL analyses across the three social-information conditions, and figure generation.
+"code/main.R" is the entry point for the full analysis pipeline. It runs preprocessing, behavioral analyses, Bayesian forager simulations, all RL analyses across the three social-information conditions, and figure and table generation.
+
+"code/pipeline_config.R" sets the MCMC and simulation settings for all analyses. It provides a full mode, which runs by default and reproduces the results in the paper, and a test mode used for development.
 
 ### Data Processing
 The "code/preprocessing" subdirectory contains the preprocessing scripts.
@@ -66,6 +68,8 @@ The "code/preprocessing" subdirectory contains the preprocessing scripts.
 
 ### Behavioral Analyses
 "code/behavioral/behavioral.R" runs the Bayesian logistic regression predicting players’ probability to forage at the better lake while accounting for individual- and group-level heterogeneity.
+
+"code/behavioral/contrasts.R" computes the contrasts of the probability to forage at the better lake.
 
 ### Bayesian Foragers
 "code/bayesianforager/BayesianForager.R" runs the simulations for the optional Bayesian foragers and plots the results.
@@ -110,7 +114,7 @@ Each condition has a "stan" subdirectory under "code/rl/\<condition\>/stan". Acr
 
 - "vsn" denotes the SRL model integrating location-related social information via VS.
 
-- "1" and "2" denote the non-adaptive and adaptive variants of the SRL models that do and do not allow social learning weights to vary between environments respectively.
+- "1" and "2" denote the non-adaptive and adaptive variants of the SRL models that do not and do allow social learning weights to vary between environments respectively.
 
 ##### "Catches" Condition
 
@@ -132,18 +136,26 @@ Each condition has a "stan" subdirectory under "code/rl/\<condition\>/stan". Acr
 
 - "vsnvsr" denotes the SRL integrating both location- and catch-related social information via VS.
 
-- "1" and "2" denote the non-adaptive and adaptive variants of the SRL models that do and do not allow social learning weights to vary between environments respectively.
+- "1" and "2" denote the non-adaptive and adaptive variants of the SRL models that do not and do allow social learning weights to vary between environments respectively.
 
 #### Functions
 
-Each condition has a "functions" subdirectory under "code/rl/\<condition\>/functions" containing the following scripts:
+Each condition has a "functions" subdirectory under "code/rl/\<condition\>/functions" containing a subset of the following scripts:
 
 - "fixed.sim.R" files follow the same naming convention as the stan files and simulate synthetic data from the respective model.
 
 - "getmodels.R" is sourced during analysis and provides information with regards to the parameters contained in each model as well as the paths to the corresponding simulation functions and stan model code.
 
+- "contrasts.R" computes the social learning weight contrasts.
+
 #### Figures
 
-The "code/figures" subdirectory contains the figure scripts.
+The "code/figures" subdirectory contains the figure script.
 
-- "figures.py" plots the RL model fits (Figs 3, 5 and 7) and the numerical simulation results (Figs 2, 4 and 6).
+- "figures.py" generates all analysis-related figures presented in the paper.
+
+#### Tables
+
+The "code/tables" subdirectory contains the table script.
+
+- "tables.R" creates the LaTeX tables for the behavioral and RL analyses as well as a CSV of the convergence diagnostics.
