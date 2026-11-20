@@ -28,10 +28,10 @@ plt.rcdefaults()
 plt.rcParams.update({'font.size': 18,'text.usetex':False,"font.family":"serif",'mathtext.fontset':'stix'})
 
 # Define colors
-co = ['#003a7d','#bf8c0f']
+co = ['#004488','#DDAA33','#BB5566']
 
-# Max catch colours, blue-grey to dark navy
-co_max = ['#8b95aa', '#4468b9', '#002c5e']
+# Max catch colours, blue, red, yellow
+co_max = [co[0], co[2], co[1]]
 
 # Model recovery colour scale, white to blue
 cmap_recov = mcolors.LinearSegmentedColormap.from_list('recov', ['white', co[0]])
@@ -48,7 +48,11 @@ recov_done = all(os.path.exists(f) for f in recov_files)
 ####
 
 # Define colors for Exp, Bayesian, and RL
-method_colors = {'Exp': co[0], 'Bayes': 'black', 'RL': co[1]}
+method_colors = {'Exp': co[0], 'Bayes': co[2], 'RL': co[1]}
+
+# Border for mean dots
+edge_color = 'black'
+edge_width = 1.0
 
 max_trial_length = 106
 social = [1, 2, 3]
@@ -94,15 +98,15 @@ for i_cond in range(3):
                 ax[0,i_max].set_title('Max catch ' + str(max_val),fontsize=14)
                 for i_ratio in range(len(ratio)):
                         ratio_val = ratio[i_ratio]
-                        ax[i_ratio,i_max].axhline(mean_acc_bayes[i_max,i_ratio],color=method_colors['Bayes'],linestyle='--',linewidth=2)
+                        ax[i_ratio,i_max].axhline(mean_acc_bayes[i_max,i_ratio],color=method_colors['Bayes'],linestyle='--',linewidth=2,zorder=1.8)
                         ax[i_ratio,-1].yaxis.set_label_position("right")
                         ax[i_ratio,-1].set_ylabel('Catch ratio ' + str(ratio_val),fontsize=14,rotation=270,labelpad=15)
                         if i_cond==0 and i_max==0 and i_ratio==0:
-                                ax[i_ratio,i_max].plot(cond_x,mean_acc_behav[:,i_max,i_ratio],'o',color=method_colors['Exp'],label='EXP',markersize=marker_size)
-                                ax[i_ratio,i_max].plot(cond_x,mean_acc_rl[:,i_max,i_ratio],'o',color=method_colors['RL'],label='RL',markersize=marker_size)
+                                ax[i_ratio,i_max].plot(cond_x,mean_acc_behav[:,i_max,i_ratio],'o',color=method_colors['Exp'],label='EXP',markersize=marker_size,markeredgecolor=edge_color,markeredgewidth=edge_width)
+                                ax[i_ratio,i_max].plot(cond_x,mean_acc_rl[:,i_max,i_ratio],'o',color=method_colors['RL'],label='RL',markersize=marker_size,markeredgecolor=edge_color,markeredgewidth=edge_width)
                         else:
-                                ax[i_ratio,i_max].plot(cond_x,mean_acc_behav[:,i_max,i_ratio],'o',color=method_colors['Exp'],markersize=marker_size)
-                                ax[i_ratio,i_max].plot(cond_x,mean_acc_rl[:,i_max,i_ratio],'o',color=method_colors['RL'],markersize=marker_size)
+                                ax[i_ratio,i_max].plot(cond_x,mean_acc_behav[:,i_max,i_ratio],'o',color=method_colors['Exp'],markersize=marker_size,markeredgecolor=edge_color,markeredgewidth=edge_width)
+                                ax[i_ratio,i_max].plot(cond_x,mean_acc_rl[:,i_max,i_ratio],'o',color=method_colors['RL'],markersize=marker_size,markeredgecolor=edge_color,markeredgewidth=edge_width)
 
                         for i_player in range(5):
                                 ax[i_ratio,i_max].scatter([i_cond+0.11*(i_player-2)]*18,acc_exp_by_player[i_cond,i_max,i_ratio,i_player*18:i_player*18+18],color=method_colors['Exp'],alpha=0.5,s=4,facecolors='none')
@@ -116,7 +120,7 @@ for i_cond in range(3):
                                 ax[i_ratio,i_max].tick_params(bottom=False,labelbottom=False)
 
                         # Mark Bayes mean at Alone, behind the other dots
-                        ax[i_ratio,i_max].plot(cond_x[0],mean_acc_bayes[i_max,i_ratio],'o',color=method_colors['Bayes'],markersize=marker_size,zorder=1.9)
+                        ax[i_ratio,i_max].plot(cond_x[0],mean_acc_bayes[i_max,i_ratio],'X',color=method_colors['Bayes'],markersize=marker_size,markeredgecolor=edge_color,markeredgewidth=edge_width,zorder=1.9)
 
 fig.subplots_adjust(wspace=0,hspace=0)
 
@@ -577,7 +581,7 @@ df_estimates = df_estimates[['max', 'ratio', 'mean', 'lower', 'upper']]
 # Weight axis break for catches
 weight_break = 0.02
 
-color_vsndbr = '#003a7d'
+color_vsndbr = co[0]
 vmin_heatmap = df_vsnvsr['acc.delta'].min()
 vmax_heatmap = df_vsnvsr['acc.delta'].max()
 
