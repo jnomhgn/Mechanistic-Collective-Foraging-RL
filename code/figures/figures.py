@@ -124,20 +124,19 @@ for i_cond in range(3):
 
 fig.subplots_adjust(wspace=0,hspace=0)
 
-# Define colors and labels
+# Define legend markers and labels
+method_markers = {'Exp': 'o', 'Bayes': 'X', 'RL': 'o'}
+method_linestyles = {'Exp': 'none', 'Bayes': '--', 'RL': 'none'}
 legend_handles = []
 legend_labels = []
-for map_idx, map_val in enumerate(method_colors):
-    color = method_colors[map_val]
-    patch = ax[0, 0].fill(np.nan, np.nan, color, alpha=0.1)[0]
-    line = ax[0, 0].plot([], [], color=color, linewidth=2)[0]
-    legend_handles.append((patch, line))
-    legend_labels.append(list(method_colors.keys())[map_idx])
+for method, color in method_colors.items():
+    handle = Line2D([], [], linestyle=method_linestyles[method], linewidth=2, marker=method_markers[method], color=color, markersize=marker_size, markeredgecolor=edge_color, markeredgewidth=edge_width)
+    legend_handles.append(handle)
+    legend_labels.append(method)
 
 # Add the legend
 fig.legend(
     legend_handles, legend_labels,
-    handler_map={tuple: HandlerTuple(ndivide=1, pad=0)},
     loc='upper center', bbox_to_anchor=(.5, 1.06), ncol=3
 )
 
