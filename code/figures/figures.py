@@ -113,7 +113,7 @@ for i_cond in range(3):
                         ax[i_ratio,i_max].set_xticks(cond_x,['A','NC','C'])
                         ax[i_ratio,i_max].set_xlim(-0.5,2.5)
                         ax[i_ratio,i_max].set_yticks([0,0.4,0.8])
-                        ax[i_ratio,i_max].axhline(0.5,linestyle='--',color='gray')
+                        ax[i_ratio,i_max].axhline(0.5,linestyle='--',color='gray',zorder=0.5)
                         if max_val>0.5:
                                 ax[i_ratio,i_max].tick_params(left = False)
                         if i_ratio<3:
@@ -222,7 +222,7 @@ for i_row in range(3):
                                 ax[i_row, i_ratio].set_title(r'Catch Ratio ' + str(ratio[i_ratio]))
                         if ylims[i_row]:
                                 ax[i_row, i_ratio].set_ylim(*ylims[i_row])
-                        ax[i_row, i_ratio].axhline(0.5, linestyle='--', color='gray')
+                        ax[i_row, i_ratio].axhline(0.5, linestyle='--', color='gray', zorder=0.5)
                         ax[i_row, i_ratio].set_xlim(-1, 77)
                         ax[i_row, i_ratio].set_xticks([0, 20, 40, 60])
                         ax[i_row, i_ratio].set_yticks([0.5, 0.75, 1])
@@ -319,7 +319,7 @@ for i_row in range(2):
                                 ax[i_row, i_ratio].set_title(r'Catch Ratio ' + str(ratio[i_ratio]))
                         if ylims[i_row]:
                                 ax[i_row, i_ratio].set_ylim(*ylims[i_row])
-                        ax[i_row, i_ratio].axhline(0.5, linestyle='--', color='gray')
+                        ax[i_row, i_ratio].axhline(0.5, linestyle='--', color='gray', zorder=0.5)
                         ax[i_row, i_ratio].set_xlim(-1, 77)
                         ax[i_row, i_ratio].set_xticks([0, 20, 40, 60])
                         ax[i_row, i_ratio].set_yticks([0.5, 0.75, 1])
@@ -415,7 +415,7 @@ for i_row in range(2):
                                 ax[i_row, i_ratio].set_title(r'Catch Ratio ' + str(ratio[i_ratio]))
                         if ylims[i_row]:
                                 ax[i_row, i_ratio].set_ylim(*ylims[i_row])
-                        ax[i_row, i_ratio].axhline(0.5, linestyle='--', color='gray')
+                        ax[i_row, i_ratio].axhline(0.5, linestyle='--', color='gray', zorder=0.5)
                         ax[i_row, i_ratio].set_xlim(-1, 77)
                         ax[i_row, i_ratio].set_xticks([0, 20, 40, 60])
                         ax[i_row, i_ratio].set_yticks([0.5, 0.75, 1])
@@ -513,7 +513,7 @@ for i_model in [0, 1]:
                         ax[i_ratio, i_max].plot(social_weight, acc_diff, color=model_color, linewidth=2, **kw)
                         ax[i_ratio, i_max].fill_between(social_weight, ci_lower, ci_upper, alpha=0.1, color=model_color)
 
-                        ax[i_ratio, i_max].axhline(0, linestyle='--', color='gray')
+                        ax[i_ratio, i_max].axhline(0, linestyle='--', color='gray', zorder=0.5)
                         if max_val > 0.5:
                                 ax[i_ratio, i_max].tick_params(left=False)
                         if i_ratio < 3:
@@ -632,7 +632,7 @@ for i_max in range(len(max)):
 
                 ax_l[i_ratio, i_max].plot(social_weight, acc_diff, color=color_vsndbr, linewidth=2)
                 ax_l[i_ratio, i_max].fill_between(social_weight, ci_lower, ci_upper, alpha=0.1, color=color_vsndbr)
-                ax_l[i_ratio, i_max].axhline(0, linestyle='--', color='gray')
+                ax_l[i_ratio, i_max].axhline(0, linestyle='--', color='gray', zorder=0.5)
                 ax_l[i_ratio, i_max].set_xscale('function', functions=(weight_forward, weight_inverse))
                 ax_l[i_ratio, i_max].set_xlim(weight_inverse(-0.075), weight_inverse(1.075))
                 ax_l[i_ratio, i_max].set_yticks([-0.5, -0.25, 0, 0.25])
